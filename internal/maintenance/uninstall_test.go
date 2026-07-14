@@ -3,6 +3,7 @@ package maintenance
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -98,6 +99,28 @@ func TestUninstallRejectsNonInteractiveCleanup(t *testing.T) {
 	}
 	if _, err := os.Stat(state); err != nil {
 		t.Fatalf("state was removed after non-interactive refusal: %v", err)
+	}
+}
+
+func TestUninstallUsesOperationLockBeforePreflight(t *testing.T) {
+	t.Parallel()
+
+	lockErr := errors.New("operation lock fixture")
+	preflightCalled := false
+	service := Service{
+		OperationLock: func(context.Context, func() error) error { return lockErr },
+		DetectInstallation: func(context.Context) (installation, error) {
+			preflightCalled = true
+			return installation{}, nil
+		},
+	}
+
+	_, err := service.Uninstall(context.Background(), settings.Store{}, nil, strings.NewReader(""), io.Discard, true)
+	if !errors.Is(err, lockErr) {
+		t.Fatalf("Uninstall() error = %v, want operation lock failure", err)
+	}
+	if preflightCalled {
+		t.Fatal("Uninstall() ran preflight outside the operation lock")
 	}
 }
 
@@ -246,7 +269,8 @@ func writeGlobalMaintenanceFiles(t *testing.T, store settings.Store) {
 
 func fakeUninstallService(executable string) Service {
 	return Service{
-		Executable: func() (string, error) { return executable, nil },
+		OperationLock: func(_ context.Context, callback func() error) error { return callback() },
+		Executable:    func() (string, error) { return executable, nil },
 		DetectInstallation: func(context.Context) (installation, error) {
 			return installation{kind: installationDirect, executable: executable}, nil
 		},

@@ -17,6 +17,7 @@ import (
 	"github.com/charmbracelet/x/term"
 	"github.com/phranck/grat/internal/config"
 	"github.com/phranck/grat/internal/maintenance"
+	"github.com/phranck/grat/internal/operations"
 	"github.com/phranck/grat/internal/ports"
 	"github.com/phranck/grat/internal/presentation"
 	"github.com/phranck/grat/internal/project"
@@ -36,11 +37,12 @@ func Run(ctx context.Context, args []string, cwd string, out io.Writer, errOut i
 }
 
 type environment struct {
-	input       io.Reader
-	interactive bool
-	settings    settings.Store
-	maintenance updateService
-	uninstaller uninstallService
+	input         io.Reader
+	interactive   bool
+	settings      settings.Store
+	operationLock func(context.Context, func() error) error
+	maintenance   updateService
+	uninstaller   uninstallService
 }
 
 type updateService interface {
@@ -53,11 +55,12 @@ type uninstallService interface {
 
 func defaultEnvironment() environment {
 	return environment{
-		input:       os.Stdin,
-		interactive: term.IsTerminal(os.Stdin.Fd()),
-		settings:    settings.Store{},
-		maintenance: maintenance.DefaultService(),
-		uninstaller: maintenance.DefaultService(),
+		input:         os.Stdin,
+		interactive:   term.IsTerminal(os.Stdin.Fd()),
+		settings:      settings.Store{},
+		operationLock: operations.WithLock,
+		maintenance:   maintenance.DefaultService(),
+		uninstaller:   maintenance.DefaultService(),
 	}
 }
 
@@ -89,7 +92,7 @@ func runWithEnvironment(ctx context.Context, args []string, cwd string, out io.W
 		}
 	case "start", "stop", "restart":
 		if _, err = configuredRoots(cwd, environment, output); err == nil {
-			err = runLifecycle(ctx, args[0], args[1:], cwd, output)
+			err = runLifecycle(ctx, args[0], args[1:], cwd, environment.operationLock, output)
 		}
 	case "status":
 		if _, err = configuredRoots(cwd, environment, output); err == nil {
@@ -104,7 +107,7 @@ func runWithEnvironment(ctx context.Context, args []string, cwd string, out io.W
 		if rootErr != nil {
 			err = rootErr
 		} else {
-			err = runPorts(ctx, args[1:], cwd, roots, output)
+			err = runPorts(ctx, args[1:], cwd, roots, environment.operationLock, output)
 		}
 	case "update":
 		if _, rootErr := configuredRoots(cwd, environment, output); rootErr != nil {
@@ -363,7 +366,13 @@ func runInitWithInput(ctx context.Context, args []string, cwd string, input io.R
 	return nil
 }
 
-func runLifecycle(ctx context.Context, command string, names []string, cwd string, output presentation.Renderer) error {
+func runLifecycle(ctx context.Context, command string, names []string, cwd string, lock func(context.Context, func() error) error, output presentation.Renderer) error {
+	return lock(ctx, func() error {
+		return runLifecycleLocked(ctx, command, names, cwd, output)
+	})
+}
+
+func runLifecycleLocked(ctx context.Context, command string, names []string, cwd string, output presentation.Renderer) error {
 	manager, err := loadManager(cwd)
 	if err != nil {
 		return err
@@ -441,7 +450,7 @@ func runLogs(ctx context.Context, args []string, cwd string, output presentation
 	return outputLog(ctx, path, *follow, output)
 }
 
-func runPorts(ctx context.Context, args []string, cwd string, roots []string, output presentation.Renderer) error {
+func runPorts(ctx context.Context, args []string, cwd string, roots []string, lock func(context.Context, func() error) error, output presentation.Renderer) error {
 	if len(args) == 0 {
 		return fmt.Errorf("ports requires audit, assign, or reassign")
 	}
@@ -452,12 +461,12 @@ func runPorts(ctx context.Context, args []string, cwd string, roots []string, ou
 		}
 		return runPortAudit(roots, output)
 	case "assign":
-		return runPortAssign(ctx, args[1:], cwd, roots, output)
+		return runPortAssign(ctx, args[1:], cwd, roots, lock, output)
 	case "reassign":
 		if len(args) != 1 {
 			return fmt.Errorf("ports reassign does not accept service names")
 		}
-		return runPortReassign(ctx, roots, output)
+		return runPortReassign(ctx, roots, lock, output)
 	default:
 		return fmt.Errorf("unknown ports command %q", args[0])
 	}
@@ -514,9 +523,11 @@ func listenerOwnerLabel(pid int) string {
 	return "PID " + fmt.Sprint(pid)
 }
 
-func runPortAssign(ctx context.Context, names []string, cwd string, roots []string, output presentation.Renderer) error {
-	return ports.WithRegistryLock(ctx, func() error {
-		return runPortAssignLocked(names, cwd, roots, output)
+func runPortAssign(ctx context.Context, names []string, cwd string, roots []string, lock func(context.Context, func() error) error, output presentation.Renderer) error {
+	return lock(ctx, func() error {
+		return ports.WithRegistryLock(ctx, func() error {
+			return runPortAssignLocked(names, cwd, roots, output)
+		})
 	})
 }
 
@@ -574,9 +585,11 @@ func runPortAssignLocked(names []string, cwd string, roots []string, output pres
 // runPortReassign stops every service-managed process in the scanned projects,
 // then assigns fresh role-compatible ports across the complete registry. It
 // never signals unmanaged processes; their active listeners remain reserved.
-func runPortReassign(ctx context.Context, roots []string, output presentation.Renderer) error {
-	return ports.WithRegistryLock(ctx, func() error {
-		return runPortReassignLocked(ctx, roots, output)
+func runPortReassign(ctx context.Context, roots []string, lock func(context.Context, func() error) error, output presentation.Renderer) error {
+	return lock(ctx, func() error {
+		return ports.WithRegistryLock(ctx, func() error {
+			return runPortReassignLocked(ctx, roots, output)
+		})
 	})
 }
 

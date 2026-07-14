@@ -11,6 +11,7 @@ import (
 	"syscall"
 
 	"github.com/phranck/grat/internal/config"
+	"github.com/phranck/grat/internal/operations"
 	gratruntime "github.com/phranck/grat/internal/runtime"
 	"github.com/phranck/grat/internal/settings"
 )
@@ -36,6 +37,16 @@ type uninstallArtifacts struct {
 // Uninstall removes grat state from registered roots after explicit class-wide
 // confirmation and then removes the identified installation.
 func (service Service) Uninstall(ctx context.Context, store settings.Store, roots []string, input io.Reader, output io.Writer, interactive bool) (Result, error) {
+	var result Result
+	err := service.operationLock(ctx, func() error {
+		var err error
+		result, err = service.uninstallLocked(ctx, store, roots, input, output, interactive)
+		return err
+	})
+	return result, err
+}
+
+func (service Service) uninstallLocked(ctx context.Context, store settings.Store, roots []string, input io.Reader, output io.Writer, interactive bool) (Result, error) {
 	if !interactive {
 		return Result{}, errors.New("uninstall requires interactive confirmation")
 	}
@@ -75,6 +86,13 @@ func (service Service) Uninstall(ctx context.Context, store settings.Store, root
 		return Result{}, err
 	}
 	return Result{Message: "grat has been uninstalled."}, nil
+}
+
+func (service Service) operationLock(ctx context.Context, callback func() error) error {
+	if service.OperationLock != nil {
+		return service.OperationLock(ctx, callback)
+	}
+	return operations.WithLock(ctx, callback)
 }
 
 func discoverUninstallArtifacts(roots []string) (uninstallArtifacts, error) {

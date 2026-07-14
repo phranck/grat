@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -222,6 +223,31 @@ func TestPortsReassignUsesOnlyConfiguredRoots(t *testing.T) {
 	}
 }
 
+func TestMutatingCommandsUseOperationLock(t *testing.T) {
+	for _, arguments := range [][]string{{"start"}, {"ports", "assign"}, {"ports", "reassign"}} {
+		t.Run(strings.Join(arguments, " "), func(t *testing.T) {
+			store, cwd := newCLITestStore(t)
+			writePortFixtureConfig(t, cwd, "fixture", []config.Service{{
+				Name: "frontend", Command: "sleep 30", Role: config.RoleFrontend, Port: 3005, Host: "127.0.0.1", HealthPath: "/",
+			}})
+			if err := store.Save(settings.Settings{Version: settings.CurrentVersion, Directories: []string{cwd}}); err != nil {
+				t.Fatalf("save settings: %v", err)
+			}
+
+			lockErr := errors.New("operation lock fixture")
+			environment := environmentForTest(store)
+			environment.operationLock = func(context.Context, func() error) error { return lockErr }
+			var stderr bytes.Buffer
+			if code := runWithEnvironment(context.Background(), arguments, cwd, io.Discard, &stderr, environment); code != 1 {
+				t.Fatalf("Run(%v) = %d, want operation lock failure", arguments, code)
+			}
+			if !strings.Contains(stderr.String(), lockErr.Error()) {
+				t.Fatalf("Run(%v) error = %q, want %q", arguments, stderr.String(), lockErr)
+			}
+		})
+	}
+}
+
 func TestUpdateDelegatesToConfiguredMaintenanceService(t *testing.T) {
 	t.Parallel()
 
@@ -293,7 +319,12 @@ func newCLITestStore(t *testing.T) (settings.Store, string) {
 }
 
 func environmentForTest(store settings.Store) environment {
-	return environment{input: strings.NewReader(""), interactive: false, settings: store}
+	return environment{
+		input:         strings.NewReader(""),
+		interactive:   false,
+		settings:      store,
+		operationLock: func(_ context.Context, callback func() error) error { return callback() },
+	}
 }
 
 func canonicalCLITestPath(t *testing.T, path string) string {

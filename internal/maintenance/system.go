@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/phranck/grat/internal/operations"
 	"github.com/phranck/grat/internal/version"
 )
 
@@ -39,6 +40,7 @@ type Service struct {
 	Remove             func(string) error
 	DetectInstallation func(context.Context) (installation, error)
 	InspectProject     func(context.Context, string) (bool, error)
+	OperationLock      func(context.Context, func() error) error
 }
 
 // Result is a concise user-facing result from a maintenance operation.
@@ -60,6 +62,7 @@ func DefaultService() Service {
 		GOARCH:         runtime.GOARCH,
 		Rename:         os.Rename,
 		Remove:         os.Remove,
+		OperationLock:  operations.WithLock,
 	}
 }
 
