@@ -41,14 +41,18 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           path: dist
           merge-multiple: true
+      - name: Package Homebrew bottles
+        env:
+          TAG: ${{ github.ref_name }}
+        run: scripts/build-homebrew-bottles.sh --version "$TAG" --input dist --output bottles
       - name: Create checksums
         run: |
-          cd dist
-          sha256sum grat_* > checksums.txt
+          find dist bottles -type f \( -name 'grat_*' -o -name '*.bottle.tar.gz' \) | sort | xargs sha256sum > dist/checksums.txt
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -56,7 +60,7 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" dist/* --clobber
+            gh release upload "$TAG" dist/* bottles/* --clobber
           else
-            gh release create "$TAG" dist/* --title "grat $TAG" --generate-notes
+            gh release create "$TAG" dist/* bottles/* --title "grat $TAG" --generate-notes
           fi
