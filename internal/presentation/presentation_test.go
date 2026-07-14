@@ -55,6 +55,20 @@ func TestRendererSanitizesDynamicTerminalControlCharacters(t *testing.T) {
 	}
 }
 
+func TestRendererSanitizesUnsafeUnicodeFormatCharacters(t *testing.T) {
+	var output bytes.Buffer
+	renderer := New(&output, ColorNever)
+	renderer.Heading("Status\u202e", "fixture\u2066")
+	renderer.Step(StepWarning, "back\u200bend", "waiting\ufefffailed")
+
+	got := output.String()
+	for _, unsafe := range []string{"\u202e", "\u2066", "\u200b", "\ufeff"} {
+		if strings.Contains(got, unsafe) {
+			t.Fatalf("renderer output contains unsafe Unicode format character %q: %q", unsafe, got)
+		}
+	}
+}
+
 func TestParseColorModeRejectsUnknownValue(t *testing.T) {
 	if _, err := ParseColorMode("rainbow"); err == nil {
 		t.Fatal("ParseColorMode(rainbow) succeeded, want error")
@@ -445,6 +459,23 @@ func TestLifecycleModelSanitizesDynamicTerminalControlCharacters(t *testing.T) {
 	for _, unwanted := range []string{"\x1b]52", "\x07", "fixture\nforged", "\x1b[2J", "\x1b[3J"} {
 		if strings.Contains(got, unwanted) {
 			t.Fatalf("lifecycle output contains unsanitized terminal control %q: %q", unwanted, got)
+		}
+	}
+}
+
+func TestLifecycleModelSanitizesUnsafeUnicodeFormatCharacters(t *testing.T) {
+	model := NewLifecycleModel(LifecycleOperation{
+		Title:   "Starting\u202e",
+		Project: "fixture\u2066",
+		Services: []LifecycleService{{
+			Name: "back\u200bend", Endpoint: "http://localhost:4000/\ufeff",
+		}},
+	}, 84)
+
+	got := model.Render()
+	for _, unsafe := range []string{"\u202e", "\u2066", "\u200b", "\ufeff"} {
+		if strings.Contains(got, unsafe) {
+			t.Fatalf("lifecycle output contains unsafe Unicode format character %q: %q", unsafe, got)
 		}
 	}
 }

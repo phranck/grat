@@ -7,10 +7,10 @@ import (
 	"os"
 	"sort"
 	"strings"
-	"unicode"
 
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/term"
+	"github.com/phranck/grat/internal/textsafe"
 )
 
 // ColorMode controls whether ANSI color sequences are emitted.
@@ -352,12 +352,7 @@ func (renderer Renderer) render(style lipgloss.Style, value string) string {
 }
 
 func terminalSafe(value string) string {
-	return strings.Map(func(character rune) rune {
-		if unicode.IsControl(character) {
-			return '\uFFFD'
-		}
-		return character
-	}, value)
+	return textsafe.Sanitize(value)
 }
 
 func (renderer Renderer) titleStyle() lipgloss.Style {

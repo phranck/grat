@@ -12,9 +12,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unicode"
 
 	"github.com/pelletier/go-toml/v2"
+	"github.com/phranck/grat/internal/textsafe"
 )
 
 const (
@@ -277,8 +277,8 @@ func (value Config) Validate() error {
 	if strings.TrimSpace(value.Project.Name) == "" {
 		return fmt.Errorf("project.name is required")
 	}
-	if containsControl(value.Project.Name) {
-		return fmt.Errorf("project.name must not contain control characters")
+	if textsafe.ContainsUnsafe(value.Project.Name) {
+		return fmt.Errorf("project.name must not contain control or Unicode format characters")
 	}
 	for name, runtimeValue := range map[string]string{
 		"start_timeout": value.Runtime.StartTimeout, "probe_interval": value.Runtime.ProbeInterval,
@@ -286,6 +286,9 @@ func (value Config) Validate() error {
 	} {
 		if len(runtimeValue) > maxRuntimeValueBytes {
 			return fmt.Errorf("runtime.%s exceeds maximum length of %d bytes", name, maxRuntimeValueBytes)
+		}
+		if textsafe.ContainsUnsafe(runtimeValue) {
+			return fmt.Errorf("runtime.%s must not contain control or Unicode format characters", name)
 		}
 	}
 	if len(value.Services) == 0 {
@@ -318,6 +321,9 @@ func (value Config) Validate() error {
 		if strings.TrimSpace(service.Command) == "" {
 			return fmt.Errorf("%s.command is required", prefix)
 		}
+		if textsafe.ContainsUnsafe(service.Command) {
+			return fmt.Errorf("%s.command must not contain control or Unicode format characters", prefix)
+		}
 		if len(service.Role) > maxServiceRoleBytes {
 			return fmt.Errorf("%s.role exceeds maximum length of %d bytes", prefix, maxServiceRoleBytes)
 		}
@@ -326,6 +332,12 @@ func (value Config) Validate() error {
 		}
 		if len(service.HealthPath) > maxHealthPathBytes {
 			return fmt.Errorf("%s.health_path exceeds maximum length of %d bytes", prefix, maxHealthPathBytes)
+		}
+		if textsafe.ContainsUnsafe(service.Host) {
+			return fmt.Errorf("%s.host must not contain control or Unicode format characters", prefix)
+		}
+		if textsafe.ContainsUnsafe(service.HealthPath) {
+			return fmt.Errorf("%s.health_path must not contain control or Unicode format characters", prefix)
 		}
 		if len(service.InheritEnv) > maxInheritedEnvironmentVariables {
 			return fmt.Errorf("%s.inherit_env exceeds maximum count of %d", prefix, maxInheritedEnvironmentVariables)
@@ -539,13 +551,4 @@ func safeEnvironmentName(name string) bool {
 		return false
 	}
 	return name != ""
-}
-
-func containsControl(value string) bool {
-	for _, character := range value {
-		if unicode.IsControl(character) {
-			return true
-		}
-	}
-	return false
 }

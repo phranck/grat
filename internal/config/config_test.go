@@ -291,6 +291,37 @@ func TestValidateRejectsControlCharactersInProjectName(t *testing.T) {
 	}
 }
 
+func TestValidateRejectsUnsafeUnicodeFormatCharacters(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]func(*Config){
+		"project name": func(value *Config) { value.Project.Name = "fixture\u202eevil" },
+		"command":      func(value *Config) { value.Services[0].Command = "printf safe\u2066evil" },
+		"host":         func(value *Config) { value.Services[0].Host = "local\u200bhost" },
+		"health path":  func(value *Config) { value.Services[0].HealthPath = "/health\ufeffcheck" },
+	}
+	for name, mutate := range tests {
+		name, mutate := name, mutate
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			value := Config{
+				Version: 1,
+				Project: Project{Name: "fixture"},
+				Runtime: DefaultRuntime(),
+				Services: []Service{{
+					Name: "backend", Command: "printf safe", Role: RoleBackend,
+					Port: 4000, Host: "localhost", HealthPath: "/health",
+				}},
+			}
+			mutate(&value)
+
+			if err := value.Validate(); err == nil {
+				t.Fatalf("Validate() accepted unsafe Unicode format character in %s", name)
+			}
+		})
+	}
+}
+
 func TestValidateRejectsUnsafeInheritedEnvironmentNames(t *testing.T) {
 	t.Parallel()
 
