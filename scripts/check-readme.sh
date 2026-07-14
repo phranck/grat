@@ -26,12 +26,60 @@ case "$first_line" in
 		;;
 esac
 
-for heading in '# grat' '## Installation' '## Quick start' '## Configuration reference' '## Safety and recovery'; do
+for heading in \
+	'# grat' \
+	'## Does grat fit your project?' \
+	'## Installation' \
+	'## Quick start' \
+	'## Project examples' \
+	'### React with Vite' \
+	'### Laravel' \
+	'### Swift with Vapor' \
+	'### Python with FastAPI' \
+	'### Go HTTP API' \
+	'### React, Laravel, and a queue worker' \
+	'## Command contract' \
+	'## Configuration reference' \
+	'## Roles and port ranges' \
+	'## Status and readiness' \
+	'## Shutdown and restart' \
+	'## Safety and recovery'; do
 	require "$heading"
 done
-for text in 'go install' 'macOS' 'Linux' 'Ctrl+C' 'ports reassign' 'https://layered.mit-license.org' 'CONTRIBUTING.md' 'SECURITY.md' 'CODE_OF_CONDUCT.md' 'SUPPORT.md'; do
+for text in \
+	'brew install phranck/grat/grat' \
+	'go install' \
+	'macOS' \
+	'Linux' \
+	'foreground' \
+	'$PORT' \
+	'npm run dev -- --host 127.0.0.1 --port $PORT --strictPort' \
+	'php artisan serve --host=127.0.0.1 --port=$PORT' \
+	'health_path = "/up"' \
+	'swift run App serve --hostname 127.0.0.1 --port $PORT' \
+	'uvicorn main:app --host 127.0.0.1 --port $PORT --reload' \
+	'go run ./cmd/server' \
+	'php artisan queue:work' \
+	'`stopped`' \
+	'`running`' \
+	'`unhealthy`' \
+	'process-group ID' \
+	'`SIGTERM`' \
+	'`SIGKILL`' \
+	'Ctrl+C' \
+	'ports reassign' \
+	'https://layered.mit-license.org' \
+	'CONTRIBUTING.md' \
+	'SECURITY.md' \
+	'CODE_OF_CONDUCT.md' \
+	'SUPPORT.md'; do
 	require "$text"
 done
+
+if grep -Fq 'legacy PID files' README.md; then
+	echo 'README.md contains historical implementation language: legacy PID files' >&2
+	exit 1
+fi
 
 for document in LICENSE CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md SUPPORT.md; do
 	if [ ! -s "$document" ]; then

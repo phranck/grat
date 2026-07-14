@@ -1,0 +1,7 @@
+/grat
+/.grat/
+/.codex/
+/.worktrees/
+/coverage.out
+/dist/
+/graphify-out/
