@@ -443,21 +443,40 @@ with status 130.
 ## Commands
 
 ```text
-grat version
-grat init
-grat start [name...]
-grat stop [name...]
-grat restart [name...]
-grat status
-grat logs [--follow] <name>
-grat ports audit
-grat ports assign [name...]
-grat ports reassign
-grat directories add PATH
-grat directories remove PATH
-grat directories list
-grat update
-grat uninstall
+$ grat
+grat  v1.1.3
+Usage
+  grat [global options] <command> [arguments]
+
+Project setup
+  init                     Create a declarative grat.config for this project
+
+Service lifecycle
+  start [name...]          Start services and wait for configured readiness
+  stop [name...]           Gracefully stop managed service processes
+  restart [name...]        Stop, start, and verify selected services
+  status                   Show managed process and health status
+  logs [--follow] NAME     Print or follow a service log
+
+Ports
+  ports audit              Find configured port collisions and live listeners
+  ports assign [name...]   Assign free role-compatible ports
+  ports reassign           Stop managed services and globally reassign ports
+
+Directories
+  directories add PATH     Add a directory to scan for grat.config files
+  directories remove PATH  Stop scanning a configured directory
+  directories list         List configured scan directories; dir is an alias
+
+Maintenance
+  update                   Update grat according to its installation method
+  uninstall                Remove grat and selected project-local artifacts
+
+Global options
+  version, --version       Print the installed grat version
+  --color=MODE             Use auto, always, or never for terminal color
+  --no-color               Disable terminal color explicitly
+  help, --help             Show this command reference
 ```
 
 `ports audit` reads `grat.config` files below registered directories, then
