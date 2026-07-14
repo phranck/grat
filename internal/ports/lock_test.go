@@ -3,10 +3,27 @@ package ports
 import (
 	"context"
 	"errors"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
 )
+
+func TestRegistryLockUsesProvidedGratConfigurationDirectory(t *testing.T) {
+	t.Parallel()
+
+	directory := t.TempDir()
+	if err := withRegistryLockIn(context.Background(), directory, func() error { return nil }); err != nil {
+		t.Fatalf("withRegistryLockIn() error = %v", err)
+	}
+	info, err := os.Stat(filepath.Join(directory, registryLockFileName))
+	if err != nil {
+		t.Fatalf("stat lock: %v", err)
+	}
+	if got, want := info.Mode().Perm(), os.FileMode(0o600); got != want {
+		t.Fatalf("lock mode = %o, want %o", got, want)
+	}
+}
 
 func TestRegistryLockHonorsContextWhileContended(t *testing.T) {
 	t.Parallel()

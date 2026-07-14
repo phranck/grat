@@ -1,15 +1,16 @@
-# Graph Report - .  (2026-07-14)
+# Graph Report - grat  (2026-07-14)
 
 ## Corpus Check
-- cluster-only mode — file stats not available
+- 53 files · ~36,974 words
+- Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 557 nodes · 1233 edges · 30 communities (25 shown, 5 thin omitted)
-- Extraction: 84% EXTRACTED · 16% INFERRED · 0% AMBIGUOUS · INFERRED: 202 edges (avg confidence: 0.81)
+- 761 nodes · 1849 edges · 34 communities (29 shown, 5 thin omitted)
+- Extraction: 83% EXTRACTED · 17% INFERRED · 0% AMBIGUOUS · INFERRED: 313 edges (avg confidence: 0.81)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `d5138d38`
+- Built from commit: `32ae4317`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -44,18 +45,22 @@
 - [[_COMMUNITY_Listener Lookup Interface|Listener Lookup Interface]]
 - [[_COMMUNITY_Code of Conduct|Code of Conduct]]
 - [[_COMMUNITY_Release Build Script|Release Build Script]]
+- [[_COMMUNITY_Community 30|Community 30]]
+- [[_COMMUNITY_Community 31|Community 31]]
+- [[_COMMUNITY_Community 32|Community 32]]
+- [[_COMMUNITY_Community 33|Community 33]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `grat` - 37 edges
-2. `Run()` - 33 edges
-3. `T` - 25 edges
-4. `T` - 24 edges
-5. `Renderer` - 22 edges
-6. `runPortAssignLocked()` - 21 edges
-7. `Config` - 19 edges
-8. `LifecycleModel` - 19 edges
-9. `runInitWithInput()` - 18 edges
-10. `NewLifecycleModel()` - 18 edges
+1. `Contains()` - 51 edges
+2. `grat` - 46 edges
+3. `Run()` - 35 edges
+4. `New()` - 35 edges
+5. `runWithEnvironment()` - 29 edges
+6. `T` - 25 edges
+7. `T` - 25 edges
+8. `Renderer` - 23 edges
+9. `Config` - 22 edges
+10. `Manager` - 22 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Configuration compatibility` --semantically_similar_to--> `Approved Declarative Tasks`  [INFERRED] [semantically similar]
@@ -72,55 +77,55 @@
 ## Import Cycles
 - None detected.
 
-## Communities (30 total, 5 thin omitted)
+## Communities (34 total, 5 thin omitted)
 
 ### Community 0 - "CLI Command Orchestration"
-Cohesion: 0.07
-Nodes (66): assignReassignedPorts(), copyReservations(), detectServices(), ensureValidRegistry(), executeLifecycle(), fileExists(), globalScanRoots(), hasConfiguredCollision() (+58 more)
+Cohesion: 0.06
+Nodes (81): assignReassignedPorts(), configuredRoots(), copyReservations(), defaultEnvironment(), detectServices(), ensureValidRegistry(), executeLifecycle(), fileExists() (+73 more)
 
 ### Community 1 - "Lifecycle TUI Engine"
 Cohesion: 0.10
-Nodes (33): CancelFunc, Cmd, Context, Reader, Style, Writer, lifecycleRow, Model (+25 more)
+Nodes (34): CancelFunc, Cmd, Context, Reader, Style, Writer, lifecycleRow, Model (+26 more)
 
 ### Community 2 - "Runtime Process Control"
-Cohesion: 0.08
-Nodes (28): Listener, Renderer, Style, Context, Duration, processState, Manager, Service (+20 more)
+Cohesion: 0.11
+Nodes (18): asset, installation, Client, Context, Service, Client, Context, Service (+10 more)
 
 ### Community 3 - "Configuration Schema"
-Cohesion: 0.11
-Nodes (32): repeatedValue, Config, containsControl(), DefaultRuntime(), InferRole(), Load(), replaceFile(), rollbackWrites() (+24 more)
+Cohesion: 0.12
+Nodes (32): Config, containsControl(), DefaultRuntime(), InferRole(), Load(), prepareWrite(), replaceFile(), rollbackWrites() (+24 more)
 
 ### Community 4 - "Port CLI Integration Tests"
-Cohesion: 0.14
-Nodes (34): exitCode(), isHelp(), Run(), assertGloballyUniqueRolePorts(), cliHelperCommand(), containsArgument(), freeCLITCPPort(), loadPortFixtureConfig() (+26 more)
+Cohesion: 0.15
+Nodes (36): exitCode(), Run(), assertGloballyUniqueRolePorts(), cliHelperCommand(), containsArgument(), freeCLITCPPort(), loadPortFixtureConfig(), runWithConfiguredRoots() (+28 more)
 
 ### Community 5 - "Terminal Presentation"
-Cohesion: 0.14
-Nodes (12): Renderer, ColorMode, formatProjectRows(), fprint(), fprintf(), fprintln(), pad(), ParseColorMode() (+4 more)
+Cohesion: 0.10
+Nodes (18): Renderer, Style, Renderer, Style, Writer, ColorMode, CommandGroup, helpUsageWidth() (+10 more)
 
 ### Community 6 - "Presentation Tests"
-Cohesion: 0.17
-Nodes (32): T, NewLifecycleModel(), DividerLine(), New(), columnOf(), displayColumn(), stripANSI(), TestHelpRendersBorderlessGroupsWithGloballyAlignedDescriptions() (+24 more)
+Cohesion: 0.19
+Nodes (33): T, NewLifecycleModel(), DividerLine(), New(), columnOf(), displayColumn(), stripANSI(), TestHelpRendersBorderlessGroupsWithGloballyAlignedDescriptions() (+25 more)
 
 ### Community 7 - "Port Registry"
-Cohesion: 0.14
-Nodes (27): Config, T, fakeLookup, Listener, ListenerLookup, Problem, ProjectConfig, FirstFree() (+19 more)
+Cohesion: 0.13
+Nodes (28): Config, Listener, T, fakeLookup, Listener, ListenerLookup, Problem, ProjectConfig (+20 more)
 
 ### Community 8 - "Service Lifecycle Tests"
-Cohesion: 0.15
-Nodes (26): Config, Service, T, Manager, Service, Listener, Manager, fixtureConfig() (+18 more)
+Cohesion: 0.08
+Nodes (42): Listener, Config, Listener, Manager, Service, T, processState, Service (+34 more)
 
 ### Community 9 - "Service Lifecycle Manager"
-Cohesion: 0.17
-Nodes (14): Client, main(), mustGetwd(), Config, Context, processState, ProgressObserver, Manager (+6 more)
+Cohesion: 0.11
+Nodes (22): main(), mustGetwd(), Client, Config, Context, processState, ProgressObserver, Manager (+14 more)
 
 ### Community 10 - "Logging and Registry Locking"
-Cohesion: 0.13
-Nodes (14): TestOutputLogStreamsBeforeInputReachesEOF(), notifyingWriter, File, T, T, T, Mutex, TestRegistryLockHonorsContextWhileContended() (+6 more)
+Cohesion: 0.11
+Nodes (18): TestOutputLogStreamsBeforeInputReachesEOF(), notifyingWriter, File, T, Context, T, T, Mutex (+10 more)
 
 ### Community 11 - "README Project Guide"
-Cohesion: 0.11
-Nodes (20): CI Workflow, Code of Conduct, Commands, Complete Development Stacks, Configuration reference, Contributing and support, Contributing Guide, Cross-Project Port Coordination (+12 more)
+Cohesion: 0.08
+Nodes (28): CI Workflow, Code of Conduct, Command contract, Commands, Complete Development Stacks, Configuration reference, Contents, Contributing and support (+20 more)
 
 ### Community 12 - "Interactive Project Init"
 Cohesion: 0.28
@@ -155,8 +160,8 @@ Cohesion: 0.47
 Nodes (4): T, FindRoot(), TestFindRootReturnsNotFoundOutsideProject(), TestFindRootUsesNearestConfig()
 
 ### Community 20 - "Version Reporting"
-Cohesion: 0.47
-Nodes (4): T, Current(), TestCurrentPrefixesLinkerOverrideWithV(), TestCurrentReturnsSourceVersion()
+Cohesion: 0.13
+Nodes (32): repeatedValue, Service, Store, T, Context, Service, T, commandResponse (+24 more)
 
 ### Community 21 - "CI Quality Gates"
 Cohesion: 0.40
@@ -174,25 +179,41 @@ Nodes (3): TestListenerOwnerLabelHandlesUnknownPID(), TestLogFollowUsesTrustedEx
 Cohesion: 0.83
 Nodes (3): require(), require_in(), check-readme.sh script
 
+### Community 30 - "Community 30"
+Cohesion: 0.15
+Nodes (22): Store, T, Settings, canonicalExistingDirectory(), canonicalExistingPath(), ConfigDirectory(), canonicalPath(), equalStrings() (+14 more)
+
+### Community 31 - "Community 31"
+Cohesion: 0.21
+Nodes (23): canonicalCLITestPath(), environmentForTest(), newCLITestStore(), sameStringSlices(), TestDirectoriesAddDoesNotPromptForInitialSetup(), TestDirectoriesCommandsPersistAndListConfiguredRoots(), TestFirstUseAcceptsExistingSitesDefault(), TestFirstUseFallsBackToWorkingDirectory() (+15 more)
+
+### Community 32 - "Community 32"
+Cohesion: 0.19
+Nodes (14): Context, Service, Reader, Result, Store, Writer, installation, installationKind (+6 more)
+
+### Community 33 - "Community 33"
+Cohesion: 0.29
+Nodes (7): Go HTTP API, Laravel, Project examples, Python with FastAPI, React, Laravel, and a queue worker, React with Vite, Swift with Vapor
+
 ## Knowledge Gaps
-- **67 isolated node(s):** `Reader`, `ProgressObserver`, `StepKind`, `LifecycleEvent`, `ProgressStage` (+62 more)
+- **101 isolated node(s):** `Store`, `updateService`, `uninstallService`, `updateService`, `uninstallService` (+96 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **5 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Run()` connect `Port CLI Integration Tests` to `CLI Command Orchestration`, `Lifecycle TUI Engine`, `Presentation Tests`, `Service Lifecycle Manager`, `Version Reporting`?**
+- **Why does `New()` connect `Presentation Tests` to `CLI Command Orchestration`, `Community 32`, `Runtime Process Control`, `Port CLI Integration Tests`, `Terminal Presentation`, `Service Lifecycle Manager`, `Interactive Project Init`, `Version Reporting`, `Community 30`?**
+  _High betweenness centrality (0.185) - this node is a cross-community bridge._
+- **Why does `Contains()` connect `Presentation Tests` to `Community 32`, `Configuration Schema`, `Port CLI Integration Tests`, `Service Lifecycle Tests`, `Interactive Project Init`, `Version Reporting`, `Community 30`, `Community 31`?**
   _High betweenness centrality (0.175) - this node is a cross-community bridge._
-- **Why does `New()` connect `Presentation Tests` to `CLI Command Orchestration`, `Port CLI Integration Tests`, `Terminal Presentation`, `Service Lifecycle Manager`, `Interactive Project Init`?**
-  _High betweenness centrality (0.146) - this node is a cross-community bridge._
-- **Why does `processAlive()` connect `Service Lifecycle Manager` to `Service Lifecycle Tests`, `Runtime Process Control`, `Configuration Schema`?**
-  _High betweenness centrality (0.093) - this node is a cross-community bridge._
+- **Why does `Run()` connect `Port CLI Integration Tests` to `CLI Command Orchestration`, `Service Lifecycle Manager`, `Presentation Tests`, `Lifecycle TUI Engine`?**
+  _High betweenness centrality (0.098) - this node is a cross-community bridge._
+- **Are the 48 inferred relationships involving `Contains()` (e.g. with `TestInitRejectsDeprecatedAppFlag()` and `TestInitRejectsInvalidGlobalRegistry()`) actually correct?**
+  _`Contains()` has 48 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 20 inferred relationships involving `Run()` (e.g. with `New()` and `Current()`) actually correct?**
   _`Run()` has 20 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `Reader`, `ProgressObserver`, `StepKind` to the rest of the system?**
-  _69 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `CLI Command Orchestration` be split into smaller, more focused modules?**
-  _Cohesion score 0.06862745098039216 - nodes in this community are weakly interconnected._
-- **Should `Lifecycle TUI Engine` be split into smaller, more focused modules?**
-  _Cohesion score 0.09725490196078432 - nodes in this community are weakly interconnected._
+- **Are the 29 inferred relationships involving `New()` (e.g. with `configuredRoots()` and `Run()`) actually correct?**
+  _`New()` has 29 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 13 inferred relationships involving `runWithEnvironment()` (e.g. with `New()` and `Current()`) actually correct?**
+  _`runWithEnvironment()` has 13 INFERRED edges - model-reasoned connections that need verification._

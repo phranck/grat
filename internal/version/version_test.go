@@ -4,8 +4,8 @@ package version
 import "testing"
 
 func TestCurrentReturnsSourceVersion(t *testing.T) {
-	if got := Current(); got != "v1.0.0" {
-		t.Fatalf("Current() = %q, want source version v1.0.0", got)
+	if got := Current(); got != "v1.1.0" {
+		t.Fatalf("Current() = %q, want source version v1.1.0", got)
 	}
 }
 

@@ -68,6 +68,17 @@ for text in \
 	'`SIGKILL`' \
 	'Ctrl+C' \
 	'ports reassign' \
+	'grat directories add PATH' \
+	'grat dir add PATH' \
+	'grat directories remove PATH' \
+	'grat directories list' \
+	'grat update' \
+	'grat uninstall' \
+	'~/Library/Application Support/grat/settings.toml' \
+	'$XDG_CONFIG_HOME/grat/settings.toml' \
+	'Delete all .grat directories? [Y/n]:' \
+	'Delete all grat.config files? [Y/n]:' \
+	'registered directories' \
 	'https://layered.mit-license.org' \
 	'CONTRIBUTING.md' \
 	'SECURITY.md' \
@@ -78,6 +89,11 @@ done
 
 if grep -Fq 'legacy PID files' README.md; then
 	echo 'README.md contains historical implementation language: legacy PID files' >&2
+	exit 1
+fi
+
+if grep -Fq 'under `~/Sites` and `~/Developer`' README.md; then
+	echo 'README.md describes obsolete fixed scan roots' >&2
 	exit 1
 fi
 
@@ -117,7 +133,7 @@ require_in go.mod 'go 1.26.5'
 require_in go.mod 'module github.com/phranck/grat'
 require_in go.mod 'tool golang.org/x/vuln/cmd/govulncheck'
 require_in README.md 'Go 1.26.5 or newer'
-require_in README.md 'go install github.com/phranck/grat/cmd/grat@v1.0.0'
+require_in README.md 'go install github.com/phranck/grat/cmd/grat@v1.1.0'
 require_in README.md '`grat.config`'
 require_in README.md '`.grat/`'
 require_in CONTRIBUTING.md 'Go 1.26.5 or newer'

@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"syscall"
 	"time"
+
+	"github.com/phranck/grat/internal/settings"
 )
 
 const registryLockFileName = "ports.lock"
@@ -15,13 +17,19 @@ const registryLockFileName = "ports.lock"
 // WithRegistryLock serializes one global port allocation or replacement for
 // the current user. The lock remains held for the complete callback.
 func WithRegistryLock(ctx context.Context, callback func() error) error {
-	configDirectory, err := os.UserConfigDir()
+	configDirectory, err := settings.ConfigDirectory()
 	if err != nil {
-		return fmt.Errorf("resolve user config directory for port lock: %w", err)
+		return fmt.Errorf("resolve grat config directory for port lock: %w", err)
 	}
-	lockDirectory := filepath.Join(configDirectory, "grat")
+	return withRegistryLockIn(ctx, configDirectory, callback)
+}
+
+func withRegistryLockIn(ctx context.Context, lockDirectory string, callback func() error) error {
 	if err := os.MkdirAll(lockDirectory, 0o700); err != nil {
 		return fmt.Errorf("create port lock directory: %w", err)
+	}
+	if err := os.Chmod(lockDirectory, 0o700); err != nil {
+		return fmt.Errorf("set port lock directory permissions: %w", err)
 	}
 	return withRegistryLock(ctx, filepath.Join(lockDirectory, registryLockFileName), callback)
 }

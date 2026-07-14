@@ -17,6 +17,7 @@ import (
 	"github.com/phranck/grat/internal/config"
 	"github.com/phranck/grat/internal/ports"
 	"github.com/phranck/grat/internal/presentation"
+	"github.com/phranck/grat/internal/settings"
 )
 
 const (
@@ -35,8 +36,8 @@ func TestVersionCommandsRenderTheToolVersion(t *testing.T) {
 		if code != 0 || stderr.Len() != 0 {
 			t.Fatalf("Run(%v) = (%d, %q), want successful version output", arguments, code, stderr.String())
 		}
-		if !strings.Contains(stdout.String(), "v1.0.0") {
-			t.Fatalf("Run(%v) output = %q, want v1.0.0", arguments, stdout.String())
+		if !strings.Contains(stdout.String(), "v1.1.0") {
+			t.Fatalf("Run(%v) output = %q, want v1.1.0", arguments, stdout.String())
 		}
 	}
 }
@@ -56,7 +57,7 @@ func TestInitAllocatesPortsForExplicitServices(t *testing.T) {
 	}
 	var stderr bytes.Buffer
 
-	code := Run(
+	code := runWithConfiguredRoots(t, []string{home},
 		context.Background(),
 		[]string{"init", "--name", "fixture", "--service", "frontend=pnpm dev", "--service", "backend=pnpm dev:backend"},
 		root,
@@ -95,7 +96,7 @@ func TestInitRejectsInvalidGlobalRegistry(t *testing.T) {
 
 	root := filepath.Join(home, "Developer", "target")
 	var stderr bytes.Buffer
-	code := Run(context.Background(), []string{"init", "--name", "target", "--service", "frontend=npm run dev"}, root, io.Discard, &stderr)
+	code := runWithConfiguredRoots(t, []string{home}, context.Background(), []string{"init", "--name", "target", "--service", "frontend=npm run dev"}, root, io.Discard, &stderr)
 	if code != 1 || !strings.Contains(stderr.String(), "invalid") {
 		t.Fatalf("Run(init) = (%d, %q), want invalid-registry rejection", code, stderr.String())
 	}
@@ -107,11 +108,12 @@ func TestInitRejectsInvalidGlobalRegistry(t *testing.T) {
 func TestInitRejectsDeprecatedAppFlag(t *testing.T) {
 	t.Parallel()
 
+	root := t.TempDir()
 	var stderr bytes.Buffer
-	code := Run(
+	code := runWithConfiguredRoots(t, []string{root},
 		context.Background(),
 		[]string{"init", "--name", "fixture", "--app", "frontend=pnpm dev"},
-		t.TempDir(),
+		root,
 		io.Discard,
 		&stderr,
 	)
@@ -174,7 +176,7 @@ func TestLogsStreamsConfiguredServiceLog(t *testing.T) {
 
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	if code := Run(context.Background(), []string{"logs", "worker"}, root, &stdout, &stderr); code != 0 {
+	if code := runWithConfiguredRoots(t, []string{root}, context.Background(), []string{"logs", "worker"}, root, &stdout, &stderr); code != 0 {
 		t.Fatalf("Run(logs) = (%d, %q), want success", code, stderr.String())
 	}
 	if got, want := stdout.String(), "line one\nline two\n"; got != want {
@@ -192,7 +194,7 @@ func TestPortsAuditReportsConfiguredReservations(t *testing.T) {
 
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	if code := Run(context.Background(), []string{"ports", "audit"}, root, &stdout, &stderr); code != 0 {
+	if code := runWithConfiguredRoots(t, []string{home}, context.Background(), []string{"ports", "audit"}, root, &stdout, &stderr); code != 0 {
 		t.Fatalf("Run(ports audit) = (%d, %q), want success", code, stderr.String())
 	}
 	for _, wanted := range []string{"Port audit", "config", "fixture / backend", "no configured port collisions"} {
@@ -220,16 +222,16 @@ func TestRestartReportsConcreteLifecycleSteps(t *testing.T) {
 		t.Fatalf("write fixture config: %v", err)
 	}
 	t.Cleanup(func() {
-		_ = Run(context.Background(), []string{"stop"}, root, io.Discard, io.Discard)
+		_ = runWithConfiguredRoots(t, []string{root}, context.Background(), []string{"stop"}, root, io.Discard, io.Discard)
 	})
 
-	if code := Run(context.Background(), []string{"start"}, root, io.Discard, io.Discard); code != 0 {
+	if code := runWithConfiguredRoots(t, []string{root}, context.Background(), []string{"start"}, root, io.Discard, io.Discard); code != 0 {
 		t.Fatalf("Run(start) exit = %d, want 0", code)
 	}
 
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	if code := Run(context.Background(), []string{"restart"}, root, &stdout, &stderr); code != 0 {
+	if code := runWithConfiguredRoots(t, []string{root}, context.Background(), []string{"restart"}, root, &stdout, &stderr); code != 0 {
 		t.Fatalf("Run(restart) = (%d, %q), want success; output: %s", code, stderr.String(), stdout.String())
 	}
 	for _, wanted := range []string{"stopping managed process", "starting isolated process", "waiting for listener and health probe", "ready on http://127.0.0.1:"} {
@@ -265,7 +267,7 @@ func TestNewPortReassignLifecycleOperationUsesProjectGroups(t *testing.T) {
 		},
 	})
 
-	if operation.Title != "Reassigning ports" || operation.Project != "~/Sites and ~/Developer" {
+	if operation.Title != "Reassigning ports" || operation.Project != "Configured directories" {
 		t.Fatalf("global lifecycle operation = %#v, want reassignment heading", operation)
 	}
 	if len(operation.Groups) != 2 {
@@ -327,7 +329,7 @@ func TestPortsAssignReportsAssignedEndpoints(t *testing.T) {
 
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	if code := Run(context.Background(), []string{"ports", "assign"}, root, &stdout, &stderr); code != 0 {
+	if code := runWithConfiguredRoots(t, []string{home}, context.Background(), []string{"ports", "assign"}, root, &stdout, &stderr); code != 0 {
 		t.Fatalf("Run(ports assign) = (%d, %q), want success", code, stderr.String())
 	}
 
@@ -361,7 +363,7 @@ func TestPortsAssignRejectsInvalidGlobalRegistry(t *testing.T) {
 	}
 
 	var stderr bytes.Buffer
-	code := Run(context.Background(), []string{"ports", "assign"}, root, io.Discard, &stderr)
+	code := runWithConfiguredRoots(t, []string{home}, context.Background(), []string{"ports", "assign"}, root, io.Discard, &stderr)
 	if code != 1 || !strings.Contains(stderr.String(), "invalid") {
 		t.Fatalf("Run(ports assign) = (%d, %q), want invalid-registry rejection", code, stderr.String())
 	}
@@ -383,7 +385,7 @@ func TestPortsReassignGloballyAllocatesConfiguredProjects(t *testing.T) {
 
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	if code := Run(context.Background(), []string{"ports", "reassign"}, firstRoot, &stdout, &stderr); code != 0 {
+	if code := runWithConfiguredRoots(t, []string{home}, context.Background(), []string{"ports", "reassign"}, firstRoot, &stdout, &stderr); code != 0 {
 		t.Fatalf("Run(ports reassign) = (%d, %q), want success; output: %s", code, stderr.String(), stdout.String())
 	}
 
@@ -405,13 +407,13 @@ func TestPortsReassignStopsManagedServices(t *testing.T) {
 		Name: "backend", Command: cliHelperCommand(), Role: config.RoleBackend, Port: port, Host: "127.0.0.1", HealthPath: "/",
 	}})
 	t.Cleanup(func() {
-		_ = Run(context.Background(), []string{"stop"}, root, io.Discard, io.Discard)
+		_ = runWithConfiguredRoots(t, []string{home}, context.Background(), []string{"stop"}, root, io.Discard, io.Discard)
 	})
 
-	if code := Run(context.Background(), []string{"start"}, root, io.Discard, io.Discard); code != 0 {
+	if code := runWithConfiguredRoots(t, []string{home}, context.Background(), []string{"start"}, root, io.Discard, io.Discard); code != 0 {
 		t.Fatalf("Run(start) = %d, want success", code)
 	}
-	if code := Run(context.Background(), []string{"ports", "reassign"}, root, io.Discard, io.Discard); code != 0 {
+	if code := runWithConfiguredRoots(t, []string{home}, context.Background(), []string{"ports", "reassign"}, root, io.Discard, io.Discard); code != 0 {
 		t.Fatalf("Run(ports reassign) = %d, want success", code)
 	}
 
@@ -437,7 +439,7 @@ func TestPortsReassignDoesNotWriteConfigsAfterCancellation(t *testing.T) {
 	contextValue, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	if code := Run(contextValue, []string{"ports", "reassign"}, root, io.Discard, io.Discard); code != 130 {
+	if code := runWithConfiguredRoots(t, []string{home}, contextValue, []string{"ports", "reassign"}, root, io.Discard, io.Discard); code != 130 {
 		t.Fatalf("Run(ports reassign) = %d, want interrupted exit code 130", code)
 	}
 	// #nosec G304 -- configPath belongs to this test's isolated temporary home.
@@ -544,4 +546,13 @@ func containsArgument(arguments []string, wanted string) bool {
 		}
 	}
 	return false
+}
+
+func runWithConfiguredRoots(t *testing.T, roots []string, ctx context.Context, args []string, cwd string, out io.Writer, errOut io.Writer) int {
+	t.Helper()
+	store, _ := newCLITestStore(t)
+	if err := store.Save(settings.Settings{Version: settings.CurrentVersion, Directories: roots}); err != nil {
+		t.Fatalf("save test settings: %v", err)
+	}
+	return runWithEnvironment(ctx, args, cwd, out, errOut, environmentForTest(store))
 }

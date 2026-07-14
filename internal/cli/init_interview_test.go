@@ -80,6 +80,7 @@ func TestRunInitWithInputRequiresExplicitNameWhenNotInteractive(t *testing.T) {
 		t.TempDir(),
 		strings.NewReader(""),
 		false,
+		nil,
 		presentation.New(io.Discard, presentation.ColorNever),
 	)
 	if err == nil || !strings.Contains(err.Error(), "--name") {

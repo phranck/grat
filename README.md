@@ -20,6 +20,7 @@ process groups it started.
 
 - [Does grat fit your project?](#does-grat-fit-your-project)
 - [Installation](#installation)
+- [Directory discovery](#directory-discovery)
 - [Quick start](#quick-start)
 - [Project examples](#project-examples)
 - [Command contract](#command-contract)
@@ -28,6 +29,7 @@ process groups it started.
 - [Status and readiness](#status-and-readiness)
 - [Shutdown and restart](#shutdown-and-restart)
 - [Commands](#commands)
+- [Maintenance](#maintenance)
 - [Safety and recovery](#safety-and-recovery)
 
 ## Does grat fit your project?
@@ -63,12 +65,51 @@ it against `checksums.txt`, make it executable, and place it on your `PATH`.
 To build with Go, install Go 1.26.5 or newer and run:
 
 ```sh
-go install github.com/phranck/grat/cmd/grat@v1.0.0
+go install github.com/phranck/grat/cmd/grat@v1.1.0
 ```
 
 grat uses `/bin/sh` to run configured commands. On macOS it inspects listeners
 with the system `lsof` command. On Linux it reads process information from
 `/proc`.
+
+## Directory discovery
+
+grat scans for project configurations only below registered directories. On the
+first functional command it asks for one directory to scan. If `~/Sites`
+exists, that is the proposed default; otherwise grat proposes the current
+directory. Help and version commands never prompt. A non-interactive command
+without a registered directory reports the exact command needed to configure
+one.
+
+Settings are stored at
+`~/Library/Application Support/grat/settings.toml` on macOS and at
+`$XDG_CONFIG_HOME/grat/settings.toml` on Linux, falling back to
+`~/.config/grat/settings.toml`. The file contains absolute, machine-local paths:
+
+```toml
+version = 1
+directories = [
+  "/absolute/path/on/this/machine",
+]
+```
+
+Manage those directories explicitly:
+
+```text
+grat directories add PATH
+grat directories remove PATH
+grat directories list
+
+grat dir add PATH
+grat dir remove PATH
+grat dir list
+```
+
+`dir` is an alias for `directories`. `directories add` accepts absolute,
+relative, and `~/` paths, validates that they name directories, and stores a
+canonical absolute path. Port allocation and auditing scan only registered
+directories. Lifecycle commands still select the nearest project-local
+`grat.config` from the current directory.
 
 ## Quick start
 
@@ -412,9 +453,14 @@ grat logs [--follow] <name>
 grat ports audit
 grat ports assign [name...]
 grat ports reassign
+grat directories add PATH
+grat directories remove PATH
+grat directories list
+grat update
+grat uninstall
 ```
 
-`ports audit` reads `grat.config` files under `~/Sites` and `~/Developer`, then
+`ports audit` reads `grat.config` files below registered directories, then
 reports configured port collisions and active TCP listeners. `ports assign`
 selects the first free port in each selected service's role range. Existing
 configuration reservations and active listeners remain reserved during
@@ -424,6 +470,32 @@ allocation.
 assigns fresh role-compatible ports, and writes the updated configurations. The
 services remain stopped so their next start uses the new ports. These operations
 hold a per-user lock across scanning, allocation, and configuration writes.
+
+## Maintenance
+
+`grat update` follows the method that owns the currently running executable.
+For Homebrew installations it delegates to Homebrew. For a release binary it
+downloads the matching platform asset from the grat GitHub release, verifies
+`checksums.txt`, and replaces the binary only after checksum validation. For a
+Go installation it prints:
+
+```sh
+go install github.com/phranck/grat/cmd/grat@latest
+```
+
+`grat uninstall` first checks registered directories for active grat-managed
+services. Stop any listed service before running the command again. It then
+asks once for each class of project-local artifact:
+
+```text
+Delete all .grat directories? [Y/n]:
+Delete all grat.config files? [Y/n]:
+```
+
+An empty answer means yes. grat removes only matching files below registered
+directories, then removes its settings, port lock, and the installation it can
+identify safely. It does not search unrelated parts of your home directory or
+remove shared Homebrew state.
 
 ## Safety and recovery
 

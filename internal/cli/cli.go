@@ -16,18 +16,52 @@ import (
 
 	"github.com/charmbracelet/x/term"
 	"github.com/phranck/grat/internal/config"
+	"github.com/phranck/grat/internal/maintenance"
 	"github.com/phranck/grat/internal/ports"
 	"github.com/phranck/grat/internal/presentation"
 	"github.com/phranck/grat/internal/project"
 	gratruntime "github.com/phranck/grat/internal/runtime"
+	"github.com/phranck/grat/internal/settings"
 	"github.com/phranck/grat/internal/version"
 )
 
 const configFileName = "grat.config"
 
+const configuredDirectoriesLabel = "Configured directories"
+
 // Run executes one service command from cwd and returns a shell-compatible exit
 // code. It writes user-facing output only to out and errOut.
 func Run(ctx context.Context, args []string, cwd string, out io.Writer, errOut io.Writer) int {
+	return runWithEnvironment(ctx, args, cwd, out, errOut, defaultEnvironment())
+}
+
+type environment struct {
+	input       io.Reader
+	interactive bool
+	settings    settings.Store
+	maintenance updateService
+	uninstaller uninstallService
+}
+
+type updateService interface {
+	Update(context.Context) (maintenance.Result, error)
+}
+
+type uninstallService interface {
+	Uninstall(context.Context, settings.Store, []string, io.Reader, io.Writer, bool) (maintenance.Result, error)
+}
+
+func defaultEnvironment() environment {
+	return environment{
+		input:       os.Stdin,
+		interactive: term.IsTerminal(os.Stdin.Fd()),
+		settings:    settings.Store{},
+		maintenance: maintenance.DefaultService(),
+		uninstaller: maintenance.DefaultService(),
+	}
+}
+
+func runWithEnvironment(ctx context.Context, args []string, cwd string, out io.Writer, errOut io.Writer, environment environment) int {
 	options, args, err := parseGlobalOptions(args)
 	output := presentation.New(out, options.color)
 	errors := presentation.New(errOut, options.color)
@@ -44,16 +78,63 @@ func Run(ctx context.Context, args []string, cwd string, out io.Writer, errOut i
 	case "version":
 		output.Heading("grat", version.Current())
 		return 0
+	case "directories", "dir":
+		err = runDirectories(args[1:], cwd, environment, output)
 	case "init":
-		err = runInit(ctx, args[1:], cwd, output)
+		roots, rootErr := configuredRoots(cwd, environment, output)
+		if rootErr != nil {
+			err = rootErr
+		} else {
+			err = runInit(ctx, args[1:], cwd, environment.input, environment.interactive, roots, output)
+		}
 	case "start", "stop", "restart":
-		err = runLifecycle(ctx, args[0], args[1:], cwd, output)
+		if _, err = configuredRoots(cwd, environment, output); err == nil {
+			err = runLifecycle(ctx, args[0], args[1:], cwd, output)
+		}
 	case "status":
-		err = runStatus(ctx, cwd, output)
+		if _, err = configuredRoots(cwd, environment, output); err == nil {
+			err = runStatus(ctx, cwd, output)
+		}
 	case "logs":
-		err = runLogs(ctx, args[1:], cwd, output)
+		if _, err = configuredRoots(cwd, environment, output); err == nil {
+			err = runLogs(ctx, args[1:], cwd, output)
+		}
 	case "ports":
-		err = runPorts(ctx, args[1:], cwd, output)
+		roots, rootErr := configuredRoots(cwd, environment, output)
+		if rootErr != nil {
+			err = rootErr
+		} else {
+			err = runPorts(ctx, args[1:], cwd, roots, output)
+		}
+	case "update":
+		if _, rootErr := configuredRoots(cwd, environment, output); rootErr != nil {
+			err = rootErr
+		} else if environment.maintenance == nil {
+			err = fmt.Errorf("update service is unavailable")
+		} else {
+			var result maintenance.Result
+			result, err = environment.maintenance.Update(ctx)
+			if err == nil {
+				output.Step(presentation.StepSuccess, "Update", result.Message)
+			}
+		}
+	case "uninstall":
+		settingsValue, exists, settingsErr := environment.settings.Load()
+		if settingsErr != nil {
+			err = settingsErr
+		} else if environment.uninstaller == nil {
+			err = fmt.Errorf("uninstall service is unavailable")
+		} else {
+			roots := []string(nil)
+			if exists {
+				roots = settingsValue.Directories
+			}
+			var result maintenance.Result
+			result, err = environment.uninstaller.Uninstall(ctx, environment.settings, roots, environment.input, output.Writer(), environment.interactive)
+			if err == nil {
+				output.Step(presentation.StepSuccess, "Uninstall", result.Message)
+			}
+		}
 	default:
 		printUsage(errors)
 		errors.Error(fmt.Errorf("unknown command %q", args[0]))
@@ -73,11 +154,119 @@ func exitCode(err error) int {
 	return 1
 }
 
-func runInit(ctx context.Context, args []string, cwd string, output presentation.Renderer) error {
-	return runInitWithInput(ctx, args, cwd, os.Stdin, term.IsTerminal(os.Stdin.Fd()), output)
+func runInit(ctx context.Context, args []string, cwd string, input io.Reader, interactive bool, roots []string, output presentation.Renderer) error {
+	return runInitWithInput(ctx, args, cwd, input, interactive, roots, output)
 }
 
-func runInitWithInput(ctx context.Context, args []string, cwd string, input io.Reader, interactive bool, output presentation.Renderer) error {
+func runDirectories(args []string, cwd string, environment environment, output presentation.Renderer) error {
+	if len(args) == 0 {
+		return errors.New("directories requires add, remove, or list")
+	}
+	switch args[0] {
+	case "add":
+		if len(args) != 2 {
+			return errors.New("directories add requires exactly one path")
+		}
+		if _, err := environment.settings.Add(args[1], cwd); err != nil {
+			return err
+		}
+		directory, err := environment.settings.Normalize(args[1], cwd)
+		if err != nil {
+			return err
+		}
+		output.Step(presentation.StepSuccess, "Directories", "added "+directory)
+		return nil
+	case "remove":
+		if len(args) != 2 {
+			return errors.New("directories remove requires exactly one path")
+		}
+		if _, err := configuredRoots(cwd, environment, output); err != nil {
+			return err
+		}
+		_, removed, err := environment.settings.Remove(args[1], cwd)
+		if err != nil {
+			return err
+		}
+		if !removed {
+			return fmt.Errorf("directory %q is not configured", args[1])
+		}
+		output.Step(presentation.StepSuccess, "Directories", "removed "+args[1])
+		return nil
+	case "list":
+		if len(args) != 1 {
+			return errors.New("directories list does not accept paths")
+		}
+		roots, err := configuredRoots(cwd, environment, output)
+		if err != nil {
+			return err
+		}
+		rows := make([][]string, 0, len(roots))
+		for _, root := range roots {
+			rows = append(rows, []string{root})
+		}
+		output.Heading("Directories", "configured scan roots")
+		output.Table([]string{"DIRECTORY"}, rows)
+		return nil
+	default:
+		return fmt.Errorf("unknown directories command %q", args[0])
+	}
+}
+
+func configuredRoots(cwd string, environment environment, output presentation.Renderer) ([]string, error) {
+	settingsValue, exists, err := environment.settings.Load()
+	if err != nil {
+		return nil, err
+	}
+	if exists && len(settingsValue.Directories) > 0 {
+		return settingsValue.Directories, nil
+	}
+	if !environment.interactive {
+		return nil, errors.New("No scan directory configured. Run: grat directories add PATH")
+	}
+	defaultDirectory, err := environment.settings.DefaultDirectory(cwd)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Fprintf(output.Writer(), "Directory to scan for grat.config files [%s]: ", defaultDirectory)
+	answer, err := readPromptLine(environment.input)
+	if err != nil {
+		return nil, fmt.Errorf("read scan directory: %w", err)
+	}
+	if strings.TrimSpace(answer) == "" {
+		answer = defaultDirectory
+	}
+	settingsValue, err = environment.settings.Add(answer, cwd)
+	if err != nil {
+		return nil, err
+	}
+	return settingsValue.Directories, nil
+}
+
+func readPromptLine(input io.Reader) (string, error) {
+	var value strings.Builder
+	buffer := make([]byte, 1)
+	for {
+		count, err := input.Read(buffer)
+		if count > 0 {
+			switch buffer[0] {
+			case '\n':
+				return strings.TrimSuffix(value.String(), "\r"), nil
+			case '\r':
+				continue
+			default:
+				value.WriteByte(buffer[0])
+			}
+		}
+		if err != nil {
+			if errors.Is(err, io.EOF) && value.Len() > 0 {
+				return value.String(), nil
+			}
+			return "", err
+		}
+	}
+}
+
+func runInitWithInput(ctx context.Context, args []string, cwd string, input io.Reader, interactive bool, roots []string, output presentation.Renderer) error {
 	flags := flag.NewFlagSet("init", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	name := flags.String("name", "", "project name")
@@ -121,7 +310,7 @@ func runInitWithInput(ctx context.Context, args []string, cwd string, input io.R
 		return fmt.Errorf("no known development scripts found; use --service name=command")
 	}
 	output.Step(presentation.StepSuccess, "Services", fmt.Sprintf("found %d configured service(s)", len(definitions)))
-	output.Step(presentation.StepWorking, "Ports", "scanning global configuration and live listeners")
+	output.Step(presentation.StepWorking, "Ports", "scanning configured directories and live listeners")
 	services := make([]config.Service, 0, len(definitions))
 	err = ports.WithRegistryLock(ctx, func() error {
 		if _, statErr := os.Stat(configPath); statErr == nil && !*force {
@@ -129,7 +318,7 @@ func runInitWithInput(ctx context.Context, args []string, cwd string, input io.R
 		} else if statErr != nil && !errors.Is(statErr, os.ErrNotExist) {
 			return fmt.Errorf("inspect %s: %w", configPath, statErr)
 		}
-		report, scanErr := ports.Scan(globalScanRoots())
+		report, scanErr := ports.Scan(roots)
 		if scanErr != nil {
 			return scanErr
 		}
@@ -252,7 +441,7 @@ func runLogs(ctx context.Context, args []string, cwd string, output presentation
 	return outputLog(ctx, path, *follow, output)
 }
 
-func runPorts(ctx context.Context, args []string, cwd string, output presentation.Renderer) error {
+func runPorts(ctx context.Context, args []string, cwd string, roots []string, output presentation.Renderer) error {
 	if len(args) == 0 {
 		return fmt.Errorf("ports requires audit, assign, or reassign")
 	}
@@ -261,23 +450,23 @@ func runPorts(ctx context.Context, args []string, cwd string, output presentatio
 		if len(args) != 1 {
 			return fmt.Errorf("ports audit does not accept service names")
 		}
-		return runPortAudit(output)
+		return runPortAudit(roots, output)
 	case "assign":
-		return runPortAssign(ctx, args[1:], cwd, output)
+		return runPortAssign(ctx, args[1:], cwd, roots, output)
 	case "reassign":
 		if len(args) != 1 {
 			return fmt.Errorf("ports reassign does not accept service names")
 		}
-		return runPortReassign(ctx, output)
+		return runPortReassign(ctx, roots, output)
 	default:
 		return fmt.Errorf("unknown ports command %q", args[0])
 	}
 }
 
-func runPortAudit(output presentation.Renderer) error {
-	output.Heading("Port audit", "~/Sites and ~/Developer")
+func runPortAudit(roots []string, output presentation.Renderer) error {
+	output.Heading("Port audit", configuredDirectoriesLabel)
 	output.Step(presentation.StepWorking, "Registry", "reading declarative grat.config files")
-	report, err := ports.Scan(globalScanRoots())
+	report, err := ports.Scan(roots)
 	if err != nil {
 		return err
 	}
@@ -325,13 +514,13 @@ func listenerOwnerLabel(pid int) string {
 	return "PID " + fmt.Sprint(pid)
 }
 
-func runPortAssign(ctx context.Context, names []string, cwd string, output presentation.Renderer) error {
+func runPortAssign(ctx context.Context, names []string, cwd string, roots []string, output presentation.Renderer) error {
 	return ports.WithRegistryLock(ctx, func() error {
-		return runPortAssignLocked(names, cwd, output)
+		return runPortAssignLocked(names, cwd, roots, output)
 	})
 }
 
-func runPortAssignLocked(names []string, cwd string, output presentation.Renderer) error {
+func runPortAssignLocked(names []string, cwd string, roots []string, output presentation.Renderer) error {
 	root, value, err := loadConfig(cwd)
 	if err != nil {
 		return err
@@ -343,7 +532,7 @@ func runPortAssignLocked(names []string, cwd string, output presentation.Rendere
 	output.Heading("Assigning ports", value.Project.Name)
 	output.Step(presentation.StepWorking, "Registry", "reading global port allocations")
 
-	report, err := ports.Scan(globalScanRoots())
+	report, err := ports.Scan(roots)
 	if err != nil {
 		return err
 	}
@@ -385,14 +574,14 @@ func runPortAssignLocked(names []string, cwd string, output presentation.Rendere
 // runPortReassign stops every service-managed process in the scanned projects,
 // then assigns fresh role-compatible ports across the complete registry. It
 // never signals unmanaged processes; their active listeners remain reserved.
-func runPortReassign(ctx context.Context, output presentation.Renderer) error {
+func runPortReassign(ctx context.Context, roots []string, output presentation.Renderer) error {
 	return ports.WithRegistryLock(ctx, func() error {
-		return runPortReassignLocked(ctx, output)
+		return runPortReassignLocked(ctx, roots, output)
 	})
 }
 
-func runPortReassignLocked(ctx context.Context, output presentation.Renderer) error {
-	output.OperationHeading("Reassigning ports", "~/Sites and ~/Developer")
+func runPortReassignLocked(ctx context.Context, roots []string, output presentation.Renderer) error {
+	output.OperationHeading("Reassigning ports", configuredDirectoriesLabel)
 	output.OperationStep("Reassigning ports", presentation.StepWorking, "Registry", "reading declarative grat.config files")
 	output.Spacer()
 
@@ -405,7 +594,7 @@ func runPortReassignLocked(ctx context.Context, output presentation.Renderer) er
 			newPortReassignLifecycleOperation(nil),
 			output.Width(),
 			func(runContext context.Context, lifecycleReport func(presentation.LifecycleEvent)) error {
-				report, err := ports.Scan(globalScanRoots())
+				report, err := ports.Scan(roots)
 				if err != nil {
 					return err
 				}
@@ -440,7 +629,7 @@ func runPortReassignLocked(ctx context.Context, output presentation.Renderer) er
 			return err
 		}
 	} else {
-		report, err := ports.Scan(globalScanRoots())
+		report, err := ports.Scan(roots)
 		if err != nil {
 			return err
 		}
@@ -484,7 +673,7 @@ func validatePortReassignReport(report ports.Report) error {
 		return err
 	}
 	if len(report.Projects) == 0 {
-		return fmt.Errorf("no grat.config files found in ~/Sites or ~/Developer")
+		return fmt.Errorf("no grat.config files found in configured directories")
 	}
 	return nil
 }
@@ -737,7 +926,7 @@ func newPortReassignLifecycleOperation(projects []ports.ProjectConfig) presentat
 		}
 		groups = append(groups, group)
 	}
-	return presentation.LifecycleOperation{Title: "Reassigning ports", Project: "~/Sites and ~/Developer", Groups: groups, HideTitle: true, GroupServices: true, HideEndpoint: true}
+	return presentation.LifecycleOperation{Title: "Reassigning ports", Project: configuredDirectoriesLabel, Groups: groups, HideTitle: true, GroupServices: true, HideEndpoint: true}
 }
 
 func portReassignRowKey(projectRoot string, serviceName string) string {
@@ -825,14 +1014,6 @@ func detectServices(root string) ([]serviceDefinition, error) {
 	addScript("developer", "dev:developer")
 	addScript("dashboard", "dev:dashboard")
 	return definitions, nil
-}
-
-func globalScanRoots() []string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return nil
-	}
-	return []string{filepath.Join(home, "Sites"), filepath.Join(home, "Developer")}
 }
 
 func copyReservations(input map[int][]ports.Reservation) map[int][]ports.Reservation {
@@ -975,6 +1156,21 @@ func helpCommandGroups() []presentation.CommandGroup {
 				{Usage: "ports audit", Description: "Find configured port collisions and live listeners"},
 				{Usage: "ports assign [name...]", Description: "Assign free role-compatible ports"},
 				{Usage: "ports reassign", Description: "Stop managed services and globally reassign ports"},
+			},
+		},
+		{
+			Title: "Directories",
+			Commands: []presentation.Command{
+				{Usage: "directories add PATH", Description: "Add a directory to scan for grat.config files"},
+				{Usage: "directories remove PATH", Description: "Stop scanning a configured directory"},
+				{Usage: "directories list", Description: "List configured scan directories; dir is an alias"},
+			},
+		},
+		{
+			Title: "Maintenance",
+			Commands: []presentation.Command{
+				{Usage: "update", Description: "Update grat according to its installation method"},
+				{Usage: "uninstall", Description: "Remove grat and selected project-local artifacts"},
 			},
 		},
 		{
