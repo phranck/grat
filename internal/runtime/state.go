@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	processStateVersion = 1
-	maxLogTailBytes     = 64 * 1024
+	legacyProcessStateVersion = 1
+	processStateVersion       = 2
+	maxLogTailBytes           = 64 * 1024
 )
 
 type processState struct {
@@ -76,7 +77,7 @@ func (manager Manager) readState(name string) (loadedState, bool, error) {
 		if err := json.Unmarshal(data, &state); err != nil {
 			return loadedState{}, false, fmt.Errorf("parse managed state for %s: %w", name, err)
 		}
-		if state.Version != processStateVersion || state.PID < 1 || state.ProcessGroup < 1 || state.StartIdentity == "" {
+		if (state.Version != processStateVersion && state.Version != legacyProcessStateVersion) || state.PID < 1 || state.ProcessGroup < 1 || state.StartIdentity == "" {
 			return loadedState{}, false, fmt.Errorf("managed state for %s is incomplete", name)
 		}
 		return loadedState{State: state}, true, nil

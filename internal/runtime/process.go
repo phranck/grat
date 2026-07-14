@@ -45,16 +45,16 @@ func (manager Manager) launch(service config.Service) (processState, error) {
 	pid := command.Process.Pid
 	identity, err := processIdentity(pid)
 	if err != nil {
-		_ = syscall.Kill(-pid, syscall.SIGTERM)
+		_ = command.Process.Signal(syscall.SIGTERM)
 		return processState{}, err
 	}
 	groupID, err := processGroup(pid)
 	if err != nil {
-		_ = syscall.Kill(-pid, syscall.SIGTERM)
+		_ = command.Process.Signal(syscall.SIGTERM)
 		return processState{}, err
 	}
 	if groupID != pid {
-		_ = syscall.Kill(-pid, syscall.SIGTERM)
+		_ = command.Process.Signal(syscall.SIGTERM)
 		return processState{}, fmt.Errorf("launch %s did not create an isolated process session", service.Name)
 	}
 	return processState{
@@ -95,7 +95,7 @@ func (manager Manager) stopState(ctx context.Context, state loadedState) error {
 	if err != nil {
 		return err
 	}
-	if err := signalGroup(state.State.ProcessGroup, syscall.SIGTERM); err != nil {
+	if err := signalManagedGroup(state.State, syscall.SIGTERM); err != nil {
 		return err
 	}
 	shutdownContext, cancel := context.WithTimeout(ctx, durations.ShutdownTimeout)
@@ -106,7 +106,7 @@ func (manager Manager) stopState(ctx context.Context, state loadedState) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	if err := signalGroup(state.State.ProcessGroup, syscall.SIGKILL); err != nil {
+	if err := signalManagedGroup(state.State, syscall.SIGKILL); err != nil {
 		return err
 	}
 	if waitForExit(context.Background(), state.State.PID, time.Second) {
@@ -116,6 +116,9 @@ func (manager Manager) stopState(ctx context.Context, state loadedState) error {
 }
 
 func validateManagedState(state processState) error {
+	if state.Version != processStateVersion {
+		return fmt.Errorf("managed PID %d uses a legacy process identity and cannot be signaled safely", state.PID)
+	}
 	identity, err := processIdentity(state.PID)
 	if err != nil {
 		return err
@@ -131,6 +134,13 @@ func validateManagedState(state processState) error {
 		return fmt.Errorf("managed PID %d no longer owns its recorded process group", state.PID)
 	}
 	return nil
+}
+
+func signalManagedGroup(state processState, signal syscall.Signal) error {
+	if err := validateManagedState(state); err != nil {
+		return err
+	}
+	return signalGroup(state.ProcessGroup, signal)
 }
 
 func signalGroup(groupID int, signal syscall.Signal) error {

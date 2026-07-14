@@ -118,32 +118,10 @@ func processAlive(pid int) bool {
 	return state != "" && !strings.HasPrefix(state, "Z")
 }
 
-func processIdentity(pid int) (string, error) {
-	// #nosec G204 -- the executable and arguments are fixed; pid is a typed integer.
-	output, err := exec.Command(psExecutable, "-o", "lstart=", "-p", strconv.Itoa(pid)).Output()
-	if err != nil {
-		return "", fmt.Errorf("inspect process identity for PID %d: %w", pid, err)
-	}
-	identity := strings.TrimSpace(string(output))
-	if identity == "" {
-		return "", fmt.Errorf("process identity for PID %d is empty", pid)
-	}
-	return identity, nil
-}
-
 func processGroup(pid int) (int, error) {
-	// #nosec G204 -- the executable and arguments are fixed; pid is a typed integer.
-	output, err := exec.Command(psExecutable, "-o", "pgid=", "-p", strconv.Itoa(pid)).Output()
+	groupID, err := syscall.Getpgid(pid)
 	if err != nil {
 		return 0, fmt.Errorf("inspect process group for PID %d: %w", pid, err)
-	}
-	fields := strings.Fields(string(output))
-	if len(fields) != 1 {
-		return 0, fmt.Errorf("process group for PID %d is incomplete", pid)
-	}
-	groupID, err := strconv.Atoi(fields[0])
-	if err != nil {
-		return 0, fmt.Errorf("parse process group for PID %d: %w", pid, err)
 	}
 	return groupID, nil
 }
