@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -101,7 +102,7 @@ func TestUpdateReplacesVerifiedReleaseForEverySupportedTarget(t *testing.T) {
 			}
 			server := newReleaseServer(t, target.goos, target.goarch, oldBinary, newBinary, false)
 			defer server.Close()
-			service := releaseService(executable, server.URL, target.goos, target.goarch)
+			service := releaseService(executable, server, target.goos, target.goarch)
 
 			result, err := service.Update(context.Background())
 			if err != nil {
@@ -133,7 +134,7 @@ func TestUpdateKeepsCurrentReleaseWhenChecksumDoesNotMatch(t *testing.T) {
 	server := newReleaseServer(t, runtime.GOOS, runtime.GOARCH, oldBinary, newBinary, true)
 	defer server.Close()
 
-	_, err := releaseService(executable, server.URL, runtime.GOOS, runtime.GOARCH).Update(context.Background())
+	_, err := releaseService(executable, server, runtime.GOOS, runtime.GOARCH).Update(context.Background())
 	if err == nil || !strings.Contains(err.Error(), "checksum") {
 		t.Fatalf("Update() error = %v, want checksum failure", err)
 	}
@@ -143,6 +144,41 @@ func TestUpdateKeepsCurrentReleaseWhenChecksumDoesNotMatch(t *testing.T) {
 	}
 	if string(got) != string(oldBinary) {
 		t.Fatalf("executable changed after failed update: got %q, want %q", got, oldBinary)
+	}
+}
+
+func TestUpdateKeepsCurrentReleaseWhenAttestationFails(t *testing.T) {
+	t.Parallel()
+
+	oldBinary := []byte("old release")
+	newBinary := []byte("new release")
+	executable := filepath.Join(t.TempDir(), "grat")
+	if err := os.WriteFile(executable, oldBinary, 0o755); err != nil {
+		t.Fatalf("write executable: %v", err)
+	}
+	server := newReleaseServer(t, runtime.GOOS, runtime.GOARCH, oldBinary, newBinary, false)
+	defer server.Close()
+	service := releaseService(executable, server, runtime.GOOS, runtime.GOARCH)
+	service.VerifyAttestation = func(_ context.Context, path string, tag string) error {
+		if tag == "v1.0.0" {
+			return nil
+		}
+		if _, err := os.Stat(path); err != nil {
+			t.Fatalf("attestation candidate is unavailable: %v", err)
+		}
+		return errors.New("attestation fixture rejected")
+	}
+
+	_, err := service.Update(context.Background())
+	if err == nil || !strings.Contains(err.Error(), "attestation") {
+		t.Fatalf("Update() error = %v, want attestation failure", err)
+	}
+	got, readErr := os.ReadFile(executable)
+	if readErr != nil {
+		t.Fatalf("read executable after failed update: %v", readErr)
+	}
+	if string(got) != string(oldBinary) {
+		t.Fatalf("executable changed after failed attestation: got %q, want %q", got, oldBinary)
 	}
 }
 
@@ -157,7 +193,7 @@ func TestUpdateDoesNotReplaceBinaryWhenAtomicRenameFails(t *testing.T) {
 	}
 	server := newReleaseServer(t, runtime.GOOS, runtime.GOARCH, oldBinary, newBinary, false)
 	defer server.Close()
-	service := releaseService(executable, server.URL, runtime.GOOS, runtime.GOARCH)
+	service := releaseService(executable, server, runtime.GOOS, runtime.GOARCH)
 	service.Rename = func(string, string) error { return errors.New("rename denied") }
 
 	if _, err := service.Update(context.Background()); err == nil {
@@ -178,7 +214,7 @@ func TestReleaseChecksumRejectsOversizedDocument(t *testing.T) {
 		t.Run(fmt.Sprintf("streamed=%t", streamed), func(t *testing.T) {
 			t.Parallel()
 
-			server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+			server := httptest.NewTLSServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
 				if streamed {
 					writer.(http.Flusher).Flush()
 				} else {
@@ -209,7 +245,7 @@ func TestReplaceVerifiedBinaryRejectsOversizedDownload(t *testing.T) {
 			t.Parallel()
 
 			payload := []byte("oversized release")
-			server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+			server := httptest.NewTLSServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
 				if streamed {
 					writer.(http.Flusher).Flush()
 				} else {
@@ -229,7 +265,7 @@ func TestReplaceVerifiedBinaryRejectsOversizedDownload(t *testing.T) {
 				MaxReleaseAssetBytes: int64(len(payload) - 1),
 			}
 
-			err := service.replaceVerifiedBinary(context.Background(), executable, server.URL, digest(payload))
+			err := service.replaceVerifiedBinary(context.Background(), executable, server.URL, digest(payload), "v1.0.1")
 			if err == nil || !strings.Contains(err.Error(), "exceeds") {
 				t.Fatalf("replaceVerifiedBinary() error = %v, want size-limit failure", err)
 			}
@@ -244,24 +280,106 @@ func TestReplaceVerifiedBinaryRejectsOversizedDownload(t *testing.T) {
 	}
 }
 
-func releaseService(executable string, apiURL string, goos string, goarch string) Service {
+func TestAssetURLRejectsUntrustedOrigins(t *testing.T) {
+	t.Parallel()
+
+	service := Service{ReleaseAPI: defaultReleaseAPI}
+	for _, endpoint := range []string{
+		"http://github.com/phranck/grat/releases/download/v1.0.0/grat_v1.0.0_darwin_arm64",
+		"https://example.com/phranck/grat/releases/download/v1.0.0/grat_v1.0.0_darwin_arm64",
+		"https://github.com/another/project/releases/download/v1.0.0/grat",
+	} {
+		if _, err := service.assetURL(endpoint); err == nil {
+			t.Fatalf("assetURL(%q) accepted an untrusted release origin", endpoint)
+		}
+	}
+}
+
+func TestReleaseURLsAcceptOnlyCanonicalGitHubPaths(t *testing.T) {
+	t.Parallel()
+
+	service := Service{ReleaseAPI: defaultReleaseAPI}
+	assetEndpoint := "https://github.com/phranck/grat/releases/download/v1.2.3/grat_v1.2.3_darwin_arm64"
+	if got, err := service.assetURL(assetEndpoint); err != nil || got != assetEndpoint {
+		t.Fatalf("assetURL() = (%q, %v), want canonical release asset", got, err)
+	}
+	redirect, err := url.Parse("https://release-assets.githubusercontent.com/github-production-release-asset/fixture")
+	if err != nil {
+		t.Fatalf("parse redirect fixture: %v", err)
+	}
+	if err := service.validateReleaseAssetURL(redirect, true); err != nil {
+		t.Fatalf("validateReleaseAssetURL() rejected GitHub release storage: %v", err)
+	}
+	if _, err := (Service{ReleaseAPI: "http://api.github.com"}).endpoint(releaseAPIPathPrefix + "latest"); err == nil {
+		t.Fatal("endpoint() accepted an insecure release API")
+	}
+}
+
+func TestReleaseDownloadRejectsCrossOriginRedirect(t *testing.T) {
+	t.Parallel()
+
+	foreign := httptest.NewTLSServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		_, _ = writer.Write([]byte("foreign release"))
+	}))
+	defer foreign.Close()
+	trusted := httptest.NewTLSServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		http.Redirect(writer, request, foreign.URL+"/asset", http.StatusFound)
+	}))
+	defer trusted.Close()
+	executable := filepath.Join(t.TempDir(), "grat")
+	if err := os.WriteFile(executable, []byte("current release"), 0o755); err != nil {
+		t.Fatalf("write executable: %v", err)
+	}
+	service := Service{ReleaseAPI: trusted.URL, HTTPClient: trusted.Client()}
+
+	err := service.replaceVerifiedBinary(context.Background(), executable, trusted.URL+"/asset", digest([]byte("foreign release")), "v1.0.1")
+	if err == nil || !strings.Contains(err.Error(), "untrusted release redirect") {
+		t.Fatalf("replaceVerifiedBinary() error = %v, want redirect refusal", err)
+	}
+}
+
+func TestAttestationVerificationUsesExactReleaseWorkflow(t *testing.T) {
+	t.Parallel()
+
+	commands := &fakeCommands{responses: map[string]commandResponse{}}
+	service := Service{Command: commands.Run}
+	arguments := []string{
+		"attestation", "verify", "/tmp/grat",
+		"--repo", "phranck/grat",
+		"--signer-workflow", "phranck/grat/.github/workflows/release.yml",
+		"--source-ref", "refs/tags/v1.2.3",
+		"--deny-self-hosted-runners",
+	}
+	commands.responses[commandKey("gh", arguments...)] = commandResponse{}
+
+	if err := service.verifyArtifactAttestation(context.Background(), "/tmp/grat", "v1.2.3"); err != nil {
+		t.Fatalf("verifyArtifactAttestation() error = %v", err)
+	}
+	if !commands.called(commandKey("gh", arguments...)) {
+		t.Fatalf("commands = %#v, want constrained gh attestation verification", commands.calls)
+	}
+}
+
+func releaseService(executable string, server *httptest.Server, goos string, goarch string) Service {
 	return Service{
 		Executable:   func() (string, error) { return executable, nil },
 		EvalSymlinks: filepath.EvalSymlinks,
 		Command: func(context.Context, string, ...string) ([]byte, error) {
 			return nil, errors.New("not installed by Homebrew")
 		},
-		CurrentVersion: func() string { return "v1.0.0" },
-		ReleaseAPI:     apiURL,
-		GOOS:           goos,
-		GOARCH:         goarch,
-		Rename:         os.Rename,
+		CurrentVersion:    func() string { return "v1.0.0" },
+		ReleaseAPI:        server.URL,
+		HTTPClient:        server.Client(),
+		GOOS:              goos,
+		GOARCH:            goarch,
+		Rename:            os.Rename,
+		VerifyAttestation: func(context.Context, string, string) error { return nil },
 	}
 }
 
 func newReleaseServer(t *testing.T, goos string, goarch string, oldBinary []byte, newBinary []byte, corruptLatestChecksum bool) *httptest.Server {
 	t.Helper()
-	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		switch request.URL.Path {
 		case "/repos/phranck/grat/releases/tags/v1.0.0":
 			writeReleaseJSON(t, writer, "v1.0.0", goos, goarch, "/current/checksums.txt", "/current/grat", oldBinary)

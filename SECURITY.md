@@ -26,3 +26,11 @@ does not prevent a trusted command running as the current user from reading
 user-accessible files. Platform inspection helpers such as `ps`, `lsof`, and
 `tail` are invoked only through fixed absolute system paths and never resolved
 through a project-controlled `PATH` entry.
+
+Release workflow binaries receive GitHub artifact attestations backed by
+Sigstore. Direct update and direct-install ownership checks are fail-closed:
+grat accepts only credential-free HTTPS API and asset URLs on the expected
+GitHub origins, rejects cross-origin redirects, verifies SHA-256 checksums, and
+uses GitHub CLI to verify the artifact digest against the exact tagged release
+workflow. Missing tooling, missing attestations, or failed provenance checks
+leave the installed executable unchanged.

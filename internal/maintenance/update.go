@@ -19,6 +19,10 @@ import (
 const (
 	defaultMaxReleaseDocumentBytes int64 = 1 << 20
 	defaultMaxReleaseAssetBytes    int64 = 128 << 20
+	releaseRepository                    = "phranck/grat"
+	releaseSignerWorkflow                = "phranck/grat/.github/workflows/release.yml"
+	releaseAPIPathPrefix                 = "/repos/phranck/grat/releases/"
+	releaseAssetPathPrefix               = "/phranck/grat/releases/download/"
 )
 
 type release struct {
@@ -103,7 +107,7 @@ func (service Service) updateDirectRelease(ctx context.Context, executable strin
 	if !ok {
 		return Result{}, fmt.Errorf("latest grat release has no asset %s", assetName)
 	}
-	if err := service.replaceVerifiedBinary(ctx, executable, binaryAsset.BrowserDownloadURL, expectedDigest); err != nil {
+	if err := service.replaceVerifiedBinary(ctx, executable, binaryAsset.BrowserDownloadURL, expectedDigest, latest.TagName); err != nil {
 		return Result{}, err
 	}
 	return Result{Message: "Updated grat to " + latest.TagName + "."}, nil
@@ -126,6 +130,9 @@ func (service Service) verifyDirectRelease(ctx context.Context, executable strin
 	if !strings.EqualFold(currentDigest, currentExpected) {
 		return errors.New("current executable does not match the verified GitHub release checksum")
 	}
+	if err := service.verifyArtifactAttestation(ctx, executable, currentVersion); err != nil {
+		return fmt.Errorf("verify current release provenance: %w", err)
+	}
 	return nil
 }
 
@@ -134,7 +141,7 @@ func (service Service) release(ctx context.Context, suffix string) (release, err
 	if err != nil {
 		return release{}, err
 	}
-	data, err := service.get(ctx, endpoint)
+	data, err := service.get(ctx, endpoint, false)
 	if err != nil {
 		return release{}, err
 	}
@@ -154,14 +161,14 @@ func (service Service) releaseChecksum(ctx context.Context, value release, asset
 	if err != nil {
 		return "", err
 	}
-	data, err := service.get(ctx, endpoint)
+	data, err := service.get(ctx, endpoint, true)
 	if err != nil {
 		return "", err
 	}
 	return checksumForAsset(string(data), assetName)
 }
 
-func (service Service) replaceVerifiedBinary(ctx context.Context, executable string, assetURL string, expectedDigest string) error {
+func (service Service) replaceVerifiedBinary(ctx context.Context, executable string, assetURL string, expectedDigest string, tag string) error {
 	endpoint, err := service.assetURL(assetURL)
 	if err != nil {
 		return err
@@ -170,7 +177,11 @@ func (service Service) replaceVerifiedBinary(ctx context.Context, executable str
 	if err != nil {
 		return fmt.Errorf("create release download request: %w", err)
 	}
-	response, err := service.httpClient().Do(request)
+	client, err := service.releaseHTTPClient(true)
+	if err != nil {
+		return err
+	}
+	response, err := client.Do(request)
 	if err != nil {
 		return fmt.Errorf("download release asset: %w", err)
 	}
@@ -212,6 +223,9 @@ func (service Service) replaceVerifiedBinary(ctx context.Context, executable str
 	if err := temporary.Close(); err != nil {
 		return fmt.Errorf("close temporary update: %w", err)
 	}
+	if err := service.verifyArtifactAttestation(ctx, temporaryPath, tag); err != nil {
+		return fmt.Errorf("verify downloaded release provenance: %w", err)
+	}
 	if err := service.rename(temporaryPath, executable); err != nil {
 		return fmt.Errorf("replace executable: %w", err)
 	}
@@ -219,31 +233,47 @@ func (service Service) replaceVerifiedBinary(ctx context.Context, executable str
 }
 
 func (service Service) endpoint(path string) (string, error) {
-	base := service.ReleaseAPI
-	if base == "" {
-		base = defaultReleaseAPI
-	}
-	baseURL, err := url.Parse(base)
+	baseURL, err := service.releaseAPIURL()
 	if err != nil {
-		return "", fmt.Errorf("parse release API URL: %w", err)
+		return "", err
 	}
 	reference, err := url.Parse(path)
 	if err != nil {
 		return "", fmt.Errorf("parse release API path: %w", err)
 	}
-	return baseURL.ResolveReference(reference).String(), nil
+	endpoint := baseURL.ResolveReference(reference)
+	if err := service.validateReleaseAPIURL(endpoint); err != nil {
+		return "", err
+	}
+	return endpoint.String(), nil
 }
 
 func (service Service) assetURL(raw string) (string, error) {
-	return service.endpoint(raw)
+	baseURL, err := service.releaseAPIURL()
+	if err != nil {
+		return "", err
+	}
+	reference, err := url.Parse(raw)
+	if err != nil {
+		return "", fmt.Errorf("parse release asset URL: %w", err)
+	}
+	endpoint := baseURL.ResolveReference(reference)
+	if err := service.validateReleaseAssetURL(endpoint, false); err != nil {
+		return "", err
+	}
+	return endpoint.String(), nil
 }
 
-func (service Service) get(ctx context.Context, endpoint string) ([]byte, error) {
+func (service Service) get(ctx context.Context, endpoint string, asset bool) ([]byte, error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
-	response, err := service.httpClient().Do(request)
+	client, err := service.releaseHTTPClient(asset)
+	if err != nil {
+		return nil, err
+	}
+	response, err := client.Do(request)
 	if err != nil {
 		return nil, err
 	}
@@ -252,6 +282,117 @@ func (service Service) get(ctx context.Context, endpoint string) ([]byte, error)
 		return nil, fmt.Errorf("unexpected HTTP status %s", response.Status)
 	}
 	return readBoundedResponse(response, service.maxReleaseDocumentBytes(), "release document")
+}
+
+func (service Service) releaseAPIURL() (*url.URL, error) {
+	base := service.ReleaseAPI
+	if base == "" {
+		base = defaultReleaseAPI
+	}
+	baseURL, err := url.Parse(base)
+	if err != nil {
+		return nil, fmt.Errorf("parse release API URL: %w", err)
+	}
+	if err := validateHTTPSURL(baseURL, "release API"); err != nil {
+		return nil, err
+	}
+	return baseURL, nil
+}
+
+func (service Service) validateReleaseAPIURL(endpoint *url.URL) error {
+	baseURL, err := service.releaseAPIURL()
+	if err != nil {
+		return err
+	}
+	if err := validateHTTPSURL(endpoint, "release API"); err != nil {
+		return err
+	}
+	if endpoint.Scheme != baseURL.Scheme || endpoint.Host != baseURL.Host {
+		return fmt.Errorf("untrusted release API origin %q", endpoint.Host)
+	}
+	if service.productionReleaseAPI(baseURL) && !strings.HasPrefix(endpoint.Path, releaseAPIPathPrefix) {
+		return fmt.Errorf("untrusted release API path %q", endpoint.Path)
+	}
+	return nil
+}
+
+func (service Service) validateReleaseAssetURL(endpoint *url.URL, redirect bool) error {
+	baseURL, err := service.releaseAPIURL()
+	if err != nil {
+		return err
+	}
+	if err := validateHTTPSURL(endpoint, "release asset"); err != nil {
+		return err
+	}
+	if !service.productionReleaseAPI(baseURL) {
+		if endpoint.Scheme != baseURL.Scheme || endpoint.Host != baseURL.Host {
+			return fmt.Errorf("untrusted release asset origin %q", endpoint.Host)
+		}
+		return nil
+	}
+
+	host := endpoint.Hostname()
+	if endpoint.Port() != "" {
+		return fmt.Errorf("untrusted release asset origin %q", endpoint.Host)
+	}
+	if host == "github.com" && strings.HasPrefix(endpoint.Path, releaseAssetPathPrefix) {
+		return nil
+	}
+	if redirect && (host == "release-assets.githubusercontent.com" || host == "objects.githubusercontent.com") {
+		return nil
+	}
+	return fmt.Errorf("untrusted release asset origin %q", endpoint.Host)
+}
+
+func validateHTTPSURL(endpoint *url.URL, description string) error {
+	if endpoint == nil || endpoint.Scheme != "https" || endpoint.Host == "" || endpoint.User != nil || endpoint.Fragment != "" {
+		return fmt.Errorf("%s URL must use an absolute credential-free HTTPS origin", description)
+	}
+	return nil
+}
+
+func (service Service) productionReleaseAPI(endpoint *url.URL) bool {
+	return endpoint.Scheme == "https" && endpoint.Hostname() == "api.github.com" && endpoint.Port() == ""
+}
+
+func (service Service) releaseHTTPClient(asset bool) (*http.Client, error) {
+	client := *service.httpClient()
+	previousCheck := client.CheckRedirect
+	client.CheckRedirect = func(request *http.Request, via []*http.Request) error {
+		var err error
+		if asset {
+			err = service.validateReleaseAssetURL(request.URL, true)
+		} else {
+			err = service.validateReleaseAPIURL(request.URL)
+		}
+		if err != nil {
+			return fmt.Errorf("untrusted release redirect: %w", err)
+		}
+		if previousCheck != nil {
+			return previousCheck(request, via)
+		}
+		return nil
+	}
+	return &client, nil
+}
+
+func (service Service) verifyArtifactAttestation(ctx context.Context, path string, tag string) error {
+	if service.VerifyAttestation != nil {
+		return service.VerifyAttestation(ctx, path, tag)
+	}
+	_, err := service.command(
+		ctx,
+		"gh",
+		"attestation", "verify", path,
+		"--repo", releaseRepository,
+		"--signer-workflow", releaseSignerWorkflow,
+		"--source-ref", "refs/tags/"+tag,
+		"--deny-self-hosted-runners",
+	)
+	if err != nil {
+		return fmt.Errorf("verify GitHub artifact attestation for %s: %w", tag, err)
+	}
+	return nil
 }
 
 func readBoundedResponse(response *http.Response, limit int64, description string) ([]byte, error) {

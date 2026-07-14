@@ -43,6 +43,7 @@ type Service struct {
 	DetectInstallation      func(context.Context) (installation, error)
 	InspectProject          func(context.Context, string) (bool, error)
 	OperationLock           func(context.Context, func() error) error
+	VerifyAttestation       func(context.Context, string, string) error
 }
 
 // Result is a concise user-facing result from a maintenance operation.

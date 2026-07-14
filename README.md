@@ -62,7 +62,17 @@ brew install phranck/grat/grat
 
 Release binaries support macOS and Linux on `amd64` and `arm64`. Download the
 matching asset from [Releases](https://github.com/phranck/grat/releases), verify
-it against `checksums.txt`, make it executable, and place it on your `PATH`.
+it against `checksums.txt` and its GitHub artifact attestation, make it
+executable, and place it on your `PATH`. With a current GitHub CLI, provenance
+verification is:
+
+```sh
+gh attestation verify ./grat_VERSION_OS_ARCH \
+  --repo phranck/grat \
+  --signer-workflow phranck/grat/.github/workflows/release.yml \
+  --source-ref refs/tags/VERSION \
+  --deny-self-hosted-runners
+```
 
 To build with Go, install Go 1.25.12 or newer and run:
 
@@ -503,9 +513,12 @@ hold a per-user lock across scanning, allocation, and configuration writes.
 
 `grat update` follows the method that owns the currently running executable.
 For Homebrew installations it delegates to Homebrew. For a release binary it
-downloads the matching platform asset from the grat GitHub release, verifies
-`checksums.txt`, and replaces the binary only after checksum validation. For a
-Go installation it prints:
+requires a current, authenticated GitHub CLI, constrains API and download URLs
+to the grat GitHub release infrastructure, verifies the current and downloaded
+binaries against both `checksums.txt` and GitHub's signed artifact attestation,
+and only then replaces the executable. The attestation must originate from the
+tagged grat release workflow and a GitHub-hosted runner. For a Go installation
+it prints:
 
 ```sh
 go install github.com/phranck/grat/cmd/grat@latest

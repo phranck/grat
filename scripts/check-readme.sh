@@ -129,6 +129,18 @@ for value in 'darwin' 'linux' 'amd64' 'arm64' 'checksums.txt'; do
 	fi
 done
 
+for value in \
+	'uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0' \
+	'attestations: write' \
+	'id-token: write' \
+	'artifact-metadata: write' \
+	'subject-path: dist/grat_${{ github.ref_name }}_${{ matrix.goos }}_${{ matrix.goarch }}'; do
+	if ! grep -Fq "$value" .github/workflows/release.yml; then
+		echo "release workflow is missing attestation policy: $value" >&2
+		exit 1
+	fi
+done
+
 if ! awk '
 	/^permissions:$/ {
 		getline

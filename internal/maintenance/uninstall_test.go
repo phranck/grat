@@ -214,7 +214,7 @@ func TestUninstallDetectsVerifiedDirectReleaseBinary(t *testing.T) {
 	}
 	server := newReleaseServer(t, "darwin", "arm64", binary, []byte("next"), false)
 	defer server.Close()
-	service := releaseService(executable, server.URL, "darwin", "arm64")
+	service := releaseService(executable, server, "darwin", "arm64")
 
 	owner, err := service.detectInstallation(context.Background())
 	if err != nil {

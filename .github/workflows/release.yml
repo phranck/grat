@@ -11,6 +11,11 @@ jobs:
   build:
     name: ${{ matrix.goos }}-${{ matrix.goarch }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     strategy:
       fail-fast: false
       matrix:
@@ -31,6 +36,10 @@ jobs:
           go build -trimpath \
             -ldflags "-s -w -X github.com/phranck/grat/internal/version.buildVersion=${VERSION}" \
             -o "dist/grat_${VERSION}_${GOOS}_${GOARCH}" ./cmd/grat
+      - name: Attest release binary
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-path: dist/grat_${{ github.ref_name }}_${{ matrix.goos }}_${{ matrix.goarch }}
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: grat-${{ matrix.goos }}-${{ matrix.goarch }}
@@ -54,7 +63,7 @@ jobs:
         run: scripts/build-homebrew-bottles.sh --version "$TAG" --input dist --output bottles
       - name: Create checksums
         run: |
-          find dist bottles -type f \( -name 'grat_*' -o -name '*.bottle.tar.gz' \) | sort | xargs sha256sum > dist/checksums.txt
+          find dist bottles -type f \( -name 'grat_*' -o -name '*.bottle.tar.gz' \) | sort | xargs sha256sum | sed 's#  \(dist\|bottles\)/#  #' > dist/checksums.txt
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
