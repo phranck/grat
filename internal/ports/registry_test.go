@@ -163,6 +163,31 @@ func TestSkipLinkedGitWorktreeConfig(t *testing.T) {
 	}
 }
 
+func TestScanRejectsConfiguredLimitOverruns(t *testing.T) {
+	t.Parallel()
+
+	first := t.TempDir()
+	second := t.TempDir()
+	writeRegistryConfig(t, first, "first")
+	writeRegistryConfig(t, second, "second")
+	base := scanLimits{MaxRoots: 2, MaxEntries: 100, MaxConfigs: 2, MaxServices: 2}
+	tests := map[string]scanLimits{
+		"roots":    {MaxRoots: 1, MaxEntries: 100, MaxConfigs: 2, MaxServices: 2},
+		"entries":  {MaxRoots: 2, MaxEntries: 1, MaxConfigs: 2, MaxServices: 2},
+		"configs":  {MaxRoots: 2, MaxEntries: 100, MaxConfigs: 1, MaxServices: 2},
+		"services": {MaxRoots: 2, MaxEntries: 100, MaxConfigs: 2, MaxServices: 1},
+	}
+	for name, limits := range tests {
+		name, limits := name, limits
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			if _, err := scanWithLimits([]string{first, second}, limits); err == nil {
+				t.Fatalf("scanWithLimits() accepted %s overrun; baseline = %#v", name, base)
+			}
+		})
+	}
+}
+
 func writeRegistryConfig(t *testing.T, root string, name string) {
 	t.Helper()
 	if err := os.MkdirAll(root, 0o700); err != nil {

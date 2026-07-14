@@ -1,11 +1,50 @@
 package config
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
+
+func TestLoadRejectsOversizedConfigBeforeParsing(t *testing.T) {
+	t.Parallel()
+
+	path := filepath.Join(t.TempDir(), "grat.config")
+	if err := os.WriteFile(path, bytes.Repeat([]byte("x"), maxConfigBytes+1), 0o600); err != nil {
+		t.Fatalf("write oversized config: %v", err)
+	}
+
+	if _, err := Load(path); err == nil || !strings.Contains(err.Error(), "exceeds") {
+		t.Fatalf("Load() error = %v, want config size refusal", err)
+	}
+}
+
+func TestLoadRejectsUnknownFieldsWithStrictDecoder(t *testing.T) {
+	t.Parallel()
+
+	path := filepath.Join(t.TempDir(), "grat.config")
+	content := `version = 1
+unexpected = "value"
+
+[project]
+name = "fixture"
+
+[[services]]
+name = "worker"
+command = "sleep 30"
+role = "worker"
+port = 0
+`
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	if _, err := Load(path); err == nil || !strings.Contains(err.Error(), "unexpected") {
+		t.Fatalf("Load() error = %v, want unknown-field refusal", err)
+	}
+}
 
 func TestLoadRejectsLegacyShellConfig(t *testing.T) {
 	t.Parallel()
@@ -297,5 +336,38 @@ func TestWriteAndLoadPreservesInheritedEnvironmentNames(t *testing.T) {
 	}
 	if got := strings.Join(loaded.Services[0].InheritEnv, ","); got != "DATABASE_URL,REDIS_URL" {
 		t.Fatalf("loaded inherit_env = %q, want DATABASE_URL,REDIS_URL", got)
+	}
+}
+
+func TestValidateRejectsBoundedCollectionAndStringInputs(t *testing.T) {
+	t.Parallel()
+
+	valid := func() Config {
+		return Config{
+			Version:  1,
+			Project:  Project{Name: "fixture"},
+			Runtime:  DefaultRuntime(),
+			Services: []Service{{Name: "worker", Command: "sleep 30", Role: RoleWorker}},
+		}
+	}
+	tests := map[string]func(*Config){
+		"project name":    func(value *Config) { value.Project.Name = strings.Repeat("p", maxProjectNameBytes+1) },
+		"service command": func(value *Config) { value.Services[0].Command = strings.Repeat("c", maxServiceCommandBytes+1) },
+		"runtime value":   func(value *Config) { value.Runtime.StartTimeout = strings.Repeat("1", maxRuntimeValueBytes+1) },
+		"environment count": func(value *Config) {
+			value.Services[0].InheritEnv = make([]string, maxInheritedEnvironmentVariables+1)
+		},
+		"service count": func(value *Config) { value.Services = make([]Service, maxServices+1) },
+	}
+	for name, mutate := range tests {
+		name, mutate := name, mutate
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			value := valid()
+			mutate(&value)
+			if err := value.Validate(); err == nil {
+				t.Fatalf("Validate() accepted over-limit %s", name)
+			}
+		})
 	}
 }

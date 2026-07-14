@@ -34,6 +34,18 @@ type uninstallArtifacts struct {
 	configFiles      []string
 }
 
+type artifactScanLimits struct {
+	MaxRoots     int
+	MaxEntries   int
+	MaxArtifacts int
+}
+
+var defaultArtifactScanLimits = artifactScanLimits{
+	MaxRoots:     64,
+	MaxEntries:   250_000,
+	MaxArtifacts: 4_096,
+}
+
 // Uninstall removes grat state from registered roots after explicit class-wide
 // confirmation and then removes the identified installation.
 func (service Service) Uninstall(ctx context.Context, store settings.Store, roots []string, input io.Reader, output io.Writer, interactive bool) (Result, error) {
@@ -96,18 +108,43 @@ func (service Service) operationLock(ctx context.Context, callback func() error)
 }
 
 func discoverUninstallArtifacts(roots []string) (uninstallArtifacts, error) {
+	return discoverUninstallArtifactsWithLimits(roots, defaultArtifactScanLimits)
+}
+
+func discoverUninstallArtifactsWithLimits(roots []string, limits artifactScanLimits) (uninstallArtifacts, error) {
+	if limits.MaxRoots <= 0 || limits.MaxEntries <= 0 || limits.MaxArtifacts <= 0 {
+		return uninstallArtifacts{}, fmt.Errorf("artifact scan limits must be positive")
+	}
 	artifacts := uninstallArtifacts{}
 	seenState := make(map[string]struct{})
 	seenConfig := make(map[string]struct{})
+	seenRoots := make(map[string]struct{}, len(roots))
+	entries := 0
+	artifactCount := 0
 	for _, root := range roots {
-		if _, err := os.Stat(root); errors.Is(err, os.ErrNotExist) {
+		absRoot, err := filepath.Abs(root)
+		if err != nil {
+			return uninstallArtifacts{}, fmt.Errorf("resolve registered directory %q: %w", root, err)
+		}
+		if _, exists := seenRoots[absRoot]; exists {
+			continue
+		}
+		if len(seenRoots) >= limits.MaxRoots {
+			return uninstallArtifacts{}, fmt.Errorf("artifact scan exceeds maximum root count of %d", limits.MaxRoots)
+		}
+		seenRoots[absRoot] = struct{}{}
+		if _, err := os.Stat(absRoot); errors.Is(err, os.ErrNotExist) {
 			continue
 		} else if err != nil {
-			return uninstallArtifacts{}, fmt.Errorf("inspect registered directory %s: %w", root, err)
+			return uninstallArtifacts{}, fmt.Errorf("inspect registered directory %s: %w", absRoot, err)
 		}
-		err := filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
+		err = filepath.WalkDir(absRoot, func(path string, entry os.DirEntry, walkErr error) error {
 			if walkErr != nil {
 				return walkErr
+			}
+			entries++
+			if entries > limits.MaxEntries {
+				return fmt.Errorf("artifact scan exceeds maximum entry count of %d", limits.MaxEntries)
 			}
 			if entry.Type()&os.ModeSymlink != 0 {
 				if entry.IsDir() {
@@ -118,8 +155,12 @@ func discoverUninstallArtifacts(roots []string) (uninstallArtifacts, error) {
 			if entry.IsDir() {
 				if entry.Name() == ".grat" {
 					if _, exists := seenState[path]; !exists {
+						if artifactCount >= limits.MaxArtifacts {
+							return fmt.Errorf("artifact scan exceeds maximum artifact count of %d", limits.MaxArtifacts)
+						}
 						seenState[path] = struct{}{}
 						artifacts.stateDirectories = append(artifacts.stateDirectories, path)
+						artifactCount++
 					}
 					return filepath.SkipDir
 				}
@@ -130,14 +171,18 @@ func discoverUninstallArtifacts(roots []string) (uninstallArtifacts, error) {
 			}
 			if entry.Type().IsRegular() && entry.Name() == "grat.config" {
 				if _, exists := seenConfig[path]; !exists {
+					if artifactCount >= limits.MaxArtifacts {
+						return fmt.Errorf("artifact scan exceeds maximum artifact count of %d", limits.MaxArtifacts)
+					}
 					seenConfig[path] = struct{}{}
 					artifacts.configFiles = append(artifacts.configFiles, path)
+					artifactCount++
 				}
 			}
 			return nil
 		})
 		if err != nil {
-			return uninstallArtifacts{}, fmt.Errorf("scan registered directory %s: %w", root, err)
+			return uninstallArtifacts{}, fmt.Errorf("scan registered directory %s: %w", absRoot, err)
 		}
 	}
 	return artifacts, nil

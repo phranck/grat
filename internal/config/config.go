@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
@@ -16,7 +17,20 @@ import (
 	"github.com/pelletier/go-toml/v2"
 )
 
-const supportedVersion = 1
+const (
+	supportedVersion                 = 1
+	maxConfigBytes                   = 1 << 20
+	maxServices                      = 128
+	maxProjectNameBytes              = 256
+	maxServiceNameBytes              = 128
+	maxServiceCommandBytes           = 8 << 10
+	maxServiceRoleBytes              = 32
+	maxHostBytes                     = 255
+	maxHealthPathBytes               = 2 << 10
+	maxRuntimeValueBytes             = 64
+	maxInheritedEnvironmentVariables = 64
+	maxEnvironmentNameBytes          = 128
+)
 
 // Role classifies a service for port allocation and lifecycle validation.
 type Role string
@@ -114,26 +128,15 @@ func DefaultRuntime() Runtime {
 // Load parses a TOML config, applies defaults, and validates every invariant.
 // It only reads data and never executes project-controlled content.
 func Load(path string) (Config, error) {
-	// #nosec G304 -- path is the explicit configuration resource selected by the caller.
-	data, err := os.ReadFile(path)
+	data, err := readConfigFile(path)
 	if err != nil {
 		return Config{}, fmt.Errorf("read grat config: %w", err)
 	}
 
-	var document map[string]any
-	if err := toml.Unmarshal(data, &document); err != nil {
-		return Config{}, fmt.Errorf("parse TOML grat config: %w", err)
-	}
-	if _, exists := document["github_worker"]; exists {
-		return Config{}, fmt.Errorf("github_worker is no longer supported")
-	}
-	if _, exists := document["apps"]; exists {
-		return Config{}, fmt.Errorf("apps is no longer supported; use services")
-	}
-
 	var value Config
-	if err := toml.Unmarshal(data, &value); err != nil {
-		return Config{}, fmt.Errorf("parse TOML grat config: %w", err)
+	decoder := toml.NewDecoder(bytes.NewReader(data)).DisallowUnknownFields()
+	if err := decoder.Decode(&value); err != nil {
+		return Config{}, configDecodeError(err)
 	}
 
 	value.applyDefaults()
@@ -200,9 +203,12 @@ func prepareWrite(write FileWrite) (preparedWrite, error) {
 		return preparedWrite{}, fmt.Errorf("encode TOML grat config: %w", err)
 	}
 	data = append(bytes.TrimRight(data, "\n"), '\n')
+	if len(data) > maxConfigBytes {
+		return preparedWrite{}, fmt.Errorf("encoded grat config exceeds maximum size of %d bytes", maxConfigBytes)
+	}
 
 	item := preparedWrite{path: write.Path, data: data, mode: 0o600}
-	original, err := os.ReadFile(write.Path)
+	original, err := readConfigFile(write.Path)
 	if err == nil {
 		info, statErr := os.Stat(write.Path)
 		if statErr != nil {
@@ -265,20 +271,37 @@ func (value Config) Validate() error {
 	if value.Version != supportedVersion {
 		return fmt.Errorf("unsupported grat config version %d", value.Version)
 	}
+	if len(value.Project.Name) > maxProjectNameBytes {
+		return fmt.Errorf("project.name exceeds maximum length of %d bytes", maxProjectNameBytes)
+	}
 	if strings.TrimSpace(value.Project.Name) == "" {
 		return fmt.Errorf("project.name is required")
 	}
 	if containsControl(value.Project.Name) {
 		return fmt.Errorf("project.name must not contain control characters")
 	}
+	for name, runtimeValue := range map[string]string{
+		"start_timeout": value.Runtime.StartTimeout, "probe_interval": value.Runtime.ProbeInterval,
+		"health_timeout": value.Runtime.HealthTimeout, "shutdown_timeout": value.Runtime.ShutdownTimeout,
+	} {
+		if len(runtimeValue) > maxRuntimeValueBytes {
+			return fmt.Errorf("runtime.%s exceeds maximum length of %d bytes", name, maxRuntimeValueBytes)
+		}
+	}
 	if len(value.Services) == 0 {
 		return fmt.Errorf("at least one service is required")
+	}
+	if len(value.Services) > maxServices {
+		return fmt.Errorf("services exceeds maximum count of %d", maxServices)
 	}
 
 	seenNames := make(map[string]struct{}, len(value.Services))
 	seenPorts := make(map[int]string, len(value.Services))
 	for index, service := range value.Services {
 		prefix := fmt.Sprintf("services[%d]", index)
+		if len(service.Name) > maxServiceNameBytes {
+			return fmt.Errorf("%s.name exceeds maximum length of %d bytes", prefix, maxServiceNameBytes)
+		}
 		if strings.TrimSpace(service.Name) == "" {
 			return fmt.Errorf("%s.name is required", prefix)
 		}
@@ -289,11 +312,29 @@ func (value Config) Validate() error {
 			return fmt.Errorf("duplicate service name %q", service.Name)
 		}
 		seenNames[service.Name] = struct{}{}
+		if len(service.Command) > maxServiceCommandBytes {
+			return fmt.Errorf("%s.command exceeds maximum length of %d bytes", prefix, maxServiceCommandBytes)
+		}
 		if strings.TrimSpace(service.Command) == "" {
 			return fmt.Errorf("%s.command is required", prefix)
 		}
+		if len(service.Role) > maxServiceRoleBytes {
+			return fmt.Errorf("%s.role exceeds maximum length of %d bytes", prefix, maxServiceRoleBytes)
+		}
+		if len(service.Host) > maxHostBytes {
+			return fmt.Errorf("%s.host exceeds maximum length of %d bytes", prefix, maxHostBytes)
+		}
+		if len(service.HealthPath) > maxHealthPathBytes {
+			return fmt.Errorf("%s.health_path exceeds maximum length of %d bytes", prefix, maxHealthPathBytes)
+		}
+		if len(service.InheritEnv) > maxInheritedEnvironmentVariables {
+			return fmt.Errorf("%s.inherit_env exceeds maximum count of %d", prefix, maxInheritedEnvironmentVariables)
+		}
 		seenEnvironment := make(map[string]struct{}, len(service.InheritEnv))
 		for _, name := range service.InheritEnv {
+			if len(name) > maxEnvironmentNameBytes {
+				return fmt.Errorf("%s.inherit_env variable exceeds maximum length of %d bytes", prefix, maxEnvironmentNameBytes)
+			}
 			if !safeEnvironmentName(name) {
 				return fmt.Errorf("%s.inherit_env contains invalid variable name %q", prefix, name)
 			}
@@ -342,6 +383,49 @@ func (value Config) Validate() error {
 		return err
 	}
 	return nil
+}
+
+func readConfigFile(path string) ([]byte, error) {
+	// #nosec G304 -- path is the explicit configuration resource selected by the caller.
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = file.Close() }()
+	data, err := io.ReadAll(io.LimitReader(file, maxConfigBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if len(data) > maxConfigBytes {
+		return nil, fmt.Errorf("grat config exceeds maximum size of %d bytes", maxConfigBytes)
+	}
+	return data, nil
+}
+
+func configDecodeError(err error) error {
+	var missing *toml.StrictMissingError
+	if !errors.As(err, &missing) {
+		return fmt.Errorf("parse TOML grat config: %w", err)
+	}
+	unknown := make([]string, 0, len(missing.Errors))
+	for _, decodeError := range missing.Errors {
+		key := decodeError.Key()
+		if len(key) == 0 {
+			continue
+		}
+		switch key[0] {
+		case "github_worker":
+			return fmt.Errorf("github_worker is no longer supported")
+		case "apps":
+			return fmt.Errorf("apps is no longer supported; use services")
+		default:
+			unknown = append(unknown, strings.Join(key, "."))
+		}
+	}
+	if len(unknown) > 0 {
+		return fmt.Errorf("unknown grat config field(s): %s", strings.Join(unknown, ", "))
+	}
+	return fmt.Errorf("parse TOML grat config: %w", err)
 }
 
 // Durations parses Runtime's validated duration strings for process management.

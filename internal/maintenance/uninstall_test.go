@@ -178,6 +178,22 @@ func TestUninstallSkipsSymlinkedDirectoriesOutsideRegisteredRoots(t *testing.T) 
 	}
 }
 
+func TestDiscoverUninstallArtifactsRejectsScanLimitOverrun(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "grat.config"), []byte("fixture"), 0o600); err != nil {
+		t.Fatalf("write config fixture: %v", err)
+	}
+
+	_, err := discoverUninstallArtifactsWithLimits([]string{root}, artifactScanLimits{
+		MaxRoots: 1, MaxEntries: 1, MaxArtifacts: 1,
+	})
+	if err == nil || !strings.Contains(err.Error(), "maximum") {
+		t.Fatalf("discoverUninstallArtifactsWithLimits() error = %v, want scan limit refusal", err)
+	}
+}
+
 func TestUninstallPreservesSharedHomebrewTap(t *testing.T) {
 	t.Parallel()
 
