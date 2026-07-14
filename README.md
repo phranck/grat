@@ -77,7 +77,7 @@ gh attestation verify ./grat_VERSION_OS_ARCH \
 To build with Go, install Go 1.25.12 or newer and run:
 
 ```sh
-go install github.com/phranck/grat/cmd/grat@v1.1.1
+go install github.com/phranck/grat/cmd/grat@v1.1.4
 ```
 
 grat uses `/bin/sh` to run configured commands. On macOS it inspects listeners
@@ -463,7 +463,7 @@ with status 130.
 
 ```text
 $ grat
-grat  v1.1.3
+grat  v1.1.4
 Usage
   grat [global options] <command> [arguments]
 
