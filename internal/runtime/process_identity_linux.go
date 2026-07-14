@@ -31,7 +31,7 @@ func processIdentity(pid int) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("inspect process identity for PID %d: %w", pid, err)
 	}
-	return fmt.Sprintf("linux:%s:%d", bootIdentity, startTicks), nil
+	return fmt.Sprintf("linux:%s:%d:%d", bootIdentity, pid, startTicks), nil
 }
 
 func linuxProcessStartTicks(data []byte, expectedPID int) (uint64, error) {

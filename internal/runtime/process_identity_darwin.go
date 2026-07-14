@@ -27,5 +27,5 @@ func processIdentity(pid int) (string, error) {
 		return "", fmt.Errorf("process identity for PID %d is incomplete", pid)
 	}
 	started := process.Proc.P_starttime
-	return fmt.Sprintf("darwin:%s:%d:%d", bootIdentity, started.Sec, started.Usec), nil
+	return fmt.Sprintf("darwin:%s:%d:%d:%d", bootIdentity, pid, started.Sec, started.Usec), nil
 }

@@ -331,45 +331,6 @@
       "time"
     ],
     "6": [
-      "cli_repeatedvalue",
-      "cli_repeatedvalue_set",
-      "cli_repeatedvalue_string",
-      "internal_maintenance_update_test_go_context",
-      "internal_maintenance_update_test_go_service",
-      "internal_maintenance_update_test_go_t",
-      "internal_runtime_process_identity_linux_test_go_t",
-      "maintenance_commandresponse",
-      "maintenance_fakecommands",
-      "maintenance_fakecommands_called",
-      "maintenance_fakecommands_run",
-      "maintenance_update_test",
-      "maintenance_update_test_commandkey",
-      "maintenance_update_test_digest",
-      "maintenance_update_test_newreleaseserver",
-      "maintenance_update_test_releaseservice",
-      "maintenance_update_test_testasseturlrejectsuntrustedorigins",
-      "maintenance_update_test_testattestationverificationusesexactreleaseworkflow",
-      "maintenance_update_test_testreleasechecksumrejectsoversizeddocument",
-      "maintenance_update_test_testreleasedownloadrejectscrossoriginredirect",
-      "maintenance_update_test_testreleaseurlsacceptonlycanonicalgithubpaths",
-      "maintenance_update_test_testreplaceverifiedbinaryrejectsoversizeddownload",
-      "maintenance_update_test_testupdatedelegatestohomebrewonlyforownedexecutable",
-      "maintenance_update_test_testupdatedoesnotdelegatetohomebrewforanotherexecutable",
-      "maintenance_update_test_testupdatedoesnotreplacebinarywhenatomicrenamefails",
-      "maintenance_update_test_testupdatekeepscurrentreleasewhenattestationfails",
-      "maintenance_update_test_testupdatekeepscurrentreleasewhenchecksumdoesnotmatch",
-      "maintenance_update_test_testupdatereplacesverifiedreleaseforeverysupportedtarget",
-      "maintenance_update_test_writereleasejson",
-      "responsewriter",
-      "runtime_process_identity_linux",
-      "runtime_process_identity_linux_linuxprocessstartticks",
-      "runtime_process_identity_linux_processidentity",
-      "runtime_process_identity_linux_test",
-      "runtime_process_identity_linux_test_testlinuxprocessstarttickshandlesclosingparenthesisincommand",
-      "runtime_process_identity_linux_test_testlinuxprocessstartticksrejectsmismatchedpid",
-      "server"
-    ],
-    "7": [
       "cli_cli_exitcode",
       "cli_cli_ishelp",
       "cli_cli_runwithenvironment",
@@ -407,7 +368,7 @@
       "version_version_test_testcurrentprefixeslinkeroverridewithv",
       "version_version_test_testcurrentreturnssourceversion"
     ],
-    "8": [
+    "7": [
       "presentation_colormode",
       "presentation_presentation",
       "presentation_presentation_formatprojectrows",
@@ -445,7 +406,7 @@
       "presentation_stepkind",
       "style"
     ],
-    "9": [
+    "8": [
       "internal_ports_registry_go_config",
       "internal_ports_registry_test_go_t",
       "ports_fakelookup",
@@ -482,7 +443,7 @@
       "ports_source",
       "role"
     ],
-    "10": [
+    "9": [
       "internal_presentation_presentation_test_go_t",
       "presentation_presentation_dividerline",
       "presentation_presentation_new",
@@ -518,7 +479,7 @@
       "presentation_presentation_test_testrunlifecyclewaitsforgracefulinterruptedrunner",
       "presentation_presentation_test_testtruncatestyledpreservesansiandfitswidth"
     ],
-    "11": [
+    "10": [
       "cli_cli_test",
       "cli_cli_test_assertgloballyuniqueroleports",
       "cli_cli_test_clihelpercommand",
@@ -552,6 +513,39 @@
       "internal_cli_cli_test_go_service",
       "internal_cli_cli_test_go_t",
       "internal_cli_cli_test_go_writer"
+    ],
+    "11": [
+      "cli_repeatedvalue",
+      "cli_repeatedvalue_set",
+      "cli_repeatedvalue_string",
+      "internal_maintenance_update_test_go_context",
+      "internal_maintenance_update_test_go_service",
+      "internal_maintenance_update_test_go_t",
+      "maintenance_commandresponse",
+      "maintenance_fakecommands",
+      "maintenance_fakecommands_called",
+      "maintenance_fakecommands_run",
+      "maintenance_uninstall_test_testuninstalldetectsverifieddirectreleasebinary",
+      "maintenance_update_test",
+      "maintenance_update_test_commandkey",
+      "maintenance_update_test_digest",
+      "maintenance_update_test_newreleaseserver",
+      "maintenance_update_test_releaseservice",
+      "maintenance_update_test_testasseturlrejectsuntrustedorigins",
+      "maintenance_update_test_testattestationverificationusesexactreleaseworkflow",
+      "maintenance_update_test_testreleasechecksumrejectsoversizeddocument",
+      "maintenance_update_test_testreleasedownloadrejectscrossoriginredirect",
+      "maintenance_update_test_testreleaseurlsacceptonlycanonicalgithubpaths",
+      "maintenance_update_test_testreplaceverifiedbinaryrejectsoversizeddownload",
+      "maintenance_update_test_testupdatedelegatestohomebrewonlyforownedexecutable",
+      "maintenance_update_test_testupdatedoesnotdelegatetohomebrewforanotherexecutable",
+      "maintenance_update_test_testupdatedoesnotreplacebinarywhenatomicrenamefails",
+      "maintenance_update_test_testupdatekeepscurrentreleasewhenattestationfails",
+      "maintenance_update_test_testupdatekeepscurrentreleasewhenchecksumdoesnotmatch",
+      "maintenance_update_test_testupdatereplacesverifiedreleaseforeverysupportedtarget",
+      "maintenance_update_test_writereleasejson",
+      "responsewriter",
+      "server"
     ],
     "12": [
       "cli_logs_test",
@@ -708,7 +702,6 @@
       "maintenance_uninstall_test_testdiscoveruninstallartifactsrejectsscanlimitoverrun",
       "maintenance_uninstall_test_testuninstallabortsbeforepromptsforactivemanagedservice",
       "maintenance_uninstall_test_testuninstalldefaultyesremovesonlyregisteredprojectartifacts",
-      "maintenance_uninstall_test_testuninstalldetectsverifieddirectreleasebinary",
       "maintenance_uninstall_test_testuninstallkeepsdeclinedartifactclass",
       "maintenance_uninstall_test_testuninstallpreservessharedhomebrewtap",
       "maintenance_uninstall_test_testuninstallrejectsnoninteractivecleanup",
@@ -837,56 +830,67 @@
       "internal_cli_helpers_test_go_t"
     ],
     "31": [
+      "internal_runtime_process_identity_linux_test_go_t",
+      "runtime_process_identity_linux_test",
+      "runtime_process_identity_linux_test_testlinuxprocessstarttickshandlesclosingparenthesisincommand",
+      "runtime_process_identity_linux_test_testlinuxprocessstartticksrejectsmismatchedpid"
+    ],
+    "32": [
       "scripts_check_readme",
       "scripts_check_readme_require",
       "scripts_check_readme_require_in",
       "users_phranck_developer_tools_cli_grat_scripts_check_readme_sh__entry"
     ],
-    "32": [
+    "33": [
       "support",
       "support_diagnostic_support_request",
       "support_sensitive_data_redaction",
       "support_support"
     ],
-    "33": [
+    "34": [
       "internal_ports_listeners_darwin_test_go_t",
       "ports_listeners_darwin_test",
       "ports_listeners_darwin_test_testlistenerinspectionusestrustedexecutable"
     ],
-    "34": [
+    "35": [
       "internal_runtime_readiness_test_go_t",
       "runtime_readiness_test",
       "runtime_readiness_test_testprocessinspectionusestrustedexecutable"
     ],
-    "35": [
+    "36": [
       "ports_listeners",
       "ports_systemlistenerlookup",
       "ports_systemlistenerlookup_listener"
     ],
-    "36": [
+    "37": [
+      "runtime_process_identity_linux",
+      "runtime_process_identity_linux_linuxprocessstartticks",
+      "runtime_process_identity_linux_processidentity"
+    ],
+    "38": [
       "code_of_conduct",
       "code_of_conduct_code_of_conduct"
     ],
-    "37": [
+    "39": [
       "runtime_process_identity_darwin",
       "runtime_process_identity_darwin_processidentity"
     ],
-    "38": [
+    "40": [
       "scripts_build_homebrew_bottles_homebrew_bottle_builder",
       "scripts_test_homebrew_bottles_homebrew_bottle_tests"
     ],
-    "39": [
+    "41": [
       "scripts_build_release",
       "users_phranck_developer_tools_cli_grat_scripts_build_release_sh__entry"
     ],
-    "40": [
+    "42": [
       "scripts_test_verify_homebrew_bottles",
       "users_phranck_developer_tools_cli_grat_scripts_test_verify_homebrew_bottles_sh__entry"
     ],
-    "41": [
+    "43": [
       "cli_help_test_help_contract_tests"
     ],
-    "42": [
+    "44": [
       "settings_settings_store"
     ]
   },
@@ -897,19 +901,19 @@
     "3": 0.0963265306122449,
     "4": 0.10852713178294573,
     "5": 0.11097560975609756,
-    "6": 0.12162162162162163,
-    "7": 0.14761904761904762,
-    "8": 0.14126984126984127,
-    "9": 0.12605042016806722,
-    "10": 0.15151515151515152,
-    "11": 0.1571969696969697,
+    "6": 0.14761904761904762,
+    "7": 0.14126984126984127,
+    "8": 0.12605042016806722,
+    "9": 0.15151515151515152,
+    "10": 0.1571969696969697,
+    "11": 0.15483870967741936,
     "12": 0.10846560846560846,
     "13": 0.1723076923076923,
     "14": 0.20553359683794467,
     "15": 0.1523809523809524,
     "16": 0.3137254901960784,
     "17": 0.27941176470588236,
-    "18": 0.3382352941176471,
+    "18": 0.36666666666666664,
     "19": 0.15384615384615385,
     "20": 0.25274725274725274,
     "21": 0.2545454545454545,
@@ -922,18 +926,20 @@
     "28": 0.6,
     "29": 0.6666666666666666,
     "30": 0.6666666666666666,
-    "31": 0.8333333333333334,
-    "32": 0.5,
-    "33": 0.6666666666666666,
+    "31": 0.6666666666666666,
+    "32": 0.8333333333333334,
+    "33": 0.5,
     "34": 0.6666666666666666,
     "35": 0.6666666666666666,
-    "36": 1.0,
+    "36": 0.6666666666666666,
     "37": 1.0,
     "38": 1.0,
     "39": 1.0,
     "40": 1.0,
     "41": 1.0,
-    "42": 1.0
+    "42": 1.0,
+    "43": 1.0,
+    "44": 1.0
   },
   "gods": [
     {
@@ -1047,18 +1053,18 @@
   "questions": [
     {
       "type": "bridge_node",
-      "question": "Why does `New()` connect `Community 10` to `Community 0`, `Community 3`, `Community 5`, `Community 6`, `Community 7`, `Community 8`, `Community 11`, `Community 18`?",
-      "why": "High betweenness centrality (0.136) - this node is a cross-community bridge."
+      "question": "Why does `New()` connect `Presentation Tests` to `CLI Orchestration`, `Update Maintenance`, `Uninstall Maintenance`, `Maintenance CLI Tests`, `Terminal Presentation`, `Configuration Tests`, `CLI Command Tests`, `Uninstall Tests`?",
+      "why": "High betweenness centrality (0.134) - this node is a cross-community bridge."
     },
     {
       "type": "bridge_node",
-      "question": "Why does `processAlive()` connect `Community 1` to `Community 3`, `Community 6`?",
-      "why": "High betweenness centrality (0.050) - this node is a cross-community bridge."
-    },
-    {
-      "type": "bridge_node",
-      "question": "Why does `runWithEnvironment()` connect `Community 7` to `Community 0`, `Community 10`, `Community 11`?",
+      "question": "Why does `processAlive()` connect `Runtime Readiness` to `Update Maintenance`, `CLI Command Tests`?",
       "why": "High betweenness centrality (0.049) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `runWithEnvironment()` connect `Maintenance CLI Tests` to `CLI Orchestration`, `Presentation Tests`, `Configuration Tests`?",
+      "why": "High betweenness centrality (0.048) - this node is a cross-community bridge."
     },
     {
       "type": "verify_inferred",
@@ -1077,7 +1083,7 @@
     },
     {
       "type": "low_cohesion",
-      "question": "Should `Community 0` be split into smaller, more focused modules?",
+      "question": "Should `CLI Orchestration` be split into smaller, more focused modules?",
       "why": "Cohesion score 0.06630630630630631 - nodes in this community are weakly interconnected."
     }
   ]

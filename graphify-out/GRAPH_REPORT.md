@@ -1,12 +1,12 @@
 # Graph Report - .  (2026-07-14)
 
 ## Corpus Check
-- 34 files · ~43,468 words
+- 2 files · ~43,470 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 803 nodes · 1817 edges · 43 communities (34 shown, 9 thin omitted)
-- Extraction: 88% EXTRACTED · 12% INFERRED · 0% AMBIGUOUS · INFERRED: 211 edges (avg confidence: 0.8)
+- 803 nodes · 1813 edges · 45 communities (35 shown, 10 thin omitted)
+- Extraction: 89% EXTRACTED · 11% INFERRED · 0% AMBIGUOUS · INFERRED: 207 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -16,12 +16,12 @@
 - [[_COMMUNITY_Update Maintenance|Update Maintenance]]
 - [[_COMMUNITY_Configuration Validation|Configuration Validation]]
 - [[_COMMUNITY_Uninstall Maintenance|Uninstall Maintenance]]
-- [[_COMMUNITY_CLI Command Tests|CLI Command Tests]]
 - [[_COMMUNITY_Maintenance CLI Tests|Maintenance CLI Tests]]
 - [[_COMMUNITY_Terminal Presentation|Terminal Presentation]]
 - [[_COMMUNITY_Port Registry|Port Registry]]
 - [[_COMMUNITY_Presentation Tests|Presentation Tests]]
 - [[_COMMUNITY_Configuration Tests|Configuration Tests]]
+- [[_COMMUNITY_CLI Command Tests|CLI Command Tests]]
 - [[_COMMUNITY_Runtime State Storage|Runtime State Storage]]
 - [[_COMMUNITY_Runtime Process Manager|Runtime Process Manager]]
 - [[_COMMUNITY_Settings Store|Settings Store]]
@@ -41,16 +41,18 @@
 - [[_COMMUNITY_Bottle Verification|Bottle Verification]]
 - [[_COMMUNITY_Project Agent Rules|Project Agent Rules]]
 - [[_COMMUNITY_CLI Test Utilities|CLI Test Utilities]]
+- [[_COMMUNITY_Linux Process Identity Tests|Linux Process Identity Tests]]
 - [[_COMMUNITY_README Contract Script|README Contract Script]]
 - [[_COMMUNITY_Support Documentation|Support Documentation]]
 - [[_COMMUNITY_Darwin Listener Tests|Darwin Listener Tests]]
 - [[_COMMUNITY_Readiness Tests|Readiness Tests]]
 - [[_COMMUNITY_Listener Lookup|Listener Lookup]]
+- [[_COMMUNITY_Linux Process Identity|Linux Process Identity]]
 - [[_COMMUNITY_Code Of Conduct|Code Of Conduct]]
 - [[_COMMUNITY_Homebrew Bottle Tooling|Homebrew Bottle Tooling]]
 - [[_COMMUNITY_Release Build Script|Release Build Script]]
 - [[_COMMUNITY_Bottle Verification Tests|Bottle Verification Tests]]
-- [[_COMMUNITY_Help Tests|Help Tests]]
+- [[_COMMUNITY_Help Contract Tests|Help Contract Tests]]
 - [[_COMMUNITY_Settings Documentation|Settings Documentation]]
 
 ## God Nodes (most connected - your core abstractions)
@@ -83,7 +85,7 @@
 ## Hyperedges (group relationships)
 - **Release Supply-Chain Verification** — workflows_release_artifact_attestation, workflows_release_sha256_checksums, workflows_release_github_release_publication, readme_release_provenance_verification, security_fail_closed_update_verification [INFERRED 0.95]
 
-## Communities (43 total, 9 thin omitted)
+## Communities (45 total, 10 thin omitted)
 
 ### Community 0 - "CLI Orchestration"
 Cohesion: 0.07
@@ -109,29 +111,29 @@ Nodes (38): configDecodeError(), DefaultRuntime(), InferRole(), Load(), readConf
 Cohesion: 0.11
 Nodes (20): Context, Service, Reader, Result, Store, Writer, Manager, artifactScanLimits (+12 more)
 
-### Community 6 - "CLI Command Tests"
-Cohesion: 0.12
-Nodes (30): repeatedValue, Context, Service, T, T, commandResponse, fakeCommands, commandKey() (+22 more)
-
-### Community 7 - "Maintenance CLI Tests"
+### Community 6 - "Maintenance CLI Tests"
 Cohesion: 0.15
 Nodes (31): exitCode(), isHelp(), runWithEnvironment(), canonicalCLITestPath(), environmentForTest(), newCLITestStore(), sameStringSlices(), TestDirectoriesAddDoesNotPromptForInitialSetup() (+23 more)
 
-### Community 8 - "Terminal Presentation"
+### Community 7 - "Terminal Presentation"
 Cohesion: 0.14
 Nodes (14): ColorMode, formatProjectRows(), fprint(), fprintf(), fprintln(), pad(), ParseColorMode(), stepStyle() (+6 more)
 
-### Community 9 - "Port Registry"
+### Community 8 - "Port Registry"
 Cohesion: 0.13
 Nodes (31): Config, T, fakeLookup, Listener, ListenerLookup, Problem, ProjectConfig, FirstFree() (+23 more)
 
-### Community 10 - "Presentation Tests"
+### Community 9 - "Presentation Tests"
 Cohesion: 0.15
 Nodes (33): T, DividerLine(), New(), columnOf(), displayColumn(), stripANSI(), TestHelpRendersBorderlessGroupsWithGloballyAlignedDescriptions(), TestLifecycleModelAlignsHeadersWithDataColumns() (+25 more)
 
-### Community 11 - "Configuration Tests"
+### Community 10 - "Configuration Tests"
 Cohesion: 0.16
 Nodes (32): assertGloballyUniqueRolePorts(), cliHelperCommand(), containsArgument(), freeCLITCPPort(), loadPortFixtureConfig(), runWithConfiguredRoots(), TestCLIRuntimeHelper(), TestExitCodeMapsInterruptedOperationsTo130() (+24 more)
+
+### Community 11 - "CLI Command Tests"
+Cohesion: 0.15
+Nodes (26): repeatedValue, Context, Service, T, commandResponse, fakeCommands, TestUninstallDetectsVerifiedDirectReleaseBinary(), commandKey() (+18 more)
 
 ### Community 12 - "Runtime State Storage"
 Cohesion: 0.11
@@ -158,8 +160,8 @@ Cohesion: 0.28
 Nodes (15): collectInitInterview(), parseServiceDefinition(), promptDefault(), promptRequired(), promptServiceName(), TestCollectInitInterviewAcceptsEditsAndAdditionalServices(), TestCollectInitInterviewAcceptsSuppliedProjectName(), TestCollectInitInterviewRequiresAtLeastOneService() (+7 more)
 
 ### Community 18 - "Uninstall Tests"
-Cohesion: 0.34
-Nodes (16): Service, Store, T, fakeUninstallService(), newUninstallStore(), TestDiscoverUninstallArtifactsRejectsScanLimitOverrun(), TestUninstallAbortsBeforePromptsForActiveManagedService(), TestUninstallDefaultYesRemovesOnlyRegisteredProjectArtifacts() (+8 more)
+Cohesion: 0.37
+Nodes (15): Service, Store, T, fakeUninstallService(), newUninstallStore(), TestDiscoverUninstallArtifactsRejectsScanLimitOverrun(), TestUninstallAbortsBeforePromptsForActiveManagedService(), TestUninstallDefaultYesRemovesOnlyRegisteredProjectArtifacts() (+7 more)
 
 ### Community 19 - "Project Documentation"
 Cohesion: 0.15
@@ -209,28 +211,32 @@ Nodes (3): Graphify Before Push, Project Agent Rules, Versioned Graphify Artifac
 Cohesion: 0.67
 Nodes (3): TestListenerOwnerLabelHandlesUnknownPID(), TestLogFollowUsesTrustedExecutable(), T
 
-### Community 31 - "README Contract Script"
+### Community 31 - "Linux Process Identity Tests"
+Cohesion: 0.67
+Nodes (3): T, TestLinuxProcessStartTicksHandlesClosingParenthesisInCommand(), TestLinuxProcessStartTicksRejectsMismatchedPID()
+
+### Community 32 - "README Contract Script"
 Cohesion: 0.83
 Nodes (3): require(), require_in(), check-readme.sh script
 
-### Community 32 - "Support Documentation"
+### Community 33 - "Support Documentation"
 Cohesion: 0.50
 Nodes (3): Diagnostic Support Request, Sensitive Data Redaction, Support
 
 ## Knowledge Gaps
 - **76 isolated node(s):** `T`, `T`, `Listener`, `T`, `Listener` (+71 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **9 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **10 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `New()` connect `Presentation Tests` to `CLI Orchestration`, `Update Maintenance`, `Uninstall Maintenance`, `CLI Command Tests`, `Maintenance CLI Tests`, `Terminal Presentation`, `Configuration Tests`, `Uninstall Tests`?**
-  _High betweenness centrality (0.136) - this node is a cross-community bridge._
+- **Why does `New()` connect `Presentation Tests` to `CLI Orchestration`, `Update Maintenance`, `Uninstall Maintenance`, `Maintenance CLI Tests`, `Terminal Presentation`, `Configuration Tests`, `CLI Command Tests`, `Uninstall Tests`?**
+  _High betweenness centrality (0.134) - this node is a cross-community bridge._
 - **Why does `processAlive()` connect `Runtime Readiness` to `Update Maintenance`, `CLI Command Tests`?**
-  _High betweenness centrality (0.050) - this node is a cross-community bridge._
-- **Why does `runWithEnvironment()` connect `Maintenance CLI Tests` to `CLI Orchestration`, `Presentation Tests`, `Configuration Tests`?**
   _High betweenness centrality (0.049) - this node is a cross-community bridge._
+- **Why does `runWithEnvironment()` connect `Maintenance CLI Tests` to `CLI Orchestration`, `Presentation Tests`, `Configuration Tests`?**
+  _High betweenness centrality (0.048) - this node is a cross-community bridge._
 - **Are the 27 inferred relationships involving `New()` (e.g. with `configuredRoots()` and `runDirectories()`) actually correct?**
   _`New()` has 27 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 14 inferred relationships involving `runWithEnvironment()` (e.g. with `New()` and `Current()`) actually correct?**
