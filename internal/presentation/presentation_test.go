@@ -102,6 +102,9 @@ func TestRendererRendersBorderlessAlignedTable(t *testing.T) {
 	)
 
 	got := stripANSI(output.String())
+	if !strings.HasPrefix(got, "\nSERVICE") {
+		t.Fatalf("table output = %q, want one blank line before its header", got)
+	}
 	if strings.ContainsAny(got, "╭╮╰╯│─") {
 		t.Fatalf("table output contains a frame:\n%s", got)
 	}

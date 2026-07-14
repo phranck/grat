@@ -173,6 +173,7 @@ func (renderer Renderer) Table(headers []string, rows [][]string) {
 	if len(headers) == 0 {
 		return
 	}
+	renderer.Spacer()
 	renderer.renderAlignedTable(headers, rows)
 }
 
