@@ -4,7 +4,7 @@ Thanks for contributing to grat.
 
 ## Development setup
 
-Use Go 1.26.5 or newer. Run the full local gate before proposing a change:
+Use Go 1.25.12 or newer. Run the full local gate before proposing a change:
 
 ```sh
 go vet ./...

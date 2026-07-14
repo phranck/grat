@@ -10,8 +10,8 @@
     "semantic_hash": ""
   },
   "internal/cli/cli_test.go": {
-    "mtime": 1784029320.7678225,
-    "ast_hash": "d092777b715146083eaa84a0b231c4db",
+    "mtime": 1784033624.657711,
+    "ast_hash": "e12ff22ff9a8e582676c81b8383ee47d",
     "semantic_hash": ""
   },
   "internal/cli/help_test.go": {
@@ -175,23 +175,23 @@
     "semantic_hash": "68880fb7d8d9978184a41f03c34649a0"
   },
   "internal/version/version.go": {
-    "mtime": 1784032574.3829598,
-    "ast_hash": "46db861840405f2b7b1c873e9834e2f0",
+    "mtime": 1784033638.3232348,
+    "ast_hash": "254cd48d7329aa2ae972fb1d2dd3a6fc",
     "semantic_hash": ""
   },
   "internal/version/version_test.go": {
-    "mtime": 1784032574.383195,
-    "ast_hash": "246e7b0fb001846c59f2222003d18a64",
+    "mtime": 1784033624.657055,
+    "ast_hash": "4f90aafeff4317ce8933521f41990613",
     "semantic_hash": ""
   },
   "scripts/build-release.sh": {
-    "mtime": 1784032574.383372,
-    "ast_hash": "a1b10b65a4ae84c33455b27510760002",
+    "mtime": 1784033638.324115,
+    "ast_hash": "913854b8f1c8a9df95cf48af7c87fbb2",
     "semantic_hash": ""
   },
   "scripts/check-readme.sh": {
-    "mtime": 1784032574.3837297,
-    "ast_hash": "2d2f9a9717ca6edc102c43538a986091",
+    "mtime": 1784033638.3258805,
+    "ast_hash": "f71f47793cf76df8249638c4515e7469",
     "semantic_hash": ""
   },
   ".github/workflows/ci.yml": {
@@ -215,13 +215,13 @@
     "semantic_hash": "05df213f9c44b87831b94b754f4016b0"
   },
   "CONTRIBUTING.md": {
-    "mtime": 1783987544.687779,
-    "ast_hash": "33ab144191a6e14f321092fc6bd956b5",
-    "semantic_hash": "33ab144191a6e14f321092fc6bd956b5"
+    "mtime": 1784033558.1903737,
+    "ast_hash": "4792061478c0da4eb51929a65d162fde",
+    "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1784032574.383575,
-    "ast_hash": "d2e6f068989e25f6940e5195b4703cb0",
+    "mtime": 1784033638.3252895,
+    "ast_hash": "857d0fccfd89e8c3a412ca07a9cb6a5a",
     "semantic_hash": ""
   },
   "SECURITY.md": {

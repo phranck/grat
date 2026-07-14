@@ -129,13 +129,13 @@ for value in 'darwin' 'linux' 'amd64' 'arm64' 'checksums.txt'; do
 	fi
 done
 
-require_in go.mod 'go 1.26.5'
+require_in go.mod 'go 1.25.12'
 require_in go.mod 'module github.com/phranck/grat'
 require_in go.mod 'tool golang.org/x/vuln/cmd/govulncheck'
-require_in README.md 'Go 1.26.5 or newer'
-require_in README.md 'go install github.com/phranck/grat/cmd/grat@v1.1.0'
+require_in README.md 'Go 1.25.12 or newer'
+require_in README.md 'go install github.com/phranck/grat/cmd/grat@v1.1.1'
 require_in README.md '`grat.config`'
 require_in README.md '`.grat/`'
-require_in CONTRIBUTING.md 'Go 1.26.5 or newer'
+require_in CONTRIBUTING.md 'Go 1.25.12 or newer'
 require_in .github/workflows/ci.yml 'go build -trimpath -o dist/grat ./cmd/grat'
 require_in .github/workflows/release.yml 'dist/grat_${VERSION}_${GOOS}_${GOARCH}'

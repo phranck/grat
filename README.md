@@ -62,10 +62,10 @@ Release binaries support macOS and Linux on `amd64` and `arm64`. Download the
 matching asset from [Releases](https://github.com/phranck/grat/releases), verify
 it against `checksums.txt`, make it executable, and place it on your `PATH`.
 
-To build with Go, install Go 1.26.5 or newer and run:
+To build with Go, install Go 1.25.12 or newer and run:
 
 ```sh
-go install github.com/phranck/grat/cmd/grat@v1.1.0
+go install github.com/phranck/grat/cmd/grat@v1.1.1
 ```
 
 grat uses `/bin/sh` to run configured commands. On macOS it inspects listeners
