@@ -64,3 +64,8 @@ jobs:
           else
             gh release create "$TAG" dist/* bottles/* --title "grat $TAG" --generate-notes
           fi
+      - name: Verify published Homebrew bottles
+        env:
+          TAG: ${{ github.ref_name }}
+          RELEASE_BASE_URL: https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}
+        run: scripts/verify-homebrew-bottles.sh --version "$TAG" --base-url "$RELEASE_BASE_URL" --input bottles

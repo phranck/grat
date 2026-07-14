@@ -72,7 +72,7 @@ package() {
 	target=$1
 	tag=$2
 	asset="$input/grat_${version}_${target}"
-	archive="$output/grat--${plain_version}.${tag}.bottle.tar.gz"
+	archive="$output/grat-${plain_version}.${tag}.bottle.tar.gz"
 	stage="$workspace/$tag/grat/$plain_version"
 
 	if [ ! -f "$asset" ]; then

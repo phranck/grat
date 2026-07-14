@@ -67,7 +67,7 @@ for spec in \
 	set -- $spec
 	target=$1
 	tag=$2
-	archive="$output/grat--9.9.9.${tag}.bottle.tar.gz"
+	archive="$output/grat-9.9.9.${tag}.bottle.tar.gz"
 	assert_file "$archive"
 	assert_archive_contains "$archive" "grat/9.9.9/.brew/grat.rb"
 	assert_archive_contains "$archive" "grat/9.9.9/bin/grat"
@@ -75,7 +75,7 @@ for spec in \
 	assert_mode "$archive"
 done
 
-formula=$(tar -xOzf "$output/grat--9.9.9.arm64_tahoe.bottle.tar.gz" "grat/9.9.9/.brew/grat.rb")
+formula=$(tar -xOzf "$output/grat-9.9.9.arm64_tahoe.bottle.tar.gz" "grat/9.9.9/.brew/grat.rb")
 case "$formula" in
 	*'url "https://github.com/phranck/grat/archive/refs/tags/v9.9.9.tar.gz"'*) ;;
 	*)

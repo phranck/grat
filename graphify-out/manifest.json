@@ -500,9 +500,9 @@
     "semantic_hash": "4f90aafeff4317ce8933521f41990613"
   },
   "/Users/phranck/Developer/tools/cli/grat/scripts/build-homebrew-bottles.sh": {
-    "mtime": 1784041469.441545,
-    "ast_hash": "7f3587b2547637dd216edbe42733ed38",
-    "semantic_hash": "7f3587b2547637dd216edbe42733ed38"
+    "mtime": 1784043325.0043364,
+    "ast_hash": "92ba956a2ebfdf0a050b4258a055c166",
+    "semantic_hash": "92ba956a2ebfdf0a050b4258a055c166"
   },
   "/Users/phranck/Developer/tools/cli/grat/scripts/build-release.sh": {
     "mtime": 1784033638.324115,
@@ -515,9 +515,9 @@
     "semantic_hash": "f71f47793cf76df8249638c4515e7469"
   },
   "/Users/phranck/Developer/tools/cli/grat/scripts/test-homebrew-bottles.sh": {
-    "mtime": 1784041435.654954,
-    "ast_hash": "9dd677fb70ad7bba8996bd040b0e7a04",
-    "semantic_hash": "9dd677fb70ad7bba8996bd040b0e7a04"
+    "mtime": 1784043316.0488782,
+    "ast_hash": "8e249c9a98d89a8baebcbed5e63b4efc",
+    "semantic_hash": "8e249c9a98d89a8baebcbed5e63b4efc"
   },
   "/Users/phranck/Developer/tools/cli/grat/.github/workflows/ci.yml": {
     "mtime": 1783987544.686671,
@@ -525,9 +525,9 @@
     "semantic_hash": "f5a4c587b044d14c0dd0178d7b8ca1b7"
   },
   "/Users/phranck/Developer/tools/cli/grat/.github/workflows/release.yml": {
-    "mtime": 1784041496.9533584,
-    "ast_hash": "14fa8039683910855ec78515bc637ae0",
-    "semantic_hash": "14fa8039683910855ec78515bc637ae0"
+    "mtime": 1784043391.5595555,
+    "ast_hash": "1ab01ddfef5d569830a90da7f808fc57",
+    "semantic_hash": "1ab01ddfef5d569830a90da7f808fc57"
   },
   "/Users/phranck/Developer/tools/cli/grat/AGENTS.md": {
     "mtime": 1783987544.6873863,
@@ -558,5 +558,15 @@
     "mtime": 1783987544.688629,
     "ast_hash": "8ca80c8662c6f988dfe7107e6f8d0ee0",
     "semantic_hash": "8ca80c8662c6f988dfe7107e6f8d0ee0"
+  },
+  "/Users/phranck/Developer/tools/cli/grat/scripts/test-verify-homebrew-bottles.sh": {
+    "mtime": 1784043353.4399815,
+    "ast_hash": "2b5907e9ed27e020dc3c812701d9989b",
+    "semantic_hash": "2b5907e9ed27e020dc3c812701d9989b"
+  },
+  "/Users/phranck/Developer/tools/cli/grat/scripts/verify-homebrew-bottles.sh": {
+    "mtime": 1784043375.6683893,
+    "ast_hash": "5b861ea183a3b6a26ff0010c699c7d6e",
+    "semantic_hash": "5b861ea183a3b6a26ff0010c699c7d6e"
   }
 }
