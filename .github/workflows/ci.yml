@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS Intel
+            os: macos-15-intel
+          - name: macOS ARM
+            os: macos-15
+          - name: Linux Intel
+            os: ubuntu-24.04
+          - name: Linux ARM
+            os: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: go.mod
+      - name: Tests
+        run: go test -race ./...
+      - name: Typechecks
+        run: go test -run '^$' ./...
+      - name: Build
+        run: go build -trimpath -o dist/grat ./cmd/grat
+      - name: Vulnerability scan
+        run: go tool govulncheck ./...
