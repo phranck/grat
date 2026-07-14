@@ -27,20 +27,22 @@ const (
 // Service owns side-effecting maintenance operations. Hooks make all external
 // dependencies replaceable by isolated test doubles.
 type Service struct {
-	Executable         func() (string, error)
-	EvalSymlinks       func(string) (string, error)
-	Command            func(context.Context, string, ...string) ([]byte, error)
-	BuildInfo          func() (string, string, bool)
-	CurrentVersion     func() string
-	ReleaseAPI         string
-	HTTPClient         *http.Client
-	GOOS               string
-	GOARCH             string
-	Rename             func(string, string) error
-	Remove             func(string) error
-	DetectInstallation func(context.Context) (installation, error)
-	InspectProject     func(context.Context, string) (bool, error)
-	OperationLock      func(context.Context, func() error) error
+	Executable              func() (string, error)
+	EvalSymlinks            func(string) (string, error)
+	Command                 func(context.Context, string, ...string) ([]byte, error)
+	BuildInfo               func() (string, string, bool)
+	CurrentVersion          func() string
+	ReleaseAPI              string
+	HTTPClient              *http.Client
+	MaxReleaseDocumentBytes int64
+	MaxReleaseAssetBytes    int64
+	GOOS                    string
+	GOARCH                  string
+	Rename                  func(string, string) error
+	Remove                  func(string) error
+	DetectInstallation      func(context.Context) (installation, error)
+	InspectProject          func(context.Context, string) (bool, error)
+	OperationLock           func(context.Context, func() error) error
 }
 
 // Result is a concise user-facing result from a maintenance operation.
@@ -51,18 +53,20 @@ type Result struct {
 // DefaultService creates the production maintenance service.
 func DefaultService() Service {
 	return Service{
-		Executable:     os.Executable,
-		EvalSymlinks:   filepath.EvalSymlinks,
-		Command:        runCommand,
-		BuildInfo:      runningBuildInfo,
-		CurrentVersion: version.Current,
-		ReleaseAPI:     defaultReleaseAPI,
-		HTTPClient:     &http.Client{Timeout: 30 * time.Second},
-		GOOS:           runtime.GOOS,
-		GOARCH:         runtime.GOARCH,
-		Rename:         os.Rename,
-		Remove:         os.Remove,
-		OperationLock:  operations.WithLock,
+		Executable:              os.Executable,
+		EvalSymlinks:            filepath.EvalSymlinks,
+		Command:                 runCommand,
+		BuildInfo:               runningBuildInfo,
+		CurrentVersion:          version.Current,
+		ReleaseAPI:              defaultReleaseAPI,
+		HTTPClient:              &http.Client{Timeout: 30 * time.Second},
+		MaxReleaseDocumentBytes: defaultMaxReleaseDocumentBytes,
+		MaxReleaseAssetBytes:    defaultMaxReleaseAssetBytes,
+		GOOS:                    runtime.GOOS,
+		GOARCH:                  runtime.GOARCH,
+		Rename:                  os.Rename,
+		Remove:                  os.Remove,
+		OperationLock:           operations.WithLock,
 	}
 }
 

@@ -16,6 +16,11 @@ import (
 	"time"
 )
 
+const (
+	defaultMaxReleaseDocumentBytes int64 = 1 << 20
+	defaultMaxReleaseAssetBytes    int64 = 128 << 20
+)
+
 type release struct {
 	TagName string  `json:"tag_name"`
 	Assets  []asset `json:"assets"`
@@ -173,6 +178,10 @@ func (service Service) replaceVerifiedBinary(ctx context.Context, executable str
 	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
 		return fmt.Errorf("download release asset: unexpected HTTP status %s", response.Status)
 	}
+	limit := service.maxReleaseAssetBytes()
+	if err := validateResponseLength(response, limit, "release asset"); err != nil {
+		return err
+	}
 	info, err := os.Stat(executable)
 	if err != nil {
 		return fmt.Errorf("inspect current executable: %w", err)
@@ -187,8 +196,12 @@ func (service Service) replaceVerifiedBinary(ctx context.Context, executable str
 		return errors.Join(fmt.Errorf("set temporary update permissions: %w", err), temporary.Close())
 	}
 	hasher := sha256.New()
-	if _, err := io.Copy(io.MultiWriter(temporary, hasher), response.Body); err != nil {
+	written, err := io.Copy(io.MultiWriter(temporary, hasher), io.LimitReader(response.Body, limit+1))
+	if err != nil {
 		return errors.Join(fmt.Errorf("write temporary update: %w", err), temporary.Close())
+	}
+	if written > limit {
+		return errors.Join(fmt.Errorf("release asset exceeds maximum size of %d bytes", limit), temporary.Close())
 	}
 	if actual := hex.EncodeToString(hasher.Sum(nil)); !strings.EqualFold(actual, expectedDigest) {
 		return errors.Join(errors.New("downloaded release checksum does not match checksums.txt"), temporary.Close())
@@ -238,7 +251,28 @@ func (service Service) get(ctx context.Context, endpoint string) ([]byte, error)
 	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
 		return nil, fmt.Errorf("unexpected HTTP status %s", response.Status)
 	}
-	return io.ReadAll(io.LimitReader(response.Body, 8<<20))
+	return readBoundedResponse(response, service.maxReleaseDocumentBytes(), "release document")
+}
+
+func readBoundedResponse(response *http.Response, limit int64, description string) ([]byte, error) {
+	if err := validateResponseLength(response, limit, description); err != nil {
+		return nil, err
+	}
+	data, err := io.ReadAll(io.LimitReader(response.Body, limit+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(data)) > limit {
+		return nil, fmt.Errorf("%s exceeds maximum size of %d bytes", description, limit)
+	}
+	return data, nil
+}
+
+func validateResponseLength(response *http.Response, limit int64, description string) error {
+	if response.ContentLength > limit {
+		return fmt.Errorf("%s exceeds maximum size of %d bytes", description, limit)
+	}
+	return nil
 }
 
 func (service Service) assetName(tag string) string {
@@ -300,6 +334,20 @@ func (service Service) httpClient() *http.Client {
 		return service.HTTPClient
 	}
 	return &http.Client{Timeout: 30 * time.Second}
+}
+
+func (service Service) maxReleaseDocumentBytes() int64 {
+	if service.MaxReleaseDocumentBytes > 0 {
+		return service.MaxReleaseDocumentBytes
+	}
+	return defaultMaxReleaseDocumentBytes
+}
+
+func (service Service) maxReleaseAssetBytes() int64 {
+	if service.MaxReleaseAssetBytes > 0 {
+		return service.MaxReleaseAssetBytes
+	}
+	return defaultMaxReleaseAssetBytes
 }
 
 func findAsset(assets []asset, name string) (asset, bool) {

@@ -172,6 +172,78 @@ func TestUpdateDoesNotReplaceBinaryWhenAtomicRenameFails(t *testing.T) {
 	}
 }
 
+func TestReleaseChecksumRejectsOversizedDocument(t *testing.T) {
+	for _, streamed := range []bool{false, true} {
+		streamed := streamed
+		t.Run(fmt.Sprintf("streamed=%t", streamed), func(t *testing.T) {
+			t.Parallel()
+
+			server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+				if streamed {
+					writer.(http.Flusher).Flush()
+				} else {
+					writer.Header().Set("Content-Length", "33")
+				}
+				_, _ = writer.Write([]byte(strings.Repeat("x", 33)))
+			}))
+			defer server.Close()
+			service := Service{
+				ReleaseAPI:              server.URL,
+				HTTPClient:              server.Client(),
+				MaxReleaseDocumentBytes: 32,
+			}
+			value := release{Assets: []asset{{Name: "checksums.txt", BrowserDownloadURL: server.URL}}}
+
+			_, err := service.releaseChecksum(context.Background(), value, "grat_v1.0.0_darwin_arm64")
+			if err == nil || !strings.Contains(err.Error(), "exceeds") {
+				t.Fatalf("releaseChecksum() error = %v, want size-limit failure", err)
+			}
+		})
+	}
+}
+
+func TestReplaceVerifiedBinaryRejectsOversizedDownload(t *testing.T) {
+	for _, streamed := range []bool{false, true} {
+		streamed := streamed
+		t.Run(fmt.Sprintf("streamed=%t", streamed), func(t *testing.T) {
+			t.Parallel()
+
+			payload := []byte("oversized release")
+			server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+				if streamed {
+					writer.(http.Flusher).Flush()
+				} else {
+					writer.Header().Set("Content-Length", fmt.Sprint(len(payload)))
+				}
+				_, _ = writer.Write(payload)
+			}))
+			defer server.Close()
+			executable := filepath.Join(t.TempDir(), "grat")
+			original := []byte("current release")
+			if err := os.WriteFile(executable, original, 0o755); err != nil {
+				t.Fatalf("write executable: %v", err)
+			}
+			service := Service{
+				ReleaseAPI:           server.URL,
+				HTTPClient:           server.Client(),
+				MaxReleaseAssetBytes: int64(len(payload) - 1),
+			}
+
+			err := service.replaceVerifiedBinary(context.Background(), executable, server.URL, digest(payload))
+			if err == nil || !strings.Contains(err.Error(), "exceeds") {
+				t.Fatalf("replaceVerifiedBinary() error = %v, want size-limit failure", err)
+			}
+			got, readErr := os.ReadFile(executable)
+			if readErr != nil {
+				t.Fatalf("read executable: %v", readErr)
+			}
+			if string(got) != string(original) {
+				t.Fatalf("executable changed after oversized download: got %q, want %q", got, original)
+			}
+		})
+	}
+}
+
 func releaseService(executable string, apiURL string, goos string, goarch string) Service {
 	return Service{
 		Executable:   func() (string, error) { return executable, nil },
