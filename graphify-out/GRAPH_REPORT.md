@@ -1,13 +1,17 @@
 # Graph Report - .  (2026-07-14)
 
 ## Corpus Check
-- 4 files · ~26,978 words
-- Verdict: corpus is large enough that graph structure adds value.
+- cluster-only mode — file stats not available
 
 ## Summary
 - 557 nodes · 1233 edges · 30 communities (25 shown, 5 thin omitted)
 - Extraction: 84% EXTRACTED · 16% INFERRED · 0% AMBIGUOUS · INFERRED: 202 edges (avg confidence: 0.81)
 - Token cost: 0 input · 0 output
+
+## Graph Freshness
+- Built from commit: `d5138d38`
+- Run `git rev-parse HEAD` and compare to check if the graph is stale.
+- Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - [[_COMMUNITY_CLI Command Orchestration|CLI Command Orchestration]]
@@ -67,11 +71,6 @@
 
 ## Import Cycles
 - None detected.
-
-## Hyperedges (group relationships)
-- **Safe Service Lifecycle** — readme_safe_local_service_manager, readme_approved_declarative_tasks, readme_process_group_isolation, readme_listener_and_http_readiness, readme_managed_process_identity, readme_cancellation_recovery [INFERRED 0.95]
-- **Coordinated Port Management** — readme_cross_project_port_coordination, readme_role_based_port_registry, readme_serialized_port_allocation, readme_safe_port_reassignment [INFERRED 0.95]
-- **Project Participation Guidance** — readme_contributing_guide, readme_security_policy, readme_code_of_conduct, readme_support_guide [EXTRACTED 1.00]
 
 ## Communities (30 total, 5 thin omitted)
 
