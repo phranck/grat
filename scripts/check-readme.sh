@@ -129,6 +129,34 @@ for value in 'darwin' 'linux' 'amd64' 'arm64' 'checksums.txt'; do
 	fi
 done
 
+if ! awk '
+	/^permissions:$/ {
+		getline
+		found = 1
+		valid = ($0 == "  contents: read")
+		exit
+	}
+	END { exit !(found && valid) }
+' .github/workflows/release.yml; then
+	echo 'release workflow must default to contents: read' >&2
+	exit 1
+fi
+
+if ! awk '
+	/^  publish:$/ { publish = 1; next }
+	publish && /^  [a-zA-Z0-9_-]+:$/ { exit 1 }
+	publish && /^    permissions:$/ {
+		getline
+		found = 1
+		valid = ($0 == "      contents: write")
+		exit
+	}
+	END { exit !(found && valid) }
+' .github/workflows/release.yml; then
+	echo 'release publish job must grant contents: write locally' >&2
+	exit 1
+fi
+
 require_in go.mod 'go 1.25.12'
 require_in go.mod 'module github.com/phranck/grat'
 require_in go.mod 'tool golang.org/x/vuln/cmd/govulncheck'
