@@ -18,6 +18,11 @@ reviewed.
 Configured service commands are intentionally executed through `/bin/sh` so
 normal project scripts keep their documented shell semantics. This is a trust
 boundary, not a sandbox. grat validates service and project identifiers before
-using them in managed paths or terminal output. Platform inspection helpers
-such as `ps`, `lsof`, and `tail` are invoked only through fixed absolute system
-paths and never resolved through a project-controlled `PATH` entry.
+using them in managed paths or terminal output. Services run through a
+non-login shell with a small non-secret environment baseline. Additional parent
+variables must be named explicitly with `inherit_env`; their values are not
+stored in project configuration. This reduces accidental secret propagation but
+does not prevent a trusted command running as the current user from reading
+user-accessible files. Platform inspection helpers such as `ps`, `lsof`, and
+`tail` are invoked only through fixed absolute system paths and never resolved
+through a project-controlled `PATH` entry.

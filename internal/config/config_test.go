@@ -251,3 +251,51 @@ func TestValidateRejectsControlCharactersInProjectName(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateRejectsUnsafeInheritedEnvironmentNames(t *testing.T) {
+	t.Parallel()
+
+	for _, names := range [][]string{{"PORT"}, {"DATABASE-URL"}, {"DATABASE_URL", "DATABASE_URL"}, {""}} {
+		names := names
+		t.Run(strings.Join(names, ","), func(t *testing.T) {
+			t.Parallel()
+			value := Config{
+				Version: 1,
+				Project: Project{Name: "fixture"},
+				Runtime: DefaultRuntime(),
+				Services: []Service{{
+					Name: "worker", Command: "sleep 30", Role: RoleWorker, InheritEnv: names,
+				}},
+			}
+
+			if err := value.Validate(); err == nil {
+				t.Fatalf("Validate() accepted inherit_env = %#v", names)
+			}
+		})
+	}
+}
+
+func TestWriteAndLoadPreservesInheritedEnvironmentNames(t *testing.T) {
+	t.Parallel()
+
+	path := filepath.Join(t.TempDir(), "grat.config")
+	value := Config{
+		Version: 1,
+		Project: Project{Name: "fixture"},
+		Runtime: DefaultRuntime(),
+		Services: []Service{{
+			Name: "worker", Command: "sleep 30", Role: RoleWorker,
+			InheritEnv: []string{"DATABASE_URL", "REDIS_URL"},
+		}},
+	}
+	if err := Write(path, value); err != nil {
+		t.Fatalf("Write() error = %v", err)
+	}
+	loaded, err := Load(path)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if got := strings.Join(loaded.Services[0].InheritEnv, ","); got != "DATABASE_URL,REDIS_URL" {
+		t.Fatalf("loaded inherit_env = %q, want DATABASE_URL,REDIS_URL", got)
+	}
+}

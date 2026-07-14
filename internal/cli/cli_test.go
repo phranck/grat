@@ -216,6 +216,7 @@ func TestRestartReportsConcreteLifecycleSteps(t *testing.T) {
 		},
 		Services: []config.Service{{
 			Name: "backend", Command: cliHelperCommand(), Role: config.RoleBackend, Port: port, Host: "127.0.0.1", HealthPath: "/",
+			InheritEnv: []string{cliRuntimeHelperEnvironment},
 		}},
 	}
 	if err := config.Write(filepath.Join(root, "grat.config"), value); err != nil {
@@ -405,6 +406,7 @@ func TestPortsReassignStopsManagedServices(t *testing.T) {
 	port := freeCLITCPPort(t)
 	writePortFixtureConfig(t, root, "fixture", []config.Service{{
 		Name: "backend", Command: cliHelperCommand(), Role: config.RoleBackend, Port: port, Host: "127.0.0.1", HealthPath: "/",
+		InheritEnv: []string{cliRuntimeHelperEnvironment},
 	}})
 	t.Cleanup(func() {
 		_ = runWithConfiguredRoots(t, []string{home}, context.Background(), []string{"stop"}, root, io.Discard, io.Discard)

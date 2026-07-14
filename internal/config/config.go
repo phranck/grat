@@ -73,12 +73,13 @@ type Durations struct {
 
 // Service defines one command managed from the project root.
 type Service struct {
-	Name       string `toml:"name"`
-	Command    string `toml:"command"`
-	Role       Role   `toml:"role"`
-	Port       int    `toml:"port"`
-	Host       string `toml:"host"`
-	HealthPath string `toml:"health_path"`
+	Name       string   `toml:"name"`
+	Command    string   `toml:"command"`
+	Role       Role     `toml:"role"`
+	Port       int      `toml:"port"`
+	Host       string   `toml:"host"`
+	HealthPath string   `toml:"health_path"`
+	InheritEnv []string `toml:"inherit_env,omitempty"`
 }
 
 // URL returns the browser-facing root URL for an HTTP service. Process-only
@@ -291,6 +292,19 @@ func (value Config) Validate() error {
 		if strings.TrimSpace(service.Command) == "" {
 			return fmt.Errorf("%s.command is required", prefix)
 		}
+		seenEnvironment := make(map[string]struct{}, len(service.InheritEnv))
+		for _, name := range service.InheritEnv {
+			if !safeEnvironmentName(name) {
+				return fmt.Errorf("%s.inherit_env contains invalid variable name %q", prefix, name)
+			}
+			if name == "PORT" {
+				return fmt.Errorf("%s.inherit_env must not contain grat-managed PORT", prefix)
+			}
+			if _, exists := seenEnvironment[name]; exists {
+				return fmt.Errorf("%s.inherit_env contains duplicate variable %q", prefix, name)
+			}
+			seenEnvironment[name] = struct{}{}
+		}
 		if _, ok := service.Role.PortRange(); !ok {
 			return fmt.Errorf("%s.role %q is invalid", prefix, service.Role)
 		}
@@ -431,6 +445,16 @@ func safeServiceName(name string) bool {
 		return false
 	}
 	return true
+}
+
+func safeEnvironmentName(name string) bool {
+	for index, character := range name {
+		if character == '_' || (character >= 'A' && character <= 'Z') || (character >= 'a' && character <= 'z') || (index > 0 && character >= '0' && character <= '9') {
+			continue
+		}
+		return false
+	}
+	return name != ""
 }
 
 func containsControl(value string) bool {

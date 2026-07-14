@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
-	"strings"
 	"syscall"
 	"time"
 
@@ -25,7 +24,7 @@ func (manager Manager) launch(service config.Service) (processState, error) {
 	}
 
 	// #nosec G204 -- service commands are an explicit trusted-local-project boundary documented in SECURITY.md.
-	command := exec.Command("/bin/sh", "-lc", service.Command)
+	command := exec.Command("/bin/sh", "-c", service.Command)
 	command.Dir = manager.Root
 	command.Env = commandEnvironment(service)
 	command.Stdout = logFile
@@ -68,10 +67,20 @@ func (manager Manager) launch(service config.Service) (processState, error) {
 }
 
 func commandEnvironment(service config.Service) []string {
-	environment := make([]string, 0, len(os.Environ())+1)
-	for _, entry := range os.Environ() {
-		if !strings.HasPrefix(entry, "PORT=") {
-			environment = append(environment, entry)
+	baseline := []string{"HOME", "LANG", "LC_ALL", "LC_CTYPE", "LOGNAME", "PATH", "SHELL", "TERM", "TMPDIR", "USER"}
+	names := append(baseline, service.InheritEnv...)
+	environment := make([]string, 0, len(names)+1)
+	seen := make(map[string]struct{}, len(names))
+	for _, name := range names {
+		if name == "PORT" {
+			continue
+		}
+		if _, exists := seen[name]; exists {
+			continue
+		}
+		seen[name] = struct{}{}
+		if value, exists := os.LookupEnv(name); exists {
+			environment = append(environment, name+"="+value)
 		}
 	}
 	if service.Port > 0 {

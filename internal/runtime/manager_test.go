@@ -350,6 +350,7 @@ func fixtureService(port int, command string) config.Service {
 		Port:       port,
 		Host:       "127.0.0.1",
 		HealthPath: "/",
+		InheritEnv: []string{runtimeHelperEnvironment},
 	}
 }
 

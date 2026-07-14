@@ -42,12 +42,14 @@ command must stay in the foreground and represent one of these service types:
 - A process-only worker that stays alive without exposing an HTTP port, such as
   a queue consumer or file watcher.
 
-Each command runs from the project root through `/bin/sh`. HTTP services receive
-their configured port in the `PORT` environment variable, so commands can use
-`$PORT` directly or pass it to a framework-specific port option. Readiness and
-shutdown track different boundaries: readiness accepts a listener owned by the
-command or one of its descendants, while shutdown signals processes that remain
-in the process group created for the command.
+Each command runs from the project root through non-login `/bin/sh`. HTTP
+services receive their configured port in the `PORT` environment variable, so
+commands can use `$PORT` directly or pass it to a framework-specific port
+option. grat passes only a small non-secret environment baseline unless a
+service explicitly lists additional parent variables. Readiness and shutdown
+track different boundaries: readiness accepts a listener owned by the command
+or one of its descendants, while shutdown signals processes that remain in the
+process group created for the command.
 
 ## Installation
 
@@ -299,13 +301,18 @@ the named services. Laravel documents the long-running worker in its
 
 Every `services.command` value is an approved shell command. grat parses the
 surrounding `grat.config` as TOML data, then passes that command to
-`/bin/sh -lc` with the project root as its working directory.
+`/bin/sh -c` with the project root as its working directory. It does not start a
+login shell or source login profiles.
 
-For an HTTP service, grat replaces any existing `PORT` environment value with
-the configured port. The command must use that value or an equivalent explicit
-port argument and must stay in the foreground. A child process may own the
-listener while it remains a descendant of the managed command. Shutdown signals
-the process group created when that command started.
+Commands inherit only `HOME`, `LANG`, `LC_ALL`, `LC_CTYPE`, `LOGNAME`, `PATH`,
+`SHELL`, `TERM`, `TMPDIR`, and `USER` when those variables exist. A service can
+opt in to additional parent variables by listing their names in `inherit_env`.
+An absent variable remains absent, values are never stored in `grat.config`, and
+`PORT` cannot be listed because grat always owns it. For an HTTP service, grat
+sets `PORT` to the configured port. The command must use that value or an
+equivalent explicit port argument and must stay in the foreground. A child
+process may own the listener while it remains a descendant of the managed
+command. Shutdown signals the process group created when that command started.
 
 For a worker, grat checks the managed process identity and whether the process
 is alive. Workers use `port = 0` and have no `host` or `health_path` requirement.
@@ -338,6 +345,7 @@ role = "frontend"
 host = "127.0.0.1"
 port = 3000
 health_path = "/"
+inherit_env = ["API_TOKEN"]
 
 [[services]]
 name = "watcher"
@@ -369,6 +377,7 @@ port = 0
 | `host` | no | Health-check host for an HTTP service. The default is `localhost`. |
 | `port` | yes | Role-compatible HTTP port, or `0` for a worker. |
 | `health_path` | HTTP only | Absolute path beginning with `/`; omitted for a worker. |
+| `inherit_env` | no | Parent variable names to pass in addition to the safe baseline; `PORT` is reserved. |
 
 Two services in one configuration cannot share a port. Every non-worker port
 must fall inside the range assigned to its role.
