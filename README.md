@@ -77,7 +77,7 @@ gh attestation verify ./grat_VERSION_OS_ARCH \
 To build with Go, install Go 1.25.12 or newer and run:
 
 ```sh
-go install github.com/phranck/grat/cmd/grat@v1.1.5
+go install github.com/phranck/grat/cmd/grat@v1.1.6
 ```
 
 grat uses `/bin/sh` to run configured commands. On macOS it inspects listeners
@@ -327,9 +327,10 @@ command. Shutdown signals the process group created when that command started.
 For a worker, grat checks the managed process identity and whether the process
 is alive. Workers use `port = 0` and have no `host` or `health_path` requirement.
 
-Standard output and standard error are written to `.grat/log/<service>.log`.
-Each file retains the most recent 10 MiB. Use `grat logs <name>` to print it or
-`grat logs --follow <name>` to follow new output.
+Standard output and standard error are written directly to
+`.grat/log/<service>.log`, so the service keeps its log destination after the
+`grat` command exits. Use `grat logs <name>` to print it or `grat logs --follow
+<name>` to follow new output.
 
 ## Configuration reference
 
@@ -463,7 +464,7 @@ with status 130.
 
 ```text
 $ grat
-grat  v1.1.5
+grat  v1.1.6
 Usage
   grat [global options] <command> [arguments]
 

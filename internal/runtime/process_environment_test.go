@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -10,6 +11,8 @@ import (
 
 	"github.com/phranck/grat/internal/config"
 )
+
+const detachedLogHelperEnvironment = "GO_WANT_GRAT_DETACHED_LOG_HELPER"
 
 func TestLaunchDoesNotSourceLoginProfile(t *testing.T) {
 	home := t.TempDir()
@@ -55,6 +58,41 @@ func TestCommandEnvironmentExcludesUnapprovedParentVariables(t *testing.T) {
 	}
 	if !containsEnvironmentEntry(environment, "PORT=4000") || containsEnvironmentEntry(environment, "PORT=9999") {
 		t.Fatalf("commandEnvironment() did not enforce the managed PORT: %#v", environment)
+	}
+}
+
+func TestLaunchKeepsLogDestinationAvailableAfterManagerExit(t *testing.T) {
+	if os.Getenv(detachedLogHelperEnvironment) == "1" {
+		root := os.Getenv("GRAT_DETACHED_LOG_ROOT")
+		service := config.Service{Name: "worker", Command: "sleep 0.1; printf detached-log-output", Role: config.RoleWorker}
+		manager := Manager{Root: root, Config: fixtureConfig(service)}
+		if err := manager.Start(context.Background(), nil); err != nil {
+			t.Fatalf("Start() error = %v", err)
+		}
+		return
+	}
+
+	root := t.TempDir()
+	command := exec.Command(os.Args[0], "-test.run=^TestLaunchKeepsLogDestinationAvailableAfterManagerExit$")
+	command.Env = append(os.Environ(), detachedLogHelperEnvironment+"=1", "GRAT_DETACHED_LOG_ROOT="+root)
+	if output, err := command.CombinedOutput(); err != nil {
+		t.Fatalf("run detached manager helper: %v\n%s", err, output)
+	}
+
+	logPath := filepath.Join(root, ".grat", "log", "worker.log")
+	deadline := time.Now().Add(time.Second)
+	for {
+		data, err := os.ReadFile(logPath)
+		if err != nil {
+			t.Fatalf("read detached service log: %v", err)
+		}
+		if got := string(data); got == "detached-log-output" {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("detached service log = %q, want %q", data, "detached-log-output")
+		}
+		time.Sleep(10 * time.Millisecond)
 	}
 }
 

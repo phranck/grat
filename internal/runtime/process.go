@@ -18,7 +18,7 @@ func (manager Manager) launch(service config.Service) (processState, error) {
 		return processState{}, err
 	}
 
-	logFile, err := newBoundedLogWriter(manager.logPath(service.Name), maxServiceLogBytes)
+	logFile, err := newServiceLogFile(manager.logPath(service.Name))
 	if err != nil {
 		return processState{}, fmt.Errorf("open log for %s: %w", service.Name, err)
 	}
