@@ -1,11 +1,11 @@
 # Graph Report - .  (2026-07-15)
 
 ## Corpus Check
-- 11 files · ~46,815 words
+- 6 files · ~46,815 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 852 nodes · 1971 edges · 44 communities (34 shown, 10 thin omitted)
+- 852 nodes · 1972 edges · 47 communities (37 shown, 10 thin omitted)
 - Extraction: 89% EXTRACTED · 11% INFERRED · 0% AMBIGUOUS · INFERRED: 223 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
@@ -48,11 +48,14 @@
 - [[_COMMUNITY_Listener Lookup|Listener Lookup]]
 - [[_COMMUNITY_Linux Process Identity|Linux Process Identity]]
 - [[_COMMUNITY_Code Of Conduct|Code Of Conduct]]
+- [[_COMMUNITY_Darwin Process Identity|Darwin Process Identity]]
 - [[_COMMUNITY_Homebrew Tooling|Homebrew Tooling]]
 - [[_COMMUNITY_Release Build Script|Release Build Script]]
-- [[_COMMUNITY_Verification Tests|Verification Tests]]
 - [[_COMMUNITY_Help Contract Tests|Help Contract Tests]]
 - [[_COMMUNITY_Settings Store|Settings Store]]
+- [[_COMMUNITY_Community 44|Community 44]]
+- [[_COMMUNITY_Community 45|Community 45]]
+- [[_COMMUNITY_Community 46|Community 46]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `runWithEnvironment()` - 33 edges
@@ -81,137 +84,149 @@
 ## Import Cycles
 - None detected.
 
-## Communities (44 total, 10 thin omitted)
+## Communities (47 total, 10 thin omitted)
 
 ### Community 0 - "CLI Recovery"
 Cohesion: 0.06
-Nodes (85): assignReassignedPorts(), configuredRoots(), confirmRecovery(), copyReservations(), defaultEnvironment(), detectServices(), ensureValidRegistry(), executeLifecycle() (+77 more)
+Nodes (86): assignReassignedPorts(), configuredRoots(), confirmRecovery(), copyReservations(), defaultEnvironment(), detectServices(), ensureValidRegistry(), executeLifecycle() (+78 more)
 
 ### Community 1 - "Presentation Runtime"
-Cohesion: 0.08
-Nodes (48): CancelFunc, Cmd, Context, Reader, Style, Writer, Manager, Service (+40 more)
-
-### Community 2 - "Runtime Manager Tests"
 Cohesion: 0.07
 Nodes (51): Duration, Config, Listener, Manager, Service, T, T, Context (+43 more)
 
+### Community 2 - "Runtime Manager Tests"
+Cohesion: 0.10
+Nodes (33): CancelFunc, Cmd, Context, Reader, Style, Writer, lifecycleRow, Model (+25 more)
+
 ### Community 3 - "CLI Test Suite"
-Cohesion: 0.09
-Nodes (55): assertGloballyUniqueRolePorts(), cliHelperCommand(), containsArgument(), freeCLITCPPort(), loadPortFixtureConfig(), runWithConfiguredRoots(), TestCLIRuntimeHelper(), TestExitCodeMapsInterruptedOperationsTo130() (+47 more)
-
-### Community 4 - "Configuration Validation"
-Cohesion: 0.09
-Nodes (45): configDecodeError(), DefaultRuntime(), InferRole(), Load(), readConfigFile(), replaceFile(), rollbackWrites(), safeEnvironmentName() (+37 more)
-
-### Community 5 - "Maintenance System"
 Cohesion: 0.10
 Nodes (22): asset, installation, Client, Context, Service, Client, Context, Service (+14 more)
 
-### Community 6 - "CLI Values And Uninstall Tests"
+### Community 4 - "Configuration Validation"
 Cohesion: 0.11
-Nodes (41): repeatedValue, Service, Store, T, Context, Service, T, commandResponse (+33 more)
+Nodes (38): configDecodeError(), DefaultRuntime(), InferRole(), Load(), readConfigFile(), replaceFile(), rollbackWrites(), safeEnvironmentName() (+30 more)
 
-### Community 7 - "Terminal Presentation"
+### Community 5 - "Maintenance System"
 Cohesion: 0.14
 Nodes (14): ColorMode, formatProjectRows(), fprint(), fprintf(), fprintln(), pad(), ParseColorMode(), stepStyle() (+6 more)
 
-### Community 8 - "Port Registry"
+### Community 6 - "CLI Values And Uninstall Tests"
+Cohesion: 0.13
+Nodes (23): Context, Service, Reader, Result, Store, Writer, Context, T (+15 more)
+
+### Community 7 - "Terminal Presentation"
 Cohesion: 0.13
 Nodes (31): Config, T, fakeLookup, Listener, ListenerLookup, Problem, ProjectConfig, FirstFree() (+23 more)
 
-### Community 9 - "Presentation Tests"
+### Community 8 - "Port Registry"
 Cohesion: 0.15
 Nodes (33): T, DividerLine(), New(), columnOf(), displayColumn(), stripANSI(), TestHelpRendersBorderlessGroupsWithGloballyAlignedDescriptions(), TestLifecycleModelAlignsHeadersWithDataColumns() (+25 more)
 
-### Community 10 - "CLI Main And Runtime"
+### Community 9 - "Presentation Tests"
 Cohesion: 0.15
 Nodes (16): Client, main(), mustGetwd(), Config, Context, loadedState, processState, ProgressObserver (+8 more)
 
+### Community 10 - "CLI Main And Runtime"
+Cohesion: 0.16
+Nodes (31): assertGloballyUniqueRolePorts(), cliHelperCommand(), containsArgument(), freeCLITCPPort(), loadPortFixtureConfig(), runWithConfiguredRoots(), TestCLIRuntimeHelper(), TestExitCodeMapsInterruptedOperationsTo130() (+23 more)
+
 ### Community 11 - "CLI Log Tests"
+Cohesion: 0.16
+Nodes (25): repeatedValue, Context, Service, T, commandResponse, fakeCommands, commandKey(), digest() (+17 more)
+
+### Community 12 - "Uninstall Maintenance"
 Cohesion: 0.11
 Nodes (19): TestOutputLogStreamsBeforeInputReachesEOF(), notifyingWriter, File, T, Context, T, T, Mutex (+11 more)
 
-### Community 12 - "Uninstall Maintenance"
-Cohesion: 0.18
-Nodes (16): Context, Service, Reader, Result, Store, Writer, artifactScanLimits, installation (+8 more)
-
 ### Community 13 - "Help And Settings"
+Cohesion: 0.22
+Nodes (23): canonicalCLITestPath(), environmentForTest(), newCLITestStore(), sameStringSlices(), TestDirectoriesAddDoesNotPromptForInitialSetup(), TestDirectoriesCommandsPersistAndListConfiguredRoots(), TestFirstUseAcceptsExistingSitesDefault(), TestFirstUseFallsBackToWorkingDirectory() (+15 more)
+
+### Community 14 - "README Documentation"
 Cohesion: 0.21
 Nodes (9): TestHelpListsProjectLifecycleAndPortCommandsWithoutWorker(), T, Settings, canonicalExistingDirectory(), canonicalExistingPath(), Contains(), Store.Save, Settings Safety Tests (+1 more)
 
-### Community 14 - "README Documentation"
+### Community 15 - "Settings Tests"
 Cohesion: 0.13
 Nodes (23): README, Declarative grat.config Configuration, grat Documentation, Local Development Stack Orchestration, Installation-Aware Secure Update, Managed Process-Group Lifecycle, Minimized Command Environment, Legacy Process Recovery (+15 more)
 
-### Community 15 - "Settings Tests"
+### Community 16 - "Interactive Setup"
 Cohesion: 0.31
 Nodes (17): Store, T, canonicalPath(), equalStrings(), newTestStore(), TestContainsAcceptsRegularFileBelowRoot(), TestContainsRejectsPathsOutsideRootAndThroughSymlinks(), TestStoreAddCanonicalizesAndDeduplicatesDirectories() (+9 more)
 
-### Community 16 - "Interactive Setup"
+### Community 17 - "Runtime State Storage"
 Cohesion: 0.28
 Nodes (15): collectInitInterview(), parseServiceDefinition(), promptDefault(), promptRequired(), promptServiceName(), TestCollectInitInterviewAcceptsEditsAndAdditionalServices(), TestCollectInitInterviewAcceptsSuppliedProjectName(), TestCollectInitInterviewRequiresAtLeastOneService() (+7 more)
 
-### Community 17 - "Runtime State Storage"
+### Community 18 - "Recovery CLI Tests"
+Cohesion: 0.34
+Nodes (16): Service, Store, T, fakeUninstallService(), newUninstallStore(), TestDiscoverUninstallArtifactsRejectsScanLimitOverrun(), TestUninstallAbortsBeforePromptsForActiveManagedService(), TestUninstallDefaultYesRemovesOnlyRegisteredProjectArtifacts() (+8 more)
+
+### Community 19 - "Contributing Documentation"
+Cohesion: 0.34
+Nodes (15): Manager, Service, T, legacyProcessIdentity(), newLegacyRecoveryFixture(), stopFixtureGroup(), TestRecoverRejectsChangedNativeSnapshotIdentityWithoutSignaling(), TestRecoverRejectsReplacedSnapshotProcessWithoutSignaling() (+7 more)
+
+### Community 20 - "Darwin Ports And Help"
 Cohesion: 0.23
 Nodes (6): Manager, Service, loadedState, processState, RecoveryCandidate, Time
 
-### Community 18 - "Recovery CLI Tests"
+### Community 21 - "Linux Listener Inspection"
 Cohesion: 0.46
 Nodes (14): assertCLIRecoveryState(), assertRecoveryPreview(), cliProcessAlive(), legacyCLIStartIdentity(), recoveryEnvironment(), stopCLIRecoveryGroup(), TestRecoverDeclinedConfirmationLeavesLegacyProcessAndState(), TestRecoverInteractiveConfirmationStopsLegacyProcessAndRemovesState() (+6 more)
 
-### Community 19 - "Contributing Documentation"
+### Community 22 - "Runtime Progress"
 Cohesion: 0.15
 Nodes (13): Code of conduct, Configuration compatibility, Contributing to grat, Cross-Platform Compatibility, Development setup, Focused Pull Requests, Local Quality Gate, Pull requests (+5 more)
 
-### Community 20 - "Darwin Ports And Help"
+### Community 23 - "Unicode Text Safety"
 Cohesion: 0.25
 Nodes (7): Listener, Renderer, Style, systemListener(), Command, CommandGroup, helpUsageWidth()
 
-### Community 21 - "Linux Listener Inspection"
+### Community 24 - "Project Root Discovery"
 Cohesion: 0.25
 Nodes (8): Listener, T, systemListener(), linuxListeningSocketInodes(), linuxSocketOwnerPIDs(), socketInode(), TestLinuxListenerParsingFindsOnlyTCPListenInodesForTheRequestedPort(), TestLinuxSocketOwnersFindsPIDsFromProcFileDescriptors()
 
-### Community 22 - "Runtime Progress"
+### Community 25 - "Bottle Packaging Tests"
 Cohesion: 0.33
 Nodes (6): Manager, Service, ProgressEvent, ProgressObserver, ProgressObserverFunc, ProgressStage
 
-### Community 23 - "Unicode Text Safety"
+### Community 26 - "Bottle Packaging"
 Cohesion: 0.39
 Nodes (6): T, ContainsUnsafe(), Sanitize(), TestSanitizeReplacesEveryUnsafeRune(), TestUnsafeRuneRejectsControlsAndUnicodeFormatCharacters(), UnsafeRune()
 
-### Community 24 - "Project Root Discovery"
+### Community 27 - "Bottle Verification"
 Cohesion: 0.47
 Nodes (4): T, FindRoot(), TestFindRootReturnsNotFoundOutsideProject(), TestFindRootUsesNearestConfig()
 
-### Community 25 - "Bottle Packaging Tests"
+### Community 28 - "Project Agent Rules"
 Cohesion: 0.60
 Nodes (5): assert_archive_contains(), assert_binary(), assert_file(), assert_mode(), test-homebrew-bottles.sh script
 
-### Community 26 - "Bottle Packaging"
+### Community 29 - "CLI Test Utilities"
 Cohesion: 0.70
 Nodes (4): package(), usage(), write_formula(), build-homebrew-bottles.sh script
 
-### Community 27 - "Bottle Verification"
+### Community 30 - "Linux Identity Tests"
 Cohesion: 0.60
 Nodes (3): usage(), verify_bottle(), verify-homebrew-bottles.sh script
 
-### Community 28 - "Project Agent Rules"
+### Community 31 - "README Contract Script"
 Cohesion: 0.67
 Nodes (3): Graphify Before Push, Project Agent Rules, Versioned Graphify Artifacts
 
-### Community 29 - "CLI Test Utilities"
+### Community 32 - "Support Documentation"
 Cohesion: 0.67
 Nodes (3): TestListenerOwnerLabelHandlesUnknownPID(), TestLogFollowUsesTrustedExecutable(), T
 
-### Community 30 - "Linux Identity Tests"
+### Community 33 - "Darwin Listener Tests"
 Cohesion: 0.67
 Nodes (3): T, TestLinuxProcessStartTicksHandlesClosingParenthesisInCommand(), TestLinuxProcessStartTicksRejectsMismatchedPID()
 
-### Community 31 - "README Contract Script"
+### Community 34 - "Readiness Tests"
 Cohesion: 0.83
 Nodes (3): require(), require_in(), check-readme.sh script
 
-### Community 32 - "Support Documentation"
+### Community 35 - "Listener Lookup"
 Cohesion: 0.50
 Nodes (3): Diagnostic Support Request, Sensitive Data Redaction, Support
 
@@ -223,10 +238,12 @@ Nodes (3): Diagnostic Support Request, Sensitive Data Redaction, Support
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `legacyProcessIdentity()` connect `Presentation Runtime` to `Runtime Manager Tests`, `CLI Values And Uninstall Tests`?**
+- **Why does `legacyProcessIdentity()` connect `Contributing Documentation` to `Presentation Runtime`, `CLI Log Tests`?**
   _High betweenness centrality (0.184) - this node is a cross-community bridge._
-- **Why does `New()` connect `Presentation Tests` to `CLI Recovery`, `CLI Test Suite`, `Maintenance System`, `CLI Values And Uninstall Tests`, `Terminal Presentation`, `Uninstall Maintenance`?**
+- **Why does `New()` connect `Port Registry` to `CLI Recovery`, `CLI Test Suite`, `Maintenance System`, `CLI Values And Uninstall Tests`, `CLI Main And Runtime`, `CLI Log Tests`, `Help And Settings`, `Recovery CLI Tests`?**
   _High betweenness centrality (0.179) - this node is a cross-community bridge._
+- **Why does `newLegacyRecoveryFixture()` connect `Contributing Documentation` to `Runtime Manager Tests`?**
+  _High betweenness centrality (0.131) - this node is a cross-community bridge._
 - **Are the 16 inferred relationships involving `runWithEnvironment()` (e.g. with `New()` and `Current()`) actually correct?**
   _`runWithEnvironment()` has 16 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 27 inferred relationships involving `New()` (e.g. with `configuredRoots()` and `runDirectories()`) actually correct?**
@@ -234,6 +251,4 @@ _Questions this graph is uniquely positioned to answer:_
 - **What connects `T`, `T`, `Listener` to the rest of the system?**
   _82 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `CLI Recovery` be split into smaller, more focused modules?**
-  _Cohesion score 0.05898876404494382 - nodes in this community are weakly interconnected._
-- **Should `Presentation Runtime` be split into smaller, more focused modules?**
-  _Cohesion score 0.07550482879719052 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05792759051186017 - nodes in this community are weakly interconnected._

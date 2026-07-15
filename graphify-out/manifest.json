@@ -285,9 +285,9 @@
     "semantic_hash": "29e5cd8167444d646c06d631e6bf8b10"
   },
   "/Users/phranck/Developer/tools/cli/grat/internal/cli/cli_test.go": {
-    "mtime": 1784058356.1660287,
-    "ast_hash": "9802e4602276ca7ef848a4dcf9e34347",
-    "semantic_hash": "9802e4602276ca7ef848a4dcf9e34347"
+    "mtime": 1784076664.5718682,
+    "ast_hash": "dcdd0efa53fe8322c2e0947fae1c294a",
+    "semantic_hash": "dcdd0efa53fe8322c2e0947fae1c294a"
   },
   "/Users/phranck/Developer/tools/cli/grat/internal/cli/directories_test.go": {
     "mtime": 1784055016.181908,
@@ -490,14 +490,14 @@
     "semantic_hash": "866b0bbde6cda06ecdb51d20f4cfa772"
   },
   "/Users/phranck/Developer/tools/cli/grat/internal/version/version.go": {
-    "mtime": 1784058376.3989456,
-    "ast_hash": "19a233548987b9989692289b40c94f3a",
-    "semantic_hash": "19a233548987b9989692289b40c94f3a"
+    "mtime": 1784076664.5715292,
+    "ast_hash": "fbc1d8d5b5e26d59664e01f9688f1bbf",
+    "semantic_hash": "fbc1d8d5b5e26d59664e01f9688f1bbf"
   },
   "/Users/phranck/Developer/tools/cli/grat/internal/version/version_test.go": {
-    "mtime": 1784058356.1657746,
-    "ast_hash": "43f8283c49e0541634b4a9098f43cc61",
-    "semantic_hash": "43f8283c49e0541634b4a9098f43cc61"
+    "mtime": 1784076664.5716758,
+    "ast_hash": "7ac7c31bd3177a1af9c02610316a17bd",
+    "semantic_hash": "7ac7c31bd3177a1af9c02610316a17bd"
   },
   "/Users/phranck/Developer/tools/cli/grat/scripts/build-homebrew-bottles.sh": {
     "mtime": 1784043325.0043364,
@@ -505,14 +505,14 @@
     "semantic_hash": "92ba956a2ebfdf0a050b4258a055c166"
   },
   "/Users/phranck/Developer/tools/cli/grat/scripts/build-release.sh": {
-    "mtime": 1784058376.39918,
-    "ast_hash": "c442401464d508b5d192ae6644744293",
-    "semantic_hash": "c442401464d508b5d192ae6644744293"
+    "mtime": 1784076664.571366,
+    "ast_hash": "ed27b69367c9528ba24c43b540fe8858",
+    "semantic_hash": "ed27b69367c9528ba24c43b540fe8858"
   },
   "/Users/phranck/Developer/tools/cli/grat/scripts/check-readme.sh": {
-    "mtime": 1784076145.9743671,
-    "ast_hash": "f5655fa445f5b79475bb0d7aed66f1c9",
-    "semantic_hash": "f5655fa445f5b79475bb0d7aed66f1c9"
+    "mtime": 1784076664.5711772,
+    "ast_hash": "b6806f7e9f45a8967fb83b09db5b71d8",
+    "semantic_hash": "b6806f7e9f45a8967fb83b09db5b71d8"
   },
   "/Users/phranck/Developer/tools/cli/grat/scripts/test-homebrew-bottles.sh": {
     "mtime": 1784043316.0488782,
@@ -545,9 +545,9 @@
     "semantic_hash": "4792061478c0da4eb51929a65d162fde"
   },
   "/Users/phranck/Developer/tools/cli/grat/README.md": {
-    "mtime": 1784076145.9726055,
-    "ast_hash": "1fb825d0abad9a385964ab94bec80d8f",
-    "semantic_hash": "1fb825d0abad9a385964ab94bec80d8f"
+    "mtime": 1784076664.5709653,
+    "ast_hash": "f6003e932f10b4ceeb324546b99ba265",
+    "semantic_hash": "f6003e932f10b4ceeb324546b99ba265"
   },
   "/Users/phranck/Developer/tools/cli/grat/SECURITY.md": {
     "mtime": 1784056304.5567927,
