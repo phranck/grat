@@ -72,7 +72,7 @@ func runWithEnvironment(ctx context.Context, args []string, cwd string, out io.W
 		errors.Error(err)
 		return 2
 	}
-	if len(args) == 0 || isHelp(args[0]) {
+	if len(args) == 0 || isHelp(args[0]) || hasHelpFlag(args[1:]) {
 		printUsage(output)
 		return 0
 	}
@@ -1181,6 +1181,15 @@ func fileExists(path string) bool {
 
 func isHelp(argument string) bool {
 	return argument == "help" || argument == "-h" || argument == "--help"
+}
+
+func hasHelpFlag(arguments []string) bool {
+	for _, argument := range arguments {
+		if argument == "-h" || argument == "--help" {
+			return true
+		}
+	}
+	return false
 }
 
 type globalOptions struct {

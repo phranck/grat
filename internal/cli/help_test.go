@@ -42,3 +42,58 @@ func TestHelpListsProjectLifecycleAndPortCommandsWithoutWorker(t *testing.T) {
 		t.Fatalf("help still advertises migration support:\n%s", output.String())
 	}
 }
+
+func TestSubcommandHelpReturnsUsageBeforeExecutingCommands(t *testing.T) {
+	for _, arguments := range [][]string{
+		{"init", "--help"},
+		{"start", "--help"},
+		{"stop", "--help"},
+		{"restart", "--help"},
+		{"recover", "--help"},
+		{"status", "--help"},
+		{"logs", "--help"},
+		{"ports", "--help"},
+		{"ports", "audit", "--help"},
+		{"directories", "--help"},
+		{"directories", "add", "--help"},
+		{"dir", "--help"},
+		{"update", "--help"},
+		{"uninstall", "--help"},
+	} {
+		t.Run(strings.Join(arguments, " "), func(t *testing.T) {
+			store, cwd := newCLITestStore(t)
+			update := &fakeUpdateService{}
+			uninstaller := &fakeUninstallService{}
+			environment := environmentForTest(store)
+			environment.maintenance = update
+			environment.uninstaller = uninstaller
+			var stdout bytes.Buffer
+			var stderr bytes.Buffer
+
+			code := runWithEnvironment(context.Background(), arguments, cwd, &stdout, &stderr, environment)
+
+			if code != 0 {
+				t.Fatalf("Run(%v) = (%d, %q), want usage success", arguments, code, stderr.String())
+			}
+			if stderr.Len() != 0 {
+				t.Fatalf("Run(%v) stderr = %q, want empty", arguments, stderr.String())
+			}
+			if !strings.Contains(stdout.String(), "Global options") {
+				t.Fatalf("Run(%v) output does not contain usage:\n%s", arguments, stdout.String())
+			}
+			if update.called {
+				t.Fatalf("Run(%v) called update service", arguments)
+			}
+			if uninstaller.called {
+				t.Fatalf("Run(%v) called uninstall service", arguments)
+			}
+			_, exists, err := store.Load()
+			if err != nil {
+				t.Fatalf("Load() error = %v", err)
+			}
+			if exists {
+				t.Fatalf("Run(%v) created settings", arguments)
+			}
+		})
+	}
+}
