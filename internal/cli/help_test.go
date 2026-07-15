@@ -26,6 +26,7 @@ func TestHelpListsProjectLifecycleAndPortCommandsWithoutWorker(t *testing.T) {
 		"update",
 		"uninstall",
 		"restart [name...]",
+		"recover [--yes] [name...]",
 		"Stop, start, and verify selected services",
 		"ports reassign",
 		"Stop managed services and globally reassign ports",

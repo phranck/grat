@@ -66,6 +66,15 @@ for text in \
 	'process-group ID' \
 	'`SIGTERM`' \
 	'`SIGKILL`' \
+	'grat recover [--yes] [name...]' \
+	'Preview and recover legacy managed processes' \
+	'Interactive recovery previews each legacy candidate before confirmation.' \
+	'Every non-interactive recovery requires `--yes`.' \
+	'Recovery never starts services.' \
+	'Recovery validates the recorded legacy start time and process group before a signal.' \
+	'Recovery binds a current strong identity before sending a signal.' \
+	'Any identity or process-group mismatch sends no signal.' \
+	'Normal `stop` and `restart` remain fail-closed for a legacy process identity.' \
 	'Ctrl+C' \
 	'ports reassign' \
 	'grat directories add PATH' \

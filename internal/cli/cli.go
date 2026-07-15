@@ -94,6 +94,12 @@ func runWithEnvironment(ctx context.Context, args []string, cwd string, out io.W
 		if _, err = configuredRoots(cwd, environment, output); err == nil {
 			err = runLifecycle(ctx, args[0], args[1:], cwd, environment.operationLock, output)
 		}
+	case "recover":
+		if _, err = configuredRoots(cwd, environment, output); err == nil {
+			err = environment.operationLock(ctx, func() error {
+				return runRecover(ctx, args[1:], cwd, environment, output)
+			})
+		}
 	case "status":
 		if _, err = configuredRoots(cwd, environment, output); err == nil {
 			err = runStatus(ctx, cwd, output)
@@ -370,6 +376,79 @@ func runLifecycle(ctx context.Context, command string, names []string, cwd strin
 	return lock(ctx, func() error {
 		return runLifecycleLocked(ctx, command, names, cwd, output)
 	})
+}
+
+func runRecover(ctx context.Context, args []string, cwd string, environment environment, output presentation.Renderer) error {
+	flags := flag.NewFlagSet("recover", flag.ContinueOnError)
+	flags.SetOutput(io.Discard)
+	yes := flags.Bool("yes", false, "confirm legacy process recovery")
+	if err := flags.Parse(args); err != nil {
+		return err
+	}
+
+	manager, err := loadManager(cwd)
+	if err != nil {
+		return err
+	}
+	candidates, err := manager.RecoveryCandidates(flags.Args())
+	if err != nil {
+		return err
+	}
+	renderRecoveryPreview(output, manager.Config.Project.Name, candidates)
+	if !*yes && !environment.interactive {
+		return errors.New("recover requires interactive confirmation or --yes")
+	}
+	if hasLiveRecoveryCandidate(candidates) && !*yes {
+		confirmed, err := confirmRecovery(environment.input, output.Writer())
+		if err != nil {
+			return err
+		}
+		if !confirmed {
+			return errors.New("legacy process recovery canceled")
+		}
+	}
+	manager.Observer = lifecycleProgressRenderer{output: output}
+	if err := manager.Recover(ctx, candidates); err != nil {
+		return err
+	}
+	return renderStatus(ctx, manager, output)
+}
+
+func renderRecoveryPreview(output presentation.Renderer, projectName string, candidates []gratruntime.RecoveryCandidate) {
+	output.Heading("Recovering legacy processes", projectName)
+	rows := make([][]string, 0, len(candidates))
+	for _, candidate := range candidates {
+		rows = append(rows, []string{
+			candidate.Service.Name,
+			fmt.Sprint(candidate.PID),
+			fmt.Sprint(candidate.ProcessGroup),
+			candidate.Command,
+		})
+	}
+	output.Table([]string{"SERVICE", "PID", "PROCESS GROUP", "COMMAND"}, rows)
+}
+
+func hasLiveRecoveryCandidate(candidates []gratruntime.RecoveryCandidate) bool {
+	for _, candidate := range candidates {
+		if candidate.Live {
+			return true
+		}
+	}
+	return false
+}
+
+func confirmRecovery(input io.Reader, output io.Writer) (bool, error) {
+	fmt.Fprint(output, "Recover live legacy processes? [y/N]: ")
+	answer, err := readPromptLine(input)
+	if err != nil {
+		return false, fmt.Errorf("read recovery confirmation: %w", err)
+	}
+	switch strings.ToLower(strings.TrimSpace(answer)) {
+	case "y", "yes":
+		return true, nil
+	default:
+		return false, nil
+	}
 }
 
 func runLifecycleLocked(ctx context.Context, command string, names []string, cwd string, output presentation.Renderer) error {
@@ -1159,6 +1238,7 @@ func helpCommandGroups() []presentation.CommandGroup {
 				{Usage: "start [name...]", Description: "Start services and wait for configured readiness"},
 				{Usage: "stop [name...]", Description: "Gracefully stop managed service processes"},
 				{Usage: "restart [name...]", Description: "Stop, start, and verify selected services"},
+				{Usage: "recover [--yes] [name...]", Description: "Preview and recover legacy managed processes"},
 				{Usage: "status", Description: "Show managed process and health status"},
 				{Usage: "logs [--follow] NAME", Description: "Print or follow a service log"},
 			},

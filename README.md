@@ -474,6 +474,7 @@ Service lifecycle
   start [name...]          Start services and wait for configured readiness
   stop [name...]           Gracefully stop managed service processes
   restart [name...]        Stop, start, and verify selected services
+  recover [--yes] [name...] Preview and recover legacy managed processes
   status                   Show managed process and health status
   logs [--follow] NAME     Print or follow a service log
 
@@ -553,6 +554,16 @@ An interrupted start also cleans up the services started by that operation.
 If a service is unhealthy, use `grat status` for the readiness reason and
 `grat logs <name>` for its output. Correct the command, host, port, or health
 path, then run `grat restart <name>`.
+
+If `grat status` reports a legacy process identity after upgrading grat, use
+`grat recover [--yes] [name...]`.
+Interactive recovery previews each legacy candidate before confirmation.
+Every non-interactive recovery requires `--yes`.
+Recovery never starts services.
+Recovery validates the recorded legacy start time and process group before a signal.
+Recovery binds a current strong identity before sending a signal.
+Any identity or process-group mismatch sends no signal.
+Normal `stop` and `restart` remain fail-closed for a legacy process identity.
 
 ## Contributing and support
 

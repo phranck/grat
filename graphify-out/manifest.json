@@ -280,9 +280,9 @@
     "semantic_hash": "673006d2cd97eef4e99add191b206fb5"
   },
   "/Users/phranck/Developer/tools/cli/grat/internal/cli/cli.go": {
-    "mtime": 1784055069.2990172,
-    "ast_hash": "cf3519596c73cec1d757ef4488689adf",
-    "semantic_hash": "cf3519596c73cec1d757ef4488689adf"
+    "mtime": 1784076145.9728246,
+    "ast_hash": "29e5cd8167444d646c06d631e6bf8b10",
+    "semantic_hash": "29e5cd8167444d646c06d631e6bf8b10"
   },
   "/Users/phranck/Developer/tools/cli/grat/internal/cli/cli_test.go": {
     "mtime": 1784058356.1660287,
@@ -295,9 +295,9 @@
     "semantic_hash": "d90ea282d569dd920e52aa83b6d92f18"
   },
   "/Users/phranck/Developer/tools/cli/grat/internal/cli/help_test.go": {
-    "mtime": 1784032038.096891,
-    "ast_hash": "1ac4d1d51b90b3d9fad8480c3d3d6f07",
-    "semantic_hash": "1ac4d1d51b90b3d9fad8480c3d3d6f07"
+    "mtime": 1784076145.9729557,
+    "ast_hash": "904d27fdac3483531123130b3f40affd",
+    "semantic_hash": "904d27fdac3483531123130b3f40affd"
   },
   "/Users/phranck/Developer/tools/cli/grat/internal/cli/helpers_test.go": {
     "mtime": 1783987544.6912138,
@@ -445,9 +445,9 @@
     "semantic_hash": "ae47b4d8c372c576e142977f1ec871c2"
   },
   "/Users/phranck/Developer/tools/cli/grat/internal/runtime/manager.go": {
-    "mtime": 1783987544.6973023,
-    "ast_hash": "59c266e2cb8ec4d5e7679eb6645c4674",
-    "semantic_hash": "59c266e2cb8ec4d5e7679eb6645c4674"
+    "mtime": 1784076145.973386,
+    "ast_hash": "c21983ae108d4476af0fcb2f6f30504d",
+    "semantic_hash": "c21983ae108d4476af0fcb2f6f30504d"
   },
   "/Users/phranck/Developer/tools/cli/grat/internal/runtime/manager_test.go": {
     "mtime": 1784055618.445571,
@@ -455,9 +455,9 @@
     "semantic_hash": "d413f6baa15e9a48a323c493e247e2d2"
   },
   "/Users/phranck/Developer/tools/cli/grat/internal/runtime/process.go": {
-    "mtime": 1784055631.7578063,
-    "ast_hash": "77f86dda00775e1be8d9004a80457dd6",
-    "semantic_hash": "77f86dda00775e1be8d9004a80457dd6"
+    "mtime": 1784076145.9735298,
+    "ast_hash": "c27d3180fa67e4dc02bddcb767b93958",
+    "semantic_hash": "c27d3180fa67e4dc02bddcb767b93958"
   },
   "/Users/phranck/Developer/tools/cli/grat/internal/runtime/progress.go": {
     "mtime": 1783987544.6982489,
@@ -475,9 +475,9 @@
     "semantic_hash": "092faebb02a46d117f3a897533060025"
   },
   "/Users/phranck/Developer/tools/cli/grat/internal/runtime/state.go": {
-    "mtime": 1784055425.474941,
-    "ast_hash": "b16a0fe2a523933562335e6f278b43d0",
-    "semantic_hash": "b16a0fe2a523933562335e6f278b43d0"
+    "mtime": 1784076145.974206,
+    "ast_hash": "4a2f6f385dd920fcc0b97a3e078551bc",
+    "semantic_hash": "4a2f6f385dd920fcc0b97a3e078551bc"
   },
   "/Users/phranck/Developer/tools/cli/grat/internal/settings/settings.go": {
     "mtime": 1784031972.2389195,
@@ -510,9 +510,9 @@
     "semantic_hash": "c442401464d508b5d192ae6644744293"
   },
   "/Users/phranck/Developer/tools/cli/grat/scripts/check-readme.sh": {
-    "mtime": 1784058376.3996015,
-    "ast_hash": "78a49ef5fc7746295fd6ba67a7ce342f",
-    "semantic_hash": "78a49ef5fc7746295fd6ba67a7ce342f"
+    "mtime": 1784076145.9743671,
+    "ast_hash": "f5655fa445f5b79475bb0d7aed66f1c9",
+    "semantic_hash": "f5655fa445f5b79475bb0d7aed66f1c9"
   },
   "/Users/phranck/Developer/tools/cli/grat/scripts/test-homebrew-bottles.sh": {
     "mtime": 1784043316.0488782,
@@ -545,9 +545,9 @@
     "semantic_hash": "4792061478c0da4eb51929a65d162fde"
   },
   "/Users/phranck/Developer/tools/cli/grat/README.md": {
-    "mtime": 1784058376.3994315,
-    "ast_hash": "4c45e36e6e24b201b118545079d6c1db",
-    "semantic_hash": "4c45e36e6e24b201b118545079d6c1db"
+    "mtime": 1784076145.9726055,
+    "ast_hash": "1fb825d0abad9a385964ab94bec80d8f",
+    "semantic_hash": "1fb825d0abad9a385964ab94bec80d8f"
   },
   "/Users/phranck/Developer/tools/cli/grat/SECURITY.md": {
     "mtime": 1784056304.5567927,
@@ -600,9 +600,9 @@
     "semantic_hash": "2ecaf937e779b355ef22b0b60ed7e67d"
   },
   "/Users/phranck/Developer/tools/cli/grat/internal/runtime/process_identity_test.go": {
-    "mtime": 1784055446.793642,
-    "ast_hash": "879b1e77eee9b0ef607f44786a7cc727",
-    "semantic_hash": "879b1e77eee9b0ef607f44786a7cc727"
+    "mtime": 1784076145.9739118,
+    "ast_hash": "384c896b95a540ef14417c175cd69889",
+    "semantic_hash": "384c896b95a540ef14417c175cd69889"
   },
   "/Users/phranck/Developer/tools/cli/grat/internal/textsafe/textsafe.go": {
     "mtime": 1784056854.485826,
@@ -613,5 +613,20 @@
     "mtime": 1784056819.0449805,
     "ast_hash": "c6545f315b446aafd155b2fd846b0608",
     "semantic_hash": "c6545f315b446aafd155b2fd846b0608"
+  },
+  "/Users/phranck/Developer/tools/cli/grat/internal/cli/recovery_test.go": {
+    "mtime": 1784076145.9730668,
+    "ast_hash": "38c448994467257d327444b3e46f3ac5",
+    "semantic_hash": "38c448994467257d327444b3e46f3ac5"
+  },
+  "/Users/phranck/Developer/tools/cli/grat/internal/runtime/process_identity_legacy.go": {
+    "mtime": 1784076145.9736164,
+    "ast_hash": "2f3c7d74c336b9a0cfeeee324bdac007",
+    "semantic_hash": "2f3c7d74c336b9a0cfeeee324bdac007"
+  },
+  "/Users/phranck/Developer/tools/cli/grat/internal/runtime/recovery_test.go": {
+    "mtime": 1784076145.97406,
+    "ast_hash": "ee55267e23f040264b04e0842a066d64",
+    "semantic_hash": "ee55267e23f040264b04e0842a066d64"
   }
 }

@@ -28,6 +28,37 @@ func TestValidateManagedStateRejectsLegacyCoarseIdentity(t *testing.T) {
 	}
 }
 
+func TestValidateLegacyManagedStateAcceptsDetachedLegacyProcess(t *testing.T) {
+	command := exec.Command("sleep", "30")
+	command.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	if err := command.Start(); err != nil {
+		t.Fatalf("start isolated process: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = syscall.Kill(-command.Process.Pid, syscall.SIGKILL)
+		_ = command.Wait()
+	})
+
+	identity, err := legacyProcessIdentity(command.Process.Pid)
+	if err != nil {
+		t.Fatalf("legacyProcessIdentity(%d) error = %v", command.Process.Pid, err)
+	}
+	groupID, err := processGroup(command.Process.Pid)
+	if err != nil {
+		t.Fatalf("processGroup() error = %v", err)
+	}
+	state := processState{
+		Version:       legacyProcessStateVersion,
+		PID:           command.Process.Pid,
+		ProcessGroup:  groupID,
+		StartIdentity: identity,
+	}
+
+	if err := validateLegacyManagedState(state); err != nil {
+		t.Fatalf("validateLegacyManagedState() error = %v", err)
+	}
+}
+
 func TestProcessIdentitySeparatesRapidProcessStarts(t *testing.T) {
 	commands := make([]*exec.Cmd, 0, 3)
 	t.Cleanup(func() {

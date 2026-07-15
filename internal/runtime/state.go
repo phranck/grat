@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/phranck/grat/internal/config"
 )
 
 const (
@@ -27,6 +29,18 @@ type processState struct {
 }
 
 type loadedState struct{ State processState }
+
+// RecoveryCandidate is a legacy process state that can be reviewed before
+// explicit recovery. Live candidates have passed the V1 identity validation.
+type RecoveryCandidate struct {
+	Service               config.Service
+	PID                   int
+	ProcessGroup          int
+	Command               string
+	Live                  bool
+	legacyStartIdentity   string
+	nativeProcessIdentity string
+}
 
 func (manager Manager) serviceStateDirectory() string {
 	return filepath.Join(manager.Root, ".grat")

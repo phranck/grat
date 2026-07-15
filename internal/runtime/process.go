@@ -145,6 +145,27 @@ func validateManagedState(state processState) error {
 	return nil
 }
 
+func validateLegacyManagedState(state processState) error {
+	if state.Version != legacyProcessStateVersion {
+		return fmt.Errorf("managed PID %d does not use a recoverable legacy identity", state.PID)
+	}
+	identity, err := legacyProcessIdentity(state.PID)
+	if err != nil {
+		return err
+	}
+	if identity != state.StartIdentity {
+		return fmt.Errorf("managed PID %d no longer has its recorded legacy identity", state.PID)
+	}
+	groupID, err := processGroup(state.PID)
+	if err != nil {
+		return err
+	}
+	if groupID != state.ProcessGroup || groupID != state.PID {
+		return fmt.Errorf("managed PID %d no longer owns its recorded process group", state.PID)
+	}
+	return nil
+}
+
 func signalManagedGroup(state processState, signal syscall.Signal) error {
 	if err := validateManagedState(state); err != nil {
 		return err

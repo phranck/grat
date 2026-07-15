@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"path/filepath"
+	"reflect"
 	"time"
 
 	"github.com/phranck/grat/internal/config"
@@ -52,6 +53,166 @@ func (manager Manager) Services(names []string) ([]config.Service, error) {
 		return nil, err
 	}
 	return manager.selectServices(names)
+}
+
+// RecoveryCandidates reports recorded V1 service states that are eligible for
+// explicit recovery. It never changes a state file or signals a process.
+func (manager Manager) RecoveryCandidates(names []string) ([]RecoveryCandidate, error) {
+	manager, err := manager.normalized()
+	if err != nil {
+		return nil, err
+	}
+	services, err := manager.selectServices(names)
+	if err != nil {
+		return nil, err
+	}
+
+	candidates := make([]RecoveryCandidate, 0, len(services))
+	for _, service := range services {
+		state, exists, err := manager.readState(service.Name)
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
+			continue
+		}
+		live := processAlive(state.State.PID)
+		nativeIdentity := ""
+		if live {
+			if err := validateLegacyManagedState(state.State); err != nil {
+				return nil, err
+			}
+			nativeIdentity, err = processIdentity(state.State.PID)
+			if err != nil {
+				return nil, err
+			}
+		} else if state.State.Version != legacyProcessStateVersion {
+			continue
+		}
+		candidates = append(candidates, RecoveryCandidate{
+			Service:               service,
+			PID:                   state.State.PID,
+			ProcessGroup:          state.State.ProcessGroup,
+			Command:               state.State.Command,
+			Live:                  live,
+			legacyStartIdentity:   state.State.StartIdentity,
+			nativeProcessIdentity: nativeIdentity,
+		})
+	}
+	return candidates, nil
+}
+
+// Recover explicitly adopts only the confirmed V1 candidate snapshot long
+// enough to stop its isolated process groups. It leaves regular lifecycle
+// methods fail-closed.
+func (manager Manager) Recover(ctx context.Context, candidates []RecoveryCandidate) error {
+	manager, err := manager.normalized()
+	if err != nil {
+		return err
+	}
+	if err := manager.validateRecoverySnapshot(candidates); err != nil {
+		return err
+	}
+
+	for index, candidate := range candidates {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		manager.report(candidate.Service, ProgressInspecting, "revalidating confirmed recovery snapshot")
+		if err := manager.validateRecoverySnapshot(candidates[index:]); err != nil {
+			return err
+		}
+		state, err := manager.recoverySnapshotState(candidate)
+		if err != nil {
+			return err
+		}
+		if candidate.Live {
+			if err := validateRecoveryCandidate(candidate, state.State); err != nil {
+				return err
+			}
+		}
+		if !candidate.Live {
+			if err := manager.removeState(candidate.Service.Name); err != nil {
+				return err
+			}
+			continue
+		}
+
+		state.State.Version = processStateVersion
+		state.State.StartIdentity = candidate.nativeProcessIdentity
+		if err := manager.writeState(candidate.Service.Name, state.State); err != nil {
+			return err
+		}
+		if err := manager.stopState(ctx, state); err != nil {
+			return err
+		}
+		if err := manager.removeState(candidate.Service.Name); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (manager Manager) validateRecoverySnapshot(candidates []RecoveryCandidate) error {
+	seenServices := make(map[string]struct{}, len(candidates))
+	for _, candidate := range candidates {
+		if _, exists := seenServices[candidate.Service.Name]; exists {
+			return fmt.Errorf("recovery snapshot contains duplicate service %q", candidate.Service.Name)
+		}
+		seenServices[candidate.Service.Name] = struct{}{}
+
+		state, err := manager.recoverySnapshotState(candidate)
+		if err != nil {
+			return err
+		}
+		if candidate.Live {
+			if err := validateRecoveryCandidate(candidate, state.State); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (manager Manager) recoverySnapshotState(candidate RecoveryCandidate) (loadedState, error) {
+	services, err := manager.selectServices([]string{candidate.Service.Name})
+	if err != nil {
+		return loadedState{}, err
+	}
+	if !reflect.DeepEqual(candidate.Service, services[0]) {
+		return loadedState{}, fmt.Errorf("recovery snapshot service %q no longer matches the configured service", candidate.Service.Name)
+	}
+	state, exists, err := manager.readState(candidate.Service.Name)
+	if err != nil {
+		return loadedState{}, err
+	}
+	if !exists {
+		return loadedState{}, fmt.Errorf("managed state for %s disappeared after recovery confirmation", candidate.Service.Name)
+	}
+	live := processAlive(state.State.PID)
+	if state.State.Version != legacyProcessStateVersion ||
+		state.State.PID != candidate.PID ||
+		state.State.ProcessGroup != candidate.ProcessGroup ||
+		state.State.Command != candidate.Command ||
+		state.State.StartIdentity != candidate.legacyStartIdentity ||
+		live != candidate.Live {
+		return loadedState{}, fmt.Errorf("managed state for %s changed after recovery confirmation", candidate.Service.Name)
+	}
+	return state, nil
+}
+
+func validateRecoveryCandidate(candidate RecoveryCandidate, state processState) error {
+	if err := validateLegacyManagedState(state); err != nil {
+		return err
+	}
+	identity, err := processIdentity(state.PID)
+	if err != nil {
+		return err
+	}
+	if identity != candidate.nativeProcessIdentity {
+		return fmt.Errorf("managed PID %d no longer has its confirmed native identity", state.PID)
+	}
+	return nil
 }
 
 // Start launches selected services and waits until each reaches its configured
