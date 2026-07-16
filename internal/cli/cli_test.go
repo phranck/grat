@@ -36,8 +36,8 @@ func TestVersionCommandsRenderTheToolVersion(t *testing.T) {
 		if code != 0 || stderr.Len() != 0 {
 			t.Fatalf("Run(%v) = (%d, %q), want successful version output", arguments, code, stderr.String())
 		}
-		if !strings.Contains(stdout.String(), "v1.1.7") {
-			t.Fatalf("Run(%v) output = %q, want v1.1.7", arguments, stdout.String())
+		if !strings.Contains(stdout.String(), "v1.2.0") {
+			t.Fatalf("Run(%v) output = %q, want v1.2.0", arguments, stdout.String())
 		}
 	}
 }

@@ -48,7 +48,7 @@ func TestCommandEnvironmentExcludesUnapprovedParentVariables(t *testing.T) {
 		Port:       4000,
 		InheritEnv: []string{"GRAT_APPROVED_FIXTURE"},
 	}
-	environment := commandEnvironment(service)
+	environment := Manager{}.commandEnvironment(service)
 
 	if containsEnvironmentName(environment, "GRAT_SECRET_FIXTURE") {
 		t.Fatalf("commandEnvironment() leaked unapproved parent variable: %#v", environment)
@@ -58,6 +58,105 @@ func TestCommandEnvironmentExcludesUnapprovedParentVariables(t *testing.T) {
 	}
 	if !containsEnvironmentEntry(environment, "PORT=4000") || containsEnvironmentEntry(environment, "PORT=9999") {
 		t.Fatalf("commandEnvironment() did not enforce the managed PORT: %#v", environment)
+	}
+}
+
+func TestCommandEnvironmentDerivesBackendURLForConsumer(t *testing.T) {
+	t.Setenv("BACKEND_URL", "http://localhost:4999")
+
+	backend := config.Service{
+		Name: "backend", Role: config.RoleBackend, Host: "localhost", Port: 4001,
+	}
+	consumer := config.Service{
+		Name: "dashboard", Role: config.RoleDashboard, Host: "localhost", Port: 4501,
+	}
+	manager := Manager{Config: config.Config{Services: []config.Service{backend, consumer}}}
+
+	environment := manager.commandEnvironment(consumer)
+
+	if !containsEnvironmentEntry(environment, "BACKEND_URL=http://localhost:4001") {
+		t.Fatalf("commandEnvironment() omitted derived backend URL: %#v", environment)
+	}
+	if containsEnvironmentEntry(environment, "BACKEND_URL=http://localhost:4999") {
+		t.Fatalf("commandEnvironment() inherited an unapproved parent override: %#v", environment)
+	}
+}
+
+func TestCommandEnvironmentPreservesApprovedBackendURLOverride(t *testing.T) {
+	t.Setenv("BACKEND_URL", "http://localhost:4999")
+
+	backend := config.Service{
+		Name: "backend", Role: config.RoleBackend, Host: "localhost", Port: 4001,
+	}
+	consumer := config.Service{
+		Name: "dashboard", Role: config.RoleDashboard, Host: "localhost", Port: 4501,
+		InheritEnv: []string{"BACKEND_URL"},
+	}
+	manager := Manager{Config: config.Config{Services: []config.Service{backend, consumer}}}
+
+	environment := manager.commandEnvironment(consumer)
+
+	if !containsEnvironmentEntry(environment, "BACKEND_URL=http://localhost:4999") {
+		t.Fatalf("commandEnvironment() omitted approved parent override: %#v", environment)
+	}
+	if containsEnvironmentEntry(environment, "BACKEND_URL=http://localhost:4001") {
+		t.Fatalf("commandEnvironment() replaced approved parent override: %#v", environment)
+	}
+}
+
+func TestCommandEnvironmentFallsBackWhenApprovedBackendURLIsAbsent(t *testing.T) {
+	previous, existed := os.LookupEnv("BACKEND_URL")
+	if err := os.Unsetenv("BACKEND_URL"); err != nil {
+		t.Fatalf("unset BACKEND_URL: %v", err)
+	}
+	t.Cleanup(func() {
+		if existed {
+			_ = os.Setenv("BACKEND_URL", previous)
+		} else {
+			_ = os.Unsetenv("BACKEND_URL")
+		}
+	})
+
+	backend := config.Service{
+		Name: "backend", Role: config.RoleBackend, Host: "127.0.0.1", Port: 4001,
+	}
+	consumer := config.Service{
+		Name: "frontend", Role: config.RoleFrontend, Host: "localhost", Port: 3001,
+		InheritEnv: []string{"BACKEND_URL"},
+	}
+	manager := Manager{Config: config.Config{Services: []config.Service{backend, consumer}}}
+
+	environment := manager.commandEnvironment(consumer)
+
+	if !containsEnvironmentEntry(environment, "BACKEND_URL=http://127.0.0.1:4001") {
+		t.Fatalf("commandEnvironment() omitted derived fallback: %#v", environment)
+	}
+}
+
+func TestCommandEnvironmentOmitsBackendURLForProviderAndAmbiguousTopology(t *testing.T) {
+	backend := config.Service{
+		Name: "backend", Role: config.RoleBackend, Host: "localhost", Port: 4000,
+	}
+	secondBackend := config.Service{
+		Name: "secondary", Role: config.RoleBackend, Host: "localhost", Port: 4001,
+	}
+	consumer := config.Service{
+		Name: "frontend", Role: config.RoleFrontend, Host: "localhost", Port: 3000,
+	}
+
+	uniqueManager := Manager{Config: config.Config{Services: []config.Service{backend, consumer}}}
+	if environment := uniqueManager.commandEnvironment(backend); containsEnvironmentName(environment, "BACKEND_URL") {
+		t.Fatalf("commandEnvironment() injected BACKEND_URL into its provider: %#v", environment)
+	}
+
+	ambiguousManager := Manager{Config: config.Config{Services: []config.Service{backend, secondBackend, consumer}}}
+	if environment := ambiguousManager.commandEnvironment(consumer); containsEnvironmentName(environment, "BACKEND_URL") {
+		t.Fatalf("commandEnvironment() guessed an ambiguous backend: %#v", environment)
+	}
+
+	noBackendManager := Manager{Config: config.Config{Services: []config.Service{consumer}}}
+	if environment := noBackendManager.commandEnvironment(consumer); containsEnvironmentName(environment, "BACKEND_URL") {
+		t.Fatalf("commandEnvironment() injected BACKEND_URL without a provider: %#v", environment)
 	}
 }
 

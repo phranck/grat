@@ -45,11 +45,13 @@ command must stay in the foreground and represent one of these service types:
 Each command runs from the project root through non-login `/bin/sh`. HTTP
 services receive their configured port in the `PORT` environment variable, so
 commands can use `$PORT` directly or pass it to a framework-specific port
-option. grat passes only a small non-secret environment baseline unless a
-service explicitly lists additional parent variables. Readiness and shutdown
-track different boundaries: readiness accepts a listener owned by the command
-or one of its descendants, while shutdown signals processes that remain in the
-process group created for the command.
+option. When a project has exactly one `backend` service, grat also provides its
+effective local origin to the other services as `BACKEND_URL`. grat passes only
+a small non-secret environment baseline unless a service explicitly lists
+additional parent variables. Readiness and shutdown track different boundaries:
+readiness accepts a listener owned by the command or one of its descendants,
+while shutdown signals processes that remain in the process group created for
+the command.
 
 ## Installation
 
@@ -77,7 +79,7 @@ gh attestation verify ./grat_VERSION_OS_ARCH \
 To build with Go, install Go 1.25.12 or newer and run:
 
 ```sh
-go install github.com/phranck/grat/cmd/grat@v1.1.7
+go install github.com/phranck/grat/cmd/grat@v1.2.0
 ```
 
 grat uses `/bin/sh` to run configured commands. On macOS it inspects listeners
@@ -304,7 +306,10 @@ port = 0
 ```
 
 `grat start` starts all three services. `grat start backend queue` selects only
-the named services. Laravel documents the long-running worker in its
+the named services. The frontend and queue worker receive
+`BACKEND_URL=http://127.0.0.1:4000`, derived from the backend service. This also
+applies when only one consumer is started or restarted. Laravel documents the
+long-running worker in its
 [queue reference](https://laravel.com/docs/13.x/queues#the-queue-work-command).
 
 ## Command contract
@@ -323,6 +328,20 @@ sets `PORT` to the configured port. The command must use that value or an
 equivalent explicit port argument and must stay in the foreground. A child
 process may own the listener while it remains a descendant of the managed
 command. Shutdown signals the process group created when that command started.
+
+When exactly one configured service uses `role = "backend"`, grat derives that
+service's origin from its effective `host` and `port` and sets `BACKEND_URL` for
+every other service. The value has no trailing slash. No value is injected when
+the project has no backend or more than one backend because the target would be
+ambiguous. The complete project configuration is used even when only selected
+services are started.
+
+To override the derived value deliberately, list `BACKEND_URL` in the consuming
+service's `inherit_env` and set it in the parent environment before invoking
+grat. An absent approved override falls back to the derived value. An unlisted
+parent value is ignored like every other unapproved variable.
+grat does not read or write `.env.local` and does not generate an environment
+file.
 
 For a worker, grat checks the managed process identity and whether the process
 is alive. Workers use `port = 0` and have no `host` or `health_path` requirement.
@@ -388,15 +407,16 @@ port = 0
 | `host` | no | Health-check host for an HTTP service. The default is `localhost`. |
 | `port` | yes | Role-compatible HTTP port, or `0` for a worker. |
 | `health_path` | HTTP only | Absolute path beginning with `/`; omitted for a worker. |
-| `inherit_env` | no | Parent variable names to pass in addition to the safe baseline; `PORT` is reserved. |
+| `inherit_env` | no | Parent variable names to pass in addition to the safe baseline; `PORT` is reserved, while an approved `BACKEND_URL` overrides automatic backend discovery. |
 
 Two services in one configuration cannot share a port. Every non-worker port
 must fall inside the range assigned to its role.
 
 ## Roles and port ranges
 
-A role selects a port range and readiness type. It does not select a framework
-or alter the configured command.
+A role selects a port range and readiness type. A unique `backend` role also
+provides automatic `BACKEND_URL` discovery to the other services. Roles do not
+select a framework or alter the configured command.
 
 | Role | Intended service | Port range | Readiness |
 | --- | --- | --- | --- |
@@ -464,7 +484,7 @@ with status 130.
 
 ```text
 $ grat
-grat  v1.1.7
+grat  v1.2.0
 Usage
   grat [global options] <command> [arguments]
 

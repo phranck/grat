@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -26,7 +27,7 @@ func (manager Manager) launch(service config.Service) (processState, error) {
 	// #nosec G204 -- service commands are an explicit trusted-local-project boundary documented in SECURITY.md.
 	command := exec.Command("/bin/sh", "-c", service.Command)
 	command.Dir = manager.Root
-	command.Env = commandEnvironment(service)
+	command.Env = manager.commandEnvironment(service)
 	command.Stdout = logFile
 	command.Stderr = logFile
 	command.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
@@ -66,27 +67,57 @@ func (manager Manager) launch(service config.Service) (processState, error) {
 	}, nil
 }
 
-func commandEnvironment(service config.Service) []string {
+func (manager Manager) commandEnvironment(service config.Service) []string {
 	baseline := []string{"HOME", "LANG", "LC_ALL", "LC_CTYPE", "LOGNAME", "PATH", "SHELL", "TERM", "TMPDIR", "USER"}
 	names := append(baseline, service.InheritEnv...)
-	environment := make([]string, 0, len(names)+1)
-	seen := make(map[string]struct{}, len(names))
+	environment := make([]string, 0, len(names)+2)
+	processed := make(map[string]struct{}, len(names))
+	present := make(map[string]struct{}, len(names)+1)
 	for _, name := range names {
 		if name == "PORT" {
 			continue
 		}
-		if _, exists := seen[name]; exists {
+		if _, exists := processed[name]; exists {
 			continue
 		}
-		seen[name] = struct{}{}
+		processed[name] = struct{}{}
 		if value, exists := os.LookupEnv(name); exists {
 			environment = append(environment, name+"="+value)
+			present[name] = struct{}{}
+		}
+	}
+	if backendURL, exists := manager.backendURLFor(service); exists {
+		if _, overridden := present["BACKEND_URL"]; !overridden {
+			environment = append(environment, "BACKEND_URL="+backendURL)
 		}
 	}
 	if service.Port > 0 {
 		environment = append(environment, "PORT="+strconv.Itoa(service.Port))
 	}
 	return environment
+}
+
+func (manager Manager) backendURLFor(service config.Service) (string, bool) {
+	if service.Role == config.RoleBackend {
+		return "", false
+	}
+
+	var backend *config.Service
+	for index := range manager.Config.Services {
+		candidate := &manager.Config.Services[index]
+		if candidate.Role != config.RoleBackend {
+			continue
+		}
+		if backend != nil {
+			return "", false
+		}
+		backend = candidate
+	}
+	if backend == nil || backend.Port == 0 {
+		return "", false
+	}
+
+	return strings.TrimSuffix(backend.URL(), "/"), true
 }
 
 func (manager Manager) stopState(ctx context.Context, state loadedState) error {

@@ -21,11 +21,16 @@ boundary, not a sandbox. grat validates service and project identifiers before
 using them in managed paths or terminal output. Services run through a
 non-login shell with a small non-secret environment baseline. Additional parent
 variables must be named explicitly with `inherit_env`; their values are not
-stored in project configuration. This reduces accidental secret propagation but
-does not prevent a trusted command running as the current user from reading
-user-accessible files. Platform inspection helpers such as `ps`, `lsof`, and
-`tail` are invoked only through fixed absolute system paths and never resolved
-through a project-controlled `PATH` entry.
+stored in project configuration. The only topology-derived value beyond the
+service's managed `PORT` is `BACKEND_URL`: when exactly one backend role exists,
+grat injects its non-secret local origin into the other services. An inherited
+`BACKEND_URL` overrides discovery only when the consumer explicitly lists it in
+`inherit_env`. grat does not read or write application environment files. This
+reduces accidental secret propagation but does not prevent a trusted command
+running as the current user from reading user-accessible files. Platform
+inspection helpers such as `ps`, `lsof`, and `tail` are invoked only through
+fixed absolute system paths and never resolved through a project-controlled
+`PATH` entry.
 
 Release workflow binaries receive GitHub artifact attestations backed by
 Sigstore. Direct update and direct-install ownership checks are fail-closed:
