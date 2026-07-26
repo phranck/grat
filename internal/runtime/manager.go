@@ -226,6 +226,7 @@ func (manager Manager) Start(ctx context.Context, names []string) error {
 	if err != nil {
 		return err
 	}
+	services = manager.servicesForStart(services)
 
 	var errorsToJoin []error
 	started := make([]string, 0, len(services))
@@ -244,6 +245,30 @@ func (manager Manager) Start(ctx context.Context, names []string) error {
 		}
 	}
 	return errors.Join(errorsToJoin...)
+}
+
+func (manager Manager) servicesForStart(services []config.Service) []config.Service {
+	backend, exists := manager.backendService()
+	if !exists {
+		return services
+	}
+
+	backendIndex := -1
+	for index, service := range services {
+		if service.Name == backend.Name {
+			backendIndex = index
+			break
+		}
+	}
+	if backendIndex <= 0 {
+		return services
+	}
+
+	ordered := make([]config.Service, 0, len(services))
+	ordered = append(ordered, services[backendIndex])
+	ordered = append(ordered, services[:backendIndex]...)
+	ordered = append(ordered, services[backendIndex+1:]...)
+	return ordered
 }
 
 // Stop terminates selected services. An empty names list selects all configured

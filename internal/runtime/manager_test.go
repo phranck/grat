@@ -71,6 +71,41 @@ func TestStartAndStopRequiresOwnedHealthyListener(t *testing.T) {
 	}
 }
 
+func TestStartLaunchesSelectedBackendBeforeSelectedConsumers(t *testing.T) {
+	t.Setenv(runtimeHelperEnvironment, "1")
+	frontend := config.Service{
+		Name:       "frontend",
+		Command:    helperCommand(http.StatusOK),
+		Role:       config.RoleFrontend,
+		Port:       freeTCPPort(t, 3000, 3099),
+		Host:       "127.0.0.1",
+		HealthPath: "/",
+		InheritEnv: []string{runtimeHelperEnvironment},
+	}
+	backend := fixtureService(
+		freeTCPPort(t, runtimeBackendTestPortFirst, runtimeBackendTestPortLast),
+		helperCommand(http.StatusOK),
+	)
+	manager := Manager{Root: t.TempDir(), Config: fixtureConfig(frontend)}
+	manager.Config.Services = []config.Service{frontend, backend}
+
+	var launched []string
+	manager.Observer = ProgressObserverFunc(func(event ProgressEvent) {
+		if event.Stage == ProgressLaunching {
+			launched = append(launched, event.Service.Name)
+		}
+	})
+
+	if err := manager.Start(context.Background(), nil); err != nil {
+		t.Fatalf("Start() error = %v", err)
+	}
+	t.Cleanup(func() { _ = manager.Stop(context.Background(), nil) })
+
+	if got, want := strings.Join(launched, ","), "backend,frontend"; got != want {
+		t.Fatalf("Start() launch order = %q, want %q", got, want)
+	}
+}
+
 func TestRestartEmitsOrderedLifecycleEvents(t *testing.T) {
 	t.Setenv(runtimeHelperEnvironment, "1")
 	manager, _ := newFixtureManager(t, http.StatusOK)
