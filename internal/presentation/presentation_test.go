@@ -55,6 +55,17 @@ func TestRendererSanitizesDynamicTerminalControlCharacters(t *testing.T) {
 	}
 }
 
+func TestRendererPreservesSanitizedMultilineErrors(t *testing.T) {
+	var output bytes.Buffer
+	renderer := New(&output, ColorNever)
+	renderer.Error(errors.New("frontend failed\nrecent log output:\nline\x1b[2J\rforged\u202e"))
+
+	want := "Error frontend failed\n      recent log output:\n      line�[2J�forged�\n"
+	if got := output.String(); got != want {
+		t.Fatalf("multiline error output = %q, want %q", got, want)
+	}
+}
+
 func TestRendererSanitizesUnsafeUnicodeFormatCharacters(t *testing.T) {
 	var output bytes.Buffer
 	renderer := New(&output, ColorNever)

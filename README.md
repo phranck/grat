@@ -79,7 +79,7 @@ gh attestation verify ./grat_VERSION_OS_ARCH \
 To build with Go, install Go 1.25.12 or newer and run:
 
 ```sh
-go install github.com/phranck/grat/cmd/grat@v1.2.0
+go install github.com/phranck/grat/cmd/grat@v1.2.1
 ```
 
 grat uses `/bin/sh` to run configured commands. On macOS it inspects listeners
@@ -336,6 +336,10 @@ the project has no backend or more than one backend because the target would be
 ambiguous. The complete project configuration is used even when only selected
 services are started.
 
+When the unique backend is selected, grat starts it before its selected consumers.
+An unselected backend remains stopped, and all other selected services retain
+their configured or explicitly requested order.
+
 To override the derived value deliberately, list `BACKEND_URL` in the consuming
 service's `inherit_env` and set it in the parent environment before invoking
 grat. An absent approved override falls back to the derived value. An unlisted
@@ -484,7 +488,7 @@ with status 130.
 
 ```text
 $ grat
-grat  v1.2.0
+grat  v1.2.1
 Usage
   grat [global options] <command> [arguments]
 

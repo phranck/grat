@@ -61,6 +61,7 @@ for text in \
 	'go run ./cmd/server' \
 	'php artisan queue:work' \
 	'BACKEND_URL=http://127.0.0.1:4000' \
+	'When the unique backend is selected, grat starts it before its selected consumers.' \
 	'grat does not read or write `.env.local`' \
 	'`stopped`' \
 	'`running`' \
@@ -184,8 +185,8 @@ require_in go.mod 'go 1.25.12'
 require_in go.mod 'module github.com/phranck/grat'
 require_in go.mod 'tool golang.org/x/vuln/cmd/govulncheck'
 require_in README.md 'Go 1.25.12 or newer'
-require_in README.md 'go install github.com/phranck/grat/cmd/grat@v1.2.0'
-require_in README.md 'grat  v1.2.0'
+require_in README.md 'go install github.com/phranck/grat/cmd/grat@v1.2.1'
+require_in README.md 'grat  v1.2.1'
 require_in README.md '`grat.config`'
 require_in README.md '`.grat/`'
 require_in CONTRIBUTING.md 'Go 1.25.12 or newer'

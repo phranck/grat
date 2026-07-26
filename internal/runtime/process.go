@@ -101,7 +101,15 @@ func (manager Manager) backendURLFor(service config.Service) (string, bool) {
 	if service.Role == config.RoleBackend {
 		return "", false
 	}
+	backend, exists := manager.backendService()
+	if !exists || backend.Port == 0 {
+		return "", false
+	}
 
+	return strings.TrimSuffix(backend.URL(), "/"), true
+}
+
+func (manager Manager) backendService() (config.Service, bool) {
 	var backend *config.Service
 	for index := range manager.Config.Services {
 		candidate := &manager.Config.Services[index]
@@ -109,15 +117,15 @@ func (manager Manager) backendURLFor(service config.Service) (string, bool) {
 			continue
 		}
 		if backend != nil {
-			return "", false
+			return config.Service{}, false
 		}
 		backend = candidate
 	}
-	if backend == nil || backend.Port == 0 {
-		return "", false
+	if backend == nil {
+		return config.Service{}, false
 	}
 
-	return strings.TrimSuffix(backend.URL(), "/"), true
+	return *backend, true
 }
 
 func (manager Manager) stopState(ctx context.Context, state loadedState) error {

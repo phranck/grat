@@ -321,7 +321,13 @@ func (renderer Renderer) renderAlignedTable(headers []string, rows [][]string) {
 
 // Error renders a consistent command error label.
 func (renderer Renderer) Error(err error) {
-	fprintf(renderer.writer, "%s %s\n", renderer.render(renderer.errorStyle(), "Error"), terminalSafe(err.Error()))
+	const label = "Error"
+	lines := strings.Split(err.Error(), "\n")
+	fprintf(renderer.writer, "%s %s\n", renderer.render(renderer.errorStyle(), label), terminalSafe(lines[0]))
+	indent := strings.Repeat(" ", lipgloss.Width(label)+1)
+	for _, line := range lines[1:] {
+		fprintf(renderer.writer, "%s%s\n", indent, terminalSafe(line))
+	}
 }
 
 func fprintf(writer io.Writer, format string, args ...any) {
