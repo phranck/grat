@@ -259,11 +259,18 @@ func TestUpdateDelegatesToConfiguredMaintenanceService(t *testing.T) {
 	if err := store.Save(settings.Settings{Version: settings.CurrentVersion, Directories: []string{root}}); err != nil {
 		t.Fatalf("save settings: %v", err)
 	}
-	service := &fakeUpdateService{result: maintenance.Result{Message: "Updated grat to v1.0.1."}}
-	environment := environmentForTest(store)
-	environment.maintenance = service
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
+	feedbackBeforeReturn := false
+	service := &fakeUpdateService{
+		result: maintenance.Result{Message: "Updated grat to v1.0.1."},
+		onUpdate: func() {
+			feedbackBeforeReturn = strings.Contains(stdout.String(), "Update") &&
+				strings.Contains(stdout.String(), "checking installation and applying updates")
+		},
+	}
+	environment := environmentForTest(store)
+	environment.maintenance = service
 
 	if code := runWithEnvironment(context.Background(), []string{"update"}, cwd, &stdout, &stderr, environment); code != 0 {
 		t.Fatalf("update exit = %d, stderr = %s", code, stderr.String())
@@ -273,6 +280,9 @@ func TestUpdateDelegatesToConfiguredMaintenanceService(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), "Updated grat to v1.0.1.") {
 		t.Fatalf("update output = %q, want maintenance result", stdout.String())
+	}
+	if !feedbackBeforeReturn {
+		t.Fatalf("update output before maintenance returned = %q, want immediate working feedback", stdout.String())
 	}
 }
 
@@ -341,13 +351,17 @@ func sameStringSlices(got, want []string) bool {
 }
 
 type fakeUpdateService struct {
-	result maintenance.Result
-	err    error
-	called bool
+	result   maintenance.Result
+	err      error
+	called   bool
+	onUpdate func()
 }
 
 func (service *fakeUpdateService) Update(context.Context) (maintenance.Result, error) {
 	service.called = true
+	if service.onUpdate != nil {
+		service.onUpdate()
+	}
 	return service.result, service.err
 }
 

@@ -1,18 +1,13 @@
-# Graph Report - grat  (2026-07-26)
+# Graph Report - .  (2026-07-26)
 
 ## Corpus Check
-- 70 files · ~48,187 words
+- 11 files · ~47,769 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 941 nodes · 2283 edges · 54 communities (39 shown, 15 thin omitted)
-- Extraction: 84% EXTRACTED · 16% INFERRED · 0% AMBIGUOUS · INFERRED: 357 edges (avg confidence: 0.8)
+- 873 nodes · 2129 edges · 50 communities (35 shown, 15 thin omitted)
+- Extraction: 84% EXTRACTED · 16% INFERRED · 0% AMBIGUOUS · INFERRED: 343 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
-
-## Graph Freshness
-- Built from commit: `6700e578`
-- Run `git rev-parse HEAD` and compare to check if the graph is stale.
-- Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - [[_COMMUNITY_CLI Service Lifecycle|CLI Service Lifecycle]]
@@ -64,34 +59,30 @@
 - [[_COMMUNITY_Platform Helper Safety|Platform Helper Safety]]
 - [[_COMMUNITY_Release Provenance|Release Provenance]]
 - [[_COMMUNITY_Settings Store|Settings Store]]
-- [[_COMMUNITY_Community 50|Community 50]]
-- [[_COMMUNITY_Community 51|Community 51]]
-- [[_COMMUNITY_Community 52|Community 52]]
-- [[_COMMUNITY_Community 53|Community 53]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `Contains()` - 71 edges
-2. `New()` - 41 edges
-3. `grat` - 39 edges
-4. `runWithEnvironment()` - 36 edges
-5. `T` - 30 edges
-6. `Service` - 29 edges
-7. `Manager` - 28 edges
-8. `T` - 25 edges
-9. `Config` - 24 edges
-10. `Renderer` - 23 edges
+1. `Contains()` - 70 edges
+2. `New()` - 39 edges
+3. `runWithEnvironment()` - 35 edges
+4. `T` - 28 edges
+5. `Service` - 27 edges
+6. `T` - 25 edges
+7. `Manager` - 24 edges
+8. `grat` - 23 edges
+9. `Renderer` - 22 edges
+10. `runWithConfiguredRoots()` - 21 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `Registry Lock Tests` --references--> `WithRegistryLock()`  [EXTRACTED]
+  /Users/phranck/Developer/tools/cli/grat/internal/ports/lock_test.go → internal/ports/lock.go
+- `Settings Safety Tests` --references--> `Contains()`  [EXTRACTED]
+  /Users/phranck/Developer/tools/cli/grat/internal/settings/settings_test.go → internal/settings/settings.go
 - `defaultEnvironment()` --calls--> `DefaultService()`  [INFERRED]
   internal/cli/cli.go → internal/maintenance/system.go
-- `defaultEnvironment()` --calls--> `isTerminal()`  [INFERRED]
-  internal/cli/cli.go → internal/presentation/presentation.go
 - `runWithEnvironment()` --calls--> `New()`  [INFERRED]
   internal/cli/cli.go → internal/presentation/presentation.go
 - `runWithConfiguredRoots()` --calls--> `runWithEnvironment()`  [INFERRED]
   internal/cli/cli_test.go → internal/cli/cli.go
-- `TestRecoverDeclinedConfirmationLeavesLegacyProcessAndState()` --calls--> `runWithEnvironment()`  [INFERRED]
-  internal/cli/recovery_test.go → internal/cli/cli.go
 
 ## Import Cycles
 - None detected.
@@ -101,15 +92,15 @@
 - **Verified Release Supply Chain** — readme_update_verification, readme_artifact_attestation, readme_homebrew_tap, readme_github_releases [EXTRACTED 1.00]
 - **Fail-Closed Process Safety** — readme_managed_process_identity, readme_process_group_shutdown, readme_fail_closed_identity_validation, readme_legacy_process_recovery [EXTRACTED 1.00]
 
-## Communities (54 total, 15 thin omitted)
+## Communities (50 total, 15 thin omitted)
 
 ### Community 0 - "CLI Service Lifecycle"
 Cohesion: 0.06
-Nodes (88): assignReassignedPorts(), configuredRoots(), confirmRecovery(), copyReservations(), defaultEnvironment(), detectServices(), ensureValidRegistry(), executeLifecycle() (+80 more)
+Nodes (81): assignReassignedPorts(), configuredRoots(), confirmRecovery(), copyReservations(), defaultEnvironment(), detectServices(), ensureValidRegistry(), executeLifecycle() (+73 more)
 
 ### Community 1 - "Process Execution"
-Cohesion: 0.06
-Nodes (58): main(), mustGetwd(), Client, Config, Context, loadedState, processState, ProgressObserver (+50 more)
+Cohesion: 0.09
+Nodes (42): Duration, Context, loadedState, processState, Manager, Service, T, Context (+34 more)
 
 ### Community 2 - "Log Streaming Tests"
 Cohesion: 0.08
@@ -117,59 +108,59 @@ Nodes (39): TestOutputLogStreamsBeforeInputReachesEOF(), notifyingWriter, repeat
 
 ### Community 3 - "Terminal Lifecycle UI"
 Cohesion: 0.10
-Nodes (34): CancelFunc, Cmd, Context, Reader, Style, Writer, lifecycleRow, Model (+26 more)
+Nodes (32): CancelFunc, Cmd, Context, Reader, Style, Writer, lifecycleRow, Model (+24 more)
 
 ### Community 4 - "Update Release Assets"
 Cohesion: 0.10
-Nodes (23): asset, installation, Client, Context, Service, Client, Context, Service (+15 more)
+Nodes (22): asset, installation, Client, Context, Service, Client, Context, Service (+14 more)
 
 ### Community 5 - "Command Help Rendering"
-Cohesion: 0.09
-Nodes (25): Renderer, Style, Renderer, Style, Writer, Context, Writer, ColorMode (+17 more)
+Cohesion: 0.11
+Nodes (19): Renderer, Style, ColorMode, Command, CommandGroup, helpUsageWidth(), formatProjectRows(), fprint() (+11 more)
 
 ### Community 6 - "Configuration Model"
 Cohesion: 0.10
-Nodes (40): Config, configDecodeError(), DefaultRuntime(), InferRole(), Load(), prepareWrite(), readConfigFile(), replaceFile() (+32 more)
+Nodes (39): Config, configDecodeError(), DefaultRuntime(), InferRole(), Load(), readConfigFile(), replaceFile(), rollbackWrites() (+31 more)
 
 ### Community 7 - "Runtime Manager Tests"
 Cohesion: 0.11
-Nodes (38): Config, Listener, Manager, Service, T, T, Manager, Service (+30 more)
+Nodes (37): Config, Service, T, T, Manager, Service, Listener, Manager (+29 more)
 
 ### Community 8 - "CLI Directory Tests"
-Cohesion: 0.14
-Nodes (32): runWithEnvironment(), canonicalCLITestPath(), environmentForTest(), newCLITestStore(), sameStringSlices(), TestDirectoriesAddDoesNotPromptForInitialSetup(), TestDirectoriesCommandsPersistAndListConfiguredRoots(), TestFirstUseAcceptsExistingSitesDefault() (+24 more)
+Cohesion: 0.12
+Nodes (35): exitCode(), hasHelpFlag(), isHelp(), runWithEnvironment(), canonicalCLITestPath(), environmentForTest(), newCLITestStore(), sameStringSlices() (+27 more)
 
 ### Community 9 - "Presentation Tests"
-Cohesion: 0.13
-Nodes (43): Buffer, T, Mutex, NewLifecycleModel(), DividerLine(), New(), columnOf(), displayColumn() (+35 more)
+Cohesion: 0.16
+Nodes (38): T, NewLifecycleModel(), DividerLine(), New(), columnOf(), displayColumn(), stripANSI(), TestHelpRendersBorderlessGroupsWithGloballyAlignedDescriptions() (+30 more)
 
 ### Community 10 - "Maintenance Uninstall"
 Cohesion: 0.13
 Nodes (23): Context, Service, Reader, Result, Store, Writer, Context, T (+15 more)
 
 ### Community 11 - "Port Registry"
-Cohesion: 0.12
-Nodes (32): Config, Listener, T, fakeLookup, Listener, ListenerLookup, Problem, ProjectConfig (+24 more)
+Cohesion: 0.13
+Nodes (31): Config, T, fakeLookup, Listener, ListenerLookup, Problem, ProjectConfig, FirstFree() (+23 more)
 
 ### Community 12 - "CLI Test Helpers"
 Cohesion: 0.15
 Nodes (32): assertGloballyUniqueRolePorts(), cliHelperCommand(), containsArgument(), freeCLITCPPort(), loadPortFixtureConfig(), runWithConfiguredRoots(), TestCLIRuntimeHelper(), TestExitCodeMapsInterruptedOperationsTo130() (+24 more)
 
 ### Community 13 - "Application Runtime"
-Cohesion: 0.29
-Nodes (7): Directory discovery, HTTP Service Readiness, Per-User Port Registry Lock, Role-Based Port Allocation, Role-Specific Readiness, Service Roles, Worker Readiness
+Cohesion: 0.14
+Nodes (16): Client, main(), mustGetwd(), Config, Context, loadedState, processState, Manager (+8 more)
 
 ### Community 14 - "Project Documentation"
-Cohesion: 0.07
-Nodes (27): Code of Conduct, Command contract, Commands, Configuration reference, Contents, Contributing and support, Contributing Guide, Does grat fit your project? (+19 more)
+Cohesion: 0.09
+Nodes (31): GitHub Artifact Attestation, BACKEND_URL Discovery, Code of Conduct, Contributing Guide, Directory Discovery, Fail-Closed Identity Validation, FastAPI Deployment Guide, grat GitHub Releases (+23 more)
 
 ### Community 15 - "Settings Store Tests"
 Cohesion: 0.31
 Nodes (17): Store, T, canonicalPath(), equalStrings(), newTestStore(), TestContainsAcceptsRegularFileBelowRoot(), TestContainsRejectsPathsOutsideRootAndThroughSymlinks(), TestStoreAddCanonicalizesAndDeduplicatesDirectories() (+9 more)
 
 ### Community 16 - "Settings Persistence"
-Cohesion: 0.29
-Nodes (5): Settings, canonicalExistingDirectory(), canonicalExistingPath(), ConfigDirectory(), Store
+Cohesion: 0.30
+Nodes (4): Settings, canonicalExistingDirectory(), canonicalExistingPath(), Store
 
 ### Community 17 - "Interactive Project Setup"
 Cohesion: 0.28
@@ -232,31 +223,15 @@ Cohesion: 0.83
 Nodes (3): require(), require_in(), check-readme.sh script
 
 ### Community 32 - "Security Documentation"
-Cohesion: 0.25
-Nodes (6): Reporting a vulnerability, Security policy, Supported versions, Diagnostic Support Request, Sensitive Data Redaction, Support
+Cohesion: 0.50
+Nodes (4): Security Policy, Diagnostic Support Request, Sensitive Data Redaction, Support
 
 ### Community 33 - "Graphify Project Rule"
-Cohesion: 0.67
+Cohesion: 1.00
 Nodes (3): Graphify Before Push, Project Agent Rules, Versioned Graphify Artifacts
 
-### Community 41 - "Contribution Guide"
-Cohesion: 0.33
-Nodes (5): Code of conduct, Configuration compatibility, Contributing to grat, Development setup, Pull requests
-
-### Community 50 - "Community 50"
-Cohesion: 0.29
-Nodes (7): Go HTTP API, Laravel, Project examples, Python with FastAPI, React, Laravel, and a queue worker, React with Vite, Swift with Vapor
-
-### Community 51 - "Community 51"
-Cohesion: 0.40
-Nodes (6): Fail-Closed Identity Validation, Managed Process Identity, Managed State, Process Group Shutdown, Legacy Process Recovery, Service Lifecycle Management
-
-### Community 52 - "Community 52"
-Cohesion: 1.00
-Nodes (3): BACKEND_URL Discovery, grat.config, Safe Environment Inheritance
-
 ## Knowledge Gaps
-- **123 isolated node(s):** `Store`, `uninstallService`, `ProgressObserver`, `StepKind`, `ProgressStage` (+118 more)
+- **95 isolated node(s):** `Store`, `ProgressObserver`, `StepKind`, `LifecycleEvent`, `ProgressStage` (+90 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **15 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -264,16 +239,16 @@ Nodes (3): BACKEND_URL Discovery, grat.config, Safe Environment Inheritance
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Contains()` connect `Presentation Tests` to `Process Execution`, `Log Streaming Tests`, `Configuration Model`, `Runtime Manager Tests`, `CLI Directory Tests`, `Maintenance Uninstall`, `CLI Test Helpers`, `Settings Store Tests`, `Settings Persistence`, `Interactive Project Setup`, `Uninstall Tests`, `Recovery CLI Tests`?**
-  _High betweenness centrality (0.199) - this node is a cross-community bridge._
-- **Why does `New()` connect `Presentation Tests` to `CLI Service Lifecycle`, `Process Execution`, `Log Streaming Tests`, `Update Release Assets`, `Command Help Rendering`, `CLI Directory Tests`, `Maintenance Uninstall`, `CLI Test Helpers`, `Settings Store Tests`, `Settings Persistence`, `Interactive Project Setup`, `Uninstall Tests`?**
-  _High betweenness centrality (0.190) - this node is a cross-community bridge._
-- **Why does `processAlive()` connect `Process Execution` to `Log Streaming Tests`, `Runtime Manager Tests`?**
-  _High betweenness centrality (0.076) - this node is a cross-community bridge._
-- **Are the 67 inferred relationships involving `Contains()` (e.g. with `TestInitRejectsDeprecatedAppFlag()` and `TestInitRejectsInvalidGlobalRegistry()`) actually correct?**
-  _`Contains()` has 67 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 35 inferred relationships involving `New()` (e.g. with `configuredRoots()` and `runDirectories()`) actually correct?**
-  _`New()` has 35 INFERRED edges - model-reasoned connections that need verification._
+  _High betweenness centrality (0.215) - this node is a cross-community bridge._
+- **Why does `New()` connect `Presentation Tests` to `CLI Service Lifecycle`, `Log Streaming Tests`, `Update Release Assets`, `Command Help Rendering`, `CLI Directory Tests`, `Maintenance Uninstall`, `CLI Test Helpers`, `Application Runtime`, `Settings Store Tests`, `Settings Persistence`, `Interactive Project Setup`, `Uninstall Tests`?**
+  _High betweenness centrality (0.205) - this node is a cross-community bridge._
+- **Why does `processAlive()` connect `Process Execution` to `Log Streaming Tests`, `Application Runtime`, `Runtime Manager Tests`?**
+  _High betweenness centrality (0.083) - this node is a cross-community bridge._
+- **Are the 66 inferred relationships involving `Contains()` (e.g. with `TestInitRejectsDeprecatedAppFlag()` and `TestInitRejectsInvalidGlobalRegistry()`) actually correct?**
+  _`Contains()` has 66 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 34 inferred relationships involving `New()` (e.g. with `configuredRoots()` and `runDirectories()`) actually correct?**
+  _`New()` has 34 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 17 inferred relationships involving `runWithEnvironment()` (e.g. with `New()` and `Current()`) actually correct?**
   _`runWithEnvironment()` has 17 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `Store`, `uninstallService`, `ProgressObserver` to the rest of the system?**
-  _128 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **What connects `Store`, `ProgressObserver`, `StepKind` to the rest of the system?**
+  _100 weakly-connected nodes found - possible documentation gaps or missing edges._

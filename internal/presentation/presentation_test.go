@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -37,6 +38,37 @@ func TestRendererUsesSemanticColorWhenForced(t *testing.T) {
 
 	if !strings.Contains(output.String(), "\x1b[") {
 		t.Fatalf("forced-color renderer output %q, want ANSI sequence", output.String())
+	}
+}
+
+func TestRunSpinnerRendersBeforeRunnerStarts(t *testing.T) {
+	var output synchronizedBuffer
+	renderedBeforeRunner := false
+
+	err := RunSpinner(context.Background(), &output, "Updating grat", func(context.Context) error {
+		renderedBeforeRunner = strings.Contains(output.String(), "Updating grat")
+		return nil
+	})
+
+	if err != nil {
+		t.Fatalf("RunSpinner() error = %v, want nil", err)
+	}
+	if !renderedBeforeRunner {
+		t.Fatalf("RunSpinner() initial output = %q, want feedback before runner starts", output.String())
+	}
+	if !strings.HasSuffix(output.String(), "\r") {
+		t.Fatalf("RunSpinner() output = %q, want cleared spinner line", output.String())
+	}
+}
+
+func TestRunSpinnerReturnsRunnerError(t *testing.T) {
+	var output synchronizedBuffer
+	want := errors.New("update failed")
+
+	if err := RunSpinner(context.Background(), &output, "Updating grat", func(context.Context) error {
+		return want
+	}); !errors.Is(err, want) {
+		t.Fatalf("RunSpinner() error = %v, want %v", err, want)
 	}
 }
 
@@ -608,4 +640,21 @@ func stripANSI(value string) string {
 		}
 		value = value[:start] + value[end+1:]
 	}
+}
+
+type synchronizedBuffer struct {
+	mu     sync.Mutex
+	buffer bytes.Buffer
+}
+
+func (buffer *synchronizedBuffer) Write(value []byte) (int, error) {
+	buffer.mu.Lock()
+	defer buffer.mu.Unlock()
+	return buffer.buffer.Write(value)
+}
+
+func (buffer *synchronizedBuffer) String() string {
+	buffer.mu.Lock()
+	defer buffer.mu.Unlock()
+	return buffer.buffer.String()
 }

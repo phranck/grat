@@ -10,7 +10,7 @@ if [ "$#" -ne 0 ]; then
 	exit 2
 fi
 
-version=${VERSION:-v1.2.1}
+version=${VERSION:-v1.2.2}
 output_directory=${OUT_DIR:-dist}
 mkdir -p "$output_directory"
 

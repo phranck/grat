@@ -79,7 +79,7 @@ gh attestation verify ./grat_VERSION_OS_ARCH \
 To build with Go, install Go 1.25.12 or newer and run:
 
 ```sh
-go install github.com/phranck/grat/cmd/grat@v1.2.1
+go install github.com/phranck/grat/cmd/grat@v1.2.2
 ```
 
 grat uses `/bin/sh` to run configured commands. On macOS it inspects listeners
@@ -488,7 +488,7 @@ with status 130.
 
 ```text
 $ grat
-grat  v1.2.1
+grat  v1.2.2
 Usage
   grat [global options] <command> [arguments]
 
@@ -538,6 +538,9 @@ hold a per-user lock across scanning, allocation, and configuration writes.
 ## Maintenance
 
 `grat update` follows the method that owns the currently running executable.
+`grat update` shows an animated spinner in an interactive terminal.
+Redirected or color-disabled output receives an immediate static working step
+instead.
 For Homebrew installations it delegates to Homebrew. For a release binary it
 requires a current, authenticated GitHub CLI, constrains API and download URLs
 to the grat GitHub release infrastructure, verifies the current and downloaded
