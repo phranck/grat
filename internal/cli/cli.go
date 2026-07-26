@@ -121,11 +121,7 @@ func runWithEnvironment(ctx context.Context, args []string, cwd string, out io.W
 		} else if environment.maintenance == nil {
 			err = fmt.Errorf("update service is unavailable")
 		} else {
-			var result maintenance.Result
-			result, err = environment.maintenance.Update(ctx)
-			if err == nil {
-				output.Step(presentation.StepSuccess, "Update", result.Message)
-			}
+			err = runUpdate(ctx, environment.maintenance, output)
 		}
 	case "uninstall":
 		settingsValue, exists, settingsErr := environment.settings.Load()
@@ -154,6 +150,29 @@ func runWithEnvironment(ctx context.Context, args []string, cwd string, out io.W
 	}
 	errors.Error(err)
 	return exitCode(err)
+}
+
+func runUpdate(ctx context.Context, service updateService, output presentation.Renderer) error {
+	var result maintenance.Result
+	runner := func(ctx context.Context) error {
+		var err error
+		result, err = service.Update(ctx)
+		return err
+	}
+
+	var err error
+	if output.Live() {
+		err = presentation.RunSpinner(ctx, output.Writer(), "Updating grat", runner)
+	} else {
+		output.Step(presentation.StepWorking, "Update", "checking installation and applying updates")
+		err = runner(ctx)
+	}
+	if err != nil {
+		return err
+	}
+
+	output.Step(presentation.StepSuccess, "Update", result.Message)
+	return nil
 }
 
 func exitCode(err error) int {
