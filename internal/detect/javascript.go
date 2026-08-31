@@ -31,6 +31,11 @@ type jsFramework struct {
 //
 // Every flag below is from the official command line reference of the framework
 // named in the comment.
+//
+// Vite additionally carries --strictPort. Without it Vite moves to the next free
+// port when the assigned one is taken, and grat then waits for a port nothing
+// binds. A server that quietly answers somewhere else is the failure this whole
+// design exists to prevent.
 var jsFrameworks = []jsFramework{
 	// angular.dev/cli/serve, and angular.dev/reference/configs/workspace-config
 	// for the workspace file.
@@ -45,9 +50,9 @@ var jsFrameworks = []jsFramework{
 	// reactrouter.com/api/other-api/dev
 	{name: "frontend", dependency: "@react-router/dev", binary: "react-router", arguments: "dev --port $PORT --host 127.0.0.1"},
 	// svelte.dev/docs/kit/cli names the underlying command as vite dev.
-	{name: "frontend", dependency: "@sveltejs/kit", binary: "vite", arguments: "dev --port $PORT --host 127.0.0.1"},
+	{name: "frontend", dependency: "@sveltejs/kit", binary: "vite", arguments: "dev --port $PORT --host 127.0.0.1 --strictPort"},
 	// vite.dev/guide/cli. Last, because the frameworks above build on it.
-	{name: "frontend", dependency: "vite", binary: "vite", arguments: "dev --port $PORT --host 127.0.0.1"},
+	{name: "frontend", dependency: "vite", binary: "vite", arguments: "dev --port $PORT --host 127.0.0.1 --strictPort"},
 }
 
 // detectJavaScriptFramework recognises a framework from the manifest and builds
