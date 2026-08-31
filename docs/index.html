@@ -25,10 +25,11 @@
     <a class="wordmark" href="#top"><span class="wordmark__glyph">▚</span> grat</a>
     <nav class="nav" aria-label="Sections">
       <a class="nav__link" aria-current="page" href="#install">Install</a>
+      <a class="nav__link nav__link--optional" href="#what">What it runs</a>
       <a class="nav__link" href="#services">Services</a>
       <a class="nav__link" href="#ports">Ports</a>
       <a class="nav__link nav__link--optional" href="#public">Public access</a>
-      <a class="nav__link" href="https://github.com/phranck/grat"><i class="ph-duotone ph-github-logo nav__icon" aria-hidden="true"></i> GitHub</a>
+      <a target="_blank" rel="noopener noreferrer" class="nav__link" href="https://github.com/phranck/grat"><i class="ph-duotone ph-github-logo nav__icon" aria-hidden="true"></i> GitHub</a>
     </nav>
   </div>
 </header>
@@ -43,7 +44,7 @@
         <p class="hero__lead">grat starts the long-running commands a project needs, waits until each one is genuinely ready, keeps their ports out of each other's way, and can put a single path on the public internet when a webhook has to reach you.</p>
         <div class="hero__actions">
           <a class="button button--primary" href="#install"><i class="ph-duotone ph-download-simple" aria-hidden="true"></i> Install</a>
-          <a class="button button--quiet" href="https://github.com/phranck/grat"><i class="ph-duotone ph-book-open-text" aria-hidden="true"></i> Read the docs</a>
+          <a target="_blank" rel="noopener noreferrer" class="button button--quiet" href="https://github.com/phranck/grat"><i class="ph-duotone ph-book-open-text" aria-hidden="true"></i> Read the docs</a>
         </div>
         <p class="hero__note">MIT licensed. One binary, no daemon, no config server.</p>
       </div>
@@ -54,21 +55,13 @@
           <span class="window__title">grat start</span>
         </div>
 <pre class="window__body"><span class="t-title">Starting services</span>  <span class="t-project">example.com</span>
-  [<span class="t-info">info</span>] <span class="t-name">backend</span>          checking managed state
-  [<span class="t-work">...</span>] <span class="t-name">backend</span>          starting isolated process
-  [<span class="t-work">...</span>] <span class="t-name">backend</span>          waiting for listener and health probe
-  [<span class="t-ok">ok</span>] <span class="t-name">backend</span>          ready on http://127.0.0.1:4001/
-  [<span class="t-info">info</span>] <span class="t-name">frontend</span>         checking managed state
-  [<span class="t-work">...</span>] <span class="t-name">frontend</span>         starting isolated process
-  [<span class="t-ok">ok</span>] <span class="t-name">frontend</span>         ready on http://127.0.0.1:3000/
-  [<span class="t-ok">ok</span>] <span class="t-name">worker</span>           ready
 
-<span class="t-title">Status</span>  <span class="t-project">example.com</span>
+  <span class="t-head">SERVICE             STATE                     ENDPOINT</span>
+  frontend            <span class="t-ok">✓ Ready</span>                   <span class="t-detail">http://localhost:3000/</span>
+  backend             <span class="t-ok">✓ Ready</span>                   <span class="t-detail">http://localhost:4001/</span>
+  worker              <span class="t-ok">✓ Ready</span>
 
-<span class="t-head">SERVICE   STATE    PORT  PID    ENDPOINT                PUBLIC</span>
-frontend  <span class="t-ok">running</span>  3000  16445  http://127.0.0.1:3000/
-backend   <span class="t-ok">running</span>  4001  16435  http://127.0.0.1:4001/
-worker    <span class="t-ok">running</span>  -     16462</pre>
+  <span class="t-ok">3 of 3 services complete</span></pre>
       </div>
     </div>
   </section>
@@ -87,19 +80,64 @@ worker    <span class="t-ok">running</span>  -     16462</pre>
         </div>
         <div class="prose">
           <p>Release binaries are published for macOS and Linux on Intel and ARM, verified against their checksums and GitHub's signed attestation.</p>
+          <p>The manual comes with it, so <code class="inline-code">man grat</code> works straight away.</p>
         </div>
       </div>
       <ol class="steps">
-        <li><strong>grat init</strong><span>Writes a declarative <code class="inline-code">grat.config</code> from the scripts your project already has.</span></li>
+        <li><strong>grat init</strong><span>Reads your project and writes a declarative <code class="inline-code">grat.config</code> from what it finds.</span></li>
         <li><strong>grat start</strong><span>Starts every service and waits until each one answers.</span></li>
         <li><strong>grat status</strong><span>Shows what runs, on which port, under which PID, and what is public.</span></li>
       </ol>
     </div>
   </section>
 
+  <section class="section measure" id="what">
+    <div class="section__head">
+      <span class="section__number">02. What it runs</span>
+      <h2 class="section__title">Any command that stays in the foreground</h2>
+      <p class="section__lead">grat is tied to no language, framework or package manager. It starts your command through <code class="inline-code">/bin/sh</code> from the project root, in a session of its own, and hands it the port in <code class="inline-code">PORT</code>. Whether that command is Node, PHP, Python, Swift or Go makes no difference to grat.</p>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Stack</th><th>The command in <code>grat.config</code></th></tr>
+        </thead>
+        <tbody>
+          <tr><td>React with Vite</td><td><code>npx vite dev --port $PORT --host 127.0.0.1</code></td></tr>
+          <tr><td>Next.js</td><td><code>npx next dev --port $PORT --hostname 127.0.0.1</code></td></tr>
+          <tr><td>Laravel</td><td><code>php artisan serve --host=127.0.0.1 --port=$PORT</code></td></tr>
+          <tr><td>Rails</td><td><code>bin/rails server -b 127.0.0.1 -p $PORT</code></td></tr>
+          <tr><td>Django</td><td><code>python manage.py runserver 127.0.0.1:$PORT</code></td></tr>
+          <tr><td>Swift with Vapor</td><td><code>swift run App serve --hostname 127.0.0.1 --port $PORT</code></td></tr>
+          <tr><td>Python with FastAPI</td><td><code>uvicorn main:app --host 127.0.0.1 --port $PORT --reload</code></td></tr>
+          <tr><td>Go</td><td><code>go run ./cmd/server</code></td></tr>
+          <tr><td>Queue worker</td><td><code>php artisan queue:work</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="split" style="margin-top: var(--space-8);">
+      <div class="prose">
+        <p><strong>What a service has to do.</strong> Stay in the foreground, because a command that puts itself in the background leaves nothing for grat to watch. Serve its port from a process that grat started, or from one of its children. Answer its health path with a status in the 200s.</p>
+        <p>A <strong>worker</strong> does none of that. It has no port, and it counts as ready for as long as its process lives.</p>
+      </div>
+      <div class="prose">
+        <p><strong>Where that boundary sits.</strong> grat follows the port back to the process holding it and up its chain of parents. If that chain does not lead to the command grat started, the service never becomes ready, and grat says so rather than pretending.</p>
+        <p>That rules out anything whose port is held by a separate daemon. A container started through Docker is the common case: the listener belongs to Docker, not to your command.</p>
+      </div>
+    </div>
+
+    <div class="prose" style="margin-top: var(--space-6); max-width: 46em;">
+      <p><strong>Most of that config writes itself.</strong> <code>grat init</code> reads the project and proposes what it finds. Angular, Astro, Next.js, Nuxt, React Router, SvelteKit and Vite are recognised on the frontend, Django, Laravel, Rails and FastAPI on the backend, along with Go modules and Swift packages using Vapor. Every command it writes carries the port and the host, because a development server that binds every interface is on the network by accident.</p>
+      <p><strong>Sometimes it asks you instead, and that is the point.</strong> Express, Fastify, NestJS and Go read no port of their own and have no flag for one, so the port sits in the line of your code that starts the server. grat looks there for <code class="inline-code">process.env.PORT</code> or <code class="inline-code">os.Getenv("PORT")</code>. If it finds it, you get a command. If it does not, grat names the file and the reason rather than guessing, because a guessed port produces a service that runs perfectly and never reports ready. You then either read the port from the environment, or name the command once with <code>--service name=command</code>.</p>
+      <p><strong>The environment is small on purpose.</strong> A command inherits ten variables, namely <code>HOME</code>, <code>LANG</code>, <code>LC_ALL</code>, <code>LC_CTYPE</code>, <code>LOGNAME</code>, <code>PATH</code>, <code>SHELL</code>, <code>TERM</code>, <code>TMPDIR</code> and <code>USER</code>, plus whatever it lists in <code>inherit_env</code>. Everything else you happen to have exported stays out, so a service behaves the same however your shell is set up.</p>
+    </div>
+  </section>
+
   <section class="section measure" id="services">
     <div class="section__head">
-      <span class="section__number">02. Services</span>
+      <span class="section__number">03. Services</span>
       <h2 class="section__title">Ready means ready, not started</h2>
       <p class="section__lead">A process that has been launched is not a service that answers. grat waits for a listener owned by the command it started, then for the health path to return, and only then calls it ready.</p>
     </div>
@@ -121,7 +159,7 @@ worker    <span class="t-ok">running</span>  -     16462</pre>
 
   <section class="section measure" id="ports">
     <div class="section__head">
-      <span class="section__number">03. Ports</span>
+      <span class="section__number">04. Ports</span>
       <h2 class="section__title">Every role owns a lane</h2>
       <p class="section__lead">Ports stop being a thing you remember. A service's role decides the range it may live in, and grat allocates inside it, across every project it knows about.</p>
     </div>
@@ -129,33 +167,33 @@ worker    <span class="t-ok">running</span>  -     16462</pre>
     <div class="scale">
       <div class="scale__row">
         <span class="scale__role">frontend</span>
-        <div class="scale__lane"><span class="scale__span" style="left:0.00%;width:4.76%"></span><span class="scale__value" style="left:4.76%">3000-3099</span></div>
+        <div class="scale__lane"><span class="scale__span" style="left:0.00%;width:6.52%"></span><span class="scale__value" style="left:6.52%">3000-3149</span></div>
       </div>
       <div class="scale__row">
         <span class="scale__role">developer</span>
-        <div class="scale__lane"><span class="scale__span" style="left:4.76%;width:4.76%"></span><span class="scale__value" style="left:9.52%">3100-3199</span></div>
+        <div class="scale__lane"><span class="scale__span" style="left:6.52%;width:6.52%"></span><span class="scale__value" style="left:13.04%">3150-3299</span></div>
       </div>
       <div class="scale__row">
         <span class="scale__role">backend</span>
-        <div class="scale__lane"><span class="scale__span" style="left:47.62%;width:4.76%"></span><span class="scale__value" style="left:52.38%">4000-4099</span></div>
+        <div class="scale__lane"><span class="scale__span" style="left:43.48%;width:6.52%"></span><span class="scale__value" style="left:50.00%">4000-4149</span></div>
       </div>
       <div class="scale__row">
         <span class="scale__role">dashboard</span>
-        <div class="scale__lane"><span class="scale__span" style="left:71.43%;width:4.76%"></span><span class="scale__value" style="left:76.19%">4500-4599</span></div>
+        <div class="scale__lane"><span class="scale__span" style="left:65.22%;width:6.52%"></span><span class="scale__value" style="left:71.74%">4500-4649</span></div>
       </div>
       <div class="scale__row">
         <span class="scale__role">other</span>
-        <div class="scale__lane"><span class="scale__span" style="left:95.24%;width:4.76%"></span><span class="scale__value scale__value--before" style="left:95.24%">5000-5099</span></div>
+        <div class="scale__lane"><span class="scale__span" style="left:86.96%;width:13.04%"></span><span class="scale__value scale__value--before" style="left:86.96%">5000-5299</span></div>
       </div>
-      <div class="scale__legend"><span>3000</span><span>5099</span></div>
+      <div class="scale__axis"><span class="scale__tick scale__tick--first" style="left:0.00%">3000</span><span class="scale__tick" style="left:21.74%">3500</span><span class="scale__tick" style="left:43.48%">4000</span><span class="scale__tick" style="left:65.22%">4500</span><span class="scale__tick" style="left:86.96%">5000</span><span class="scale__tick scale__tick--last" style="left:99.96%">5299</span></div>
     </div>
   </section>
 
   <section class="section measure" id="public">
     <div class="section__head">
-      <span class="section__number">04. Public access</span>
+      <span class="section__number">05. Public access</span>
       <h2 class="section__title">A webhook can reach your laptop</h2>
-      <p class="section__lead">A payment provider confirms from server to server, to an address it reaches from the internet. grat makes one of your services reachable there, at a name that stays the same, and sets Tailscale up on the way if it is missing.</p>
+      <p class="section__lead">Whether you want to show somebody on the other side of the world how your site or web app currently looks, or you need a webhook URL that reaches your local development environment, grat gives you a way to do it. Underneath, the exposing runs on <a href="https://tailscale.com" target="_blank" rel="noopener noreferrer">Tailscale</a>. You configure nothing and set nothing up. Run the command, and grat does the rest.</p>
     </div>
     <div class="split">
       <div class="stack">
@@ -182,13 +220,13 @@ worker    <span class="t-ok">running</span>  -     16462</pre>
 <pre class="window__body"><span class="t-title">Exposing service</span>  <span class="t-project">example.com</span>
   [<span class="t-info">info</span>] <span class="t-name">Tailscale</span>        is not installed on this machine
   [<span class="t-info">info</span>] <span class="t-name">Command</span>          brew install tailscale
-  [<span class="t-work">...</span>] <span class="t-name">Tailscale</span>        installing
-  [<span class="t-ok">ok</span>] <span class="t-name">Tailscale</span>        installed
+  [<span class="t-work">...</span>]  <span class="t-name">Tailscale</span>        installing
+  [<span class="t-ok">ok</span>]   <span class="t-name">Tailscale</span>        installed
   [<span class="t-info">info</span>] <span class="t-name">Tailnet</span>          this machine is signed in to no tailnet
-  [<span class="t-work">...</span>] <span class="t-name">Sign-in</span>          opening the page in your browser
-  [<span class="t-ok">ok</span>] <span class="t-name">Tailnet</span>          this machine is connected
-  [<span class="t-work">...</span>] <span class="t-name">backend</span>          publishing /api/webhooks/creem
-  [<span class="t-ok">ok</span>] <span class="t-name">backend</span>          reachable at https://mini.tail1234.ts.net/api/webhooks/creem</pre>
+  [<span class="t-work">...</span>]  <span class="t-name">Sign-in</span>          opening the page in your browser
+  [<span class="t-ok">ok</span>]   <span class="t-name">Tailnet</span>          this machine is connected
+  [<span class="t-work">...</span>]  <span class="t-name">backend</span>          publishing /api/webhooks/creem
+  [<span class="t-ok">ok</span>]   <span class="t-name">backend</span>          reachable at https://mini.tail1234.ts.net/api/webhooks/creem</pre>
       </div>
     </div>
   </section>
@@ -199,9 +237,9 @@ worker    <span class="t-ok">running</span>  -     16462</pre>
   <div class="measure footer__row">
     <span>grat, MIT licensed</span>
     <div class="footer__links">
-      <a href="https://github.com/phranck/grat">Source</a>
-      <a href="https://github.com/phranck/grat/releases">Releases</a>
-      <a href="https://github.com/phranck/grat/issues">Issues</a>
+      <a target="_blank" rel="noopener noreferrer" href="https://github.com/phranck/grat">Source</a>
+      <a target="_blank" rel="noopener noreferrer" href="https://github.com/phranck/grat/releases">Releases</a>
+      <a target="_blank" rel="noopener noreferrer" href="https://github.com/phranck/grat/issues">Issues</a>
     </div>
   </div>
 </footer>

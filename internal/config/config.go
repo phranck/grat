@@ -502,19 +502,38 @@ func (runtime Runtime) Durations() (Durations, error) {
 func (role Role) PortRange() (PortRange, bool) {
 	switch role {
 	case RoleFrontend, RoleWebsite:
-		return PortRange{First: 3000, Last: 3099}, true
+		return PortRange{First: 3000, Last: 3149}, true
 	case RoleDeveloper:
-		return PortRange{First: 3100, Last: 3199}, true
+		return PortRange{First: 3150, Last: 3299}, true
 	case RoleBackend, RoleAPI:
-		return PortRange{First: 4000, Last: 4099}, true
+		return PortRange{First: 4000, Last: 4149}, true
 	case RoleDashboard, RoleAdmin:
-		return PortRange{First: 4500, Last: 4599}, true
+		return PortRange{First: 4500, Last: 4649}, true
 	case RoleOther:
-		return PortRange{First: 5000, Last: 5099}, true
+		return PortRange{First: 5000, Last: 5299}, true
 	case RoleWorker:
 		return PortRange{}, true
 	default:
 		return PortRange{}, false
+	}
+}
+
+// Roles lists every role grat knows, in the order documentation presents them.
+//
+// It exists so that anything describing the roles, such as the manual page, is
+// built from this list rather than repeating it. A second list would go on
+// naming a role after one was added here, and nothing would say so.
+func Roles() []Role {
+	return []Role{
+		RoleFrontend,
+		RoleWebsite,
+		RoleDeveloper,
+		RoleBackend,
+		RoleAPI,
+		RoleDashboard,
+		RoleAdmin,
+		RoleOther,
+		RoleWorker,
 	}
 }
 

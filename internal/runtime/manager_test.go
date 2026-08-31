@@ -157,7 +157,7 @@ func TestStartRejectsUnhealthyHTTPResponse(t *testing.T) {
 func TestStartGracefullyStopsPreviouslyStartedServicesWhenCancelled(t *testing.T) {
 	t.Setenv(runtimeHelperEnvironment, "1")
 	backendPort := freeTCPPort(t, runtimeBackendTestPortFirst, runtimeBackendTestPortLast)
-	developerPort := freeTCPPort(t, 3100, 3199)
+	developerPort := freeTCPPort(t, 3150, 3299)
 	backend := fixtureService(backendPort, helperCommand(http.StatusOK))
 	developer := config.Service{
 		Name: "developer", Command: "sleep 30", Role: config.RoleDeveloper,

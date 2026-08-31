@@ -9,9 +9,21 @@ input="$workspace/input"
 output="$workspace/output"
 mkdir -p "$input"
 
+# The mock stands in for a release binary. The packaging script runs the one
+# matching this host to produce the manual page, so the mock has to answer that
+# call as well as identify itself.
 for target in darwin_amd64 darwin_arm64 linux_amd64 linux_arm64; do
 	asset="$input/grat_v9.9.9_${target}"
-	printf 'mock binary for %s\n' "$target" >"$asset"
+	cat >"$asset" <<EOF
+#!/bin/sh
+if [ "\${1:-}" = manual ]; then
+	echo '.TH GRAT 1 "2026-01-01" "grat v9.9.9" "User Commands"'
+	echo '.SH NAME'
+	echo 'grat \\- mock manual for ${target}'
+	exit 0
+fi
+echo 'mock binary for ${target}'
+EOF
 	chmod 755 "$asset"
 done
 
@@ -59,6 +71,20 @@ assert_mode() {
 	esac
 }
 
+# The manual page is generated once and copied into every bottle, so each one
+# has to carry a page that starts with the header a manual reader expects.
+assert_manual() {
+	archive=$1
+	first=$(tar -xOzf "$archive" "grat/9.9.9/share/man/man1/grat.1" | head -1)
+	case "$first" in
+		".TH GRAT 1 "*) ;;
+		*)
+			echo "archive $archive carries no usable manual page: $first" >&2
+			exit 1
+			;;
+	esac
+}
+
 for spec in \
 	"darwin_amd64 tahoe" \
 	"darwin_arm64 arm64_tahoe" \
@@ -71,8 +97,10 @@ for spec in \
 	assert_file "$archive"
 	assert_archive_contains "$archive" "grat/9.9.9/.brew/grat.rb"
 	assert_archive_contains "$archive" "grat/9.9.9/bin/grat"
+	assert_archive_contains "$archive" "grat/9.9.9/share/man/man1/grat.1"
 	assert_binary "$archive" "$target"
 	assert_mode "$archive"
+	assert_manual "$archive"
 done
 
 formula=$(tar -xOzf "$output/grat-9.9.9.arm64_tahoe.bottle.tar.gz" "grat/9.9.9/.brew/grat.rb")
@@ -86,6 +114,14 @@ esac
 case "$formula" in
 	*'head '*)
 		echo "embedded formula must not advertise a development head" >&2
+		exit 1
+		;;
+esac
+
+case "$formula" in
+	*'man1.install "grat.1"'*) ;;
+	*)
+		echo "embedded formula does not install the manual page" >&2
 		exit 1
 		;;
 esac

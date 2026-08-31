@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -12,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/phranck/grat/internal/config"
+	"github.com/phranck/grat/internal/detect"
 	"github.com/phranck/grat/internal/ports"
 	"github.com/phranck/grat/internal/presentation"
 )
@@ -151,45 +151,15 @@ func initServiceSuggestions(root string, explicit []string) ([]serviceDefinition
 	return definitions, nil
 }
 
+// detectServices asks the detector what this directory holds and returns the
+// services it could derive completely. What it recognised without understanding
+// is not returned, because the caller offers these as suggestions to accept and
+// a suggestion has to be runnable.
 func detectServices(root string) ([]serviceDefinition, error) {
-	// #nosec G304 -- root is the explicitly selected project root and the filename is fixed.
-	data, err := os.ReadFile(filepath.Join(root, "package.json"))
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("read package.json for service detection: %w; use --service name=command", err)
+	finding := detect.Directory(root)
+	definitions := make([]serviceDefinition, 0, len(finding.Services))
+	for _, service := range finding.Services {
+		definitions = append(definitions, serviceDefinition{Name: service.Name, Command: service.Command})
 	}
-	var manifest struct {
-		PackageManager string            `json:"packageManager"`
-		Scripts        map[string]string `json:"scripts"`
-	}
-	if err := json.Unmarshal(data, &manifest); err != nil {
-		return nil, fmt.Errorf("parse package.json for service detection: %w", err)
-	}
-
-	packageCommand := "npm run"
-	if strings.HasPrefix(manifest.PackageManager, "pnpm@") || fileExists(filepath.Join(root, "pnpm-lock.yaml")) {
-		packageCommand = "pnpm"
-	}
-	definitions := make([]serviceDefinition, 0, 5)
-	addScript := func(name string, scripts ...string) {
-		for _, script := range scripts {
-			if _, exists := manifest.Scripts[script]; exists {
-				definitions = append(definitions, serviceDefinition{Name: name, Command: packageCommand + " " + script})
-				return
-			}
-		}
-	}
-	addScript("shared", "dev:shared")
-	addScript("backend", "dev:backend")
-	addScript("frontend", "dev:frontend", "dev")
-	addScript("developer", "dev:developer")
-	addScript("dashboard", "dev:dashboard")
 	return definitions, nil
-}
-
-func fileExists(path string) bool {
-	info, err := os.Stat(path)
-	return err == nil && info.Mode().IsRegular()
 }
