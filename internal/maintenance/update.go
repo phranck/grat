@@ -45,10 +45,17 @@ func (service Service) Update(ctx context.Context) (Result, error) {
 	if owned, err := service.homebrewOwns(ctx, executable); err != nil {
 		return Result{}, err
 	} else if owned {
+		installed := service.currentVersion()
 		if _, err := service.command(ctx, "brew", "upgrade", HomebrewFormula); err != nil {
 			return Result{}, fmt.Errorf("update with Homebrew: %w", err)
 		}
-		return Result{Message: "Updated grat with Homebrew."}, nil
+		// Reading the version back can fail without the upgrade having failed, so a
+		// missing answer costs the detail in the message and nothing else.
+		upgraded, err := service.homebrewVersion(ctx)
+		if err != nil {
+			return Result{Message: "Updated grat with Homebrew."}, nil
+		}
+		return Result{Message: updateMessage(installed, upgraded, "with Homebrew")}, nil
 	}
 	if module, buildVersion, ok := service.buildInfo(); ok && module == ModulePath && buildVersion != "" && buildVersion != "(devel)" {
 		return Result{Message: "Run: go install github.com/phranck/grat/cmd/grat@latest"}, nil
@@ -96,7 +103,7 @@ func (service Service) updateDirectRelease(ctx context.Context, executable strin
 		return Result{}, errors.New("latest grat release has no tag")
 	}
 	if latest.TagName == currentVersion {
-		return Result{Message: "grat is already up to date (" + currentVersion + ")."}, nil
+		return Result{Message: updateMessage(currentVersion, latest.TagName, "")}, nil
 	}
 	assetName := service.assetName(latest.TagName)
 	expectedDigest, err := service.releaseChecksum(ctx, latest, assetName)
@@ -110,7 +117,60 @@ func (service Service) updateDirectRelease(ctx context.Context, executable strin
 	if err := service.replaceVerifiedBinary(ctx, executable, binaryAsset.BrowserDownloadURL, expectedDigest, latest.TagName); err != nil {
 		return Result{}, err
 	}
-	return Result{Message: "Updated grat to " + latest.TagName + "."}, nil
+	return Result{Message: updateMessage(currentVersion, latest.TagName, "")}, nil
+}
+
+// homebrewVersion reports the version Homebrew currently has linked.
+//
+// It reads the path the formula's prefix resolves to, whose last element is that
+// version. The formula's version list is not used, because it holds every
+// version still in the cellar after an upgrade rather than the one in force.
+func (service Service) homebrewVersion(ctx context.Context) (string, error) {
+	prefixOutput, err := service.command(ctx, "brew", "--prefix", HomebrewFormula)
+	if err != nil {
+		return "", err
+	}
+	prefix := strings.TrimSpace(string(prefixOutput))
+	if prefix == "" {
+		return "", fmt.Errorf("Homebrew reported no prefix for %s", HomebrewFormula)
+	}
+	resolved, err := service.evalSymlinks(prefix)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Base(resolved), nil
+}
+
+// updateMessage names both versions, because what somebody wants from an update
+// is to know what changed. via names the mechanism where there is one to name,
+// such as "with Homebrew", and is empty otherwise.
+func updateMessage(before string, after string, via string) string {
+	before = versionWithPrefix(before)
+	after = versionWithPrefix(after)
+	suffix := ""
+	if via != "" {
+		suffix = " " + via
+	}
+	switch {
+	case after == "":
+		return "Updated grat" + suffix + "."
+	case before == after:
+		return "grat is already up to date (" + after + ")."
+	case before == "":
+		return "Updated grat to " + after + suffix + "."
+	default:
+		return "Updated grat from " + before + " to " + after + suffix + "."
+	}
+}
+
+// versionWithPrefix gives a version the leading v that grat prints, so a version
+// reported by Homebrew and one reported by the running binary compare equal.
+func versionWithPrefix(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" || strings.HasPrefix(value, "v") {
+		return value
+	}
+	return "v" + value
 }
 
 func (service Service) verifyDirectRelease(ctx context.Context, executable string, currentVersion string) error {
