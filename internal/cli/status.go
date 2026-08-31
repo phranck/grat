@@ -59,14 +59,14 @@ func renderStatus(ctx context.Context, manager gratruntime.Manager, output prese
 //
 // This is the place where an address that should not be open stands out, which is
 // why it belongs in the ordinary status rather than only in a command of its own.
-// It never turns status into a command that can fail: a project that publishes
-// nothing asks Tailscale nothing, and a machine that cannot answer leaves the
+// It never turns status into a command that can fail: a project with no HTTP
+// service asks Tailscale nothing, and a machine that cannot answer leaves the
 // column empty.
 func publicAddresses(ctx context.Context, value config.Config) map[string]string {
 	addresses := make(map[string]string)
 	exposable := make([]config.Service, 0, len(value.Services))
 	for _, service := range value.Services {
-		if service.Expose != nil {
+		if service.Port != 0 {
 			exposable = append(exposable, service)
 		}
 	}
@@ -87,7 +87,7 @@ func publicAddresses(ctx context.Context, value config.Config) map[string]string
 		return addresses
 	}
 	for _, service := range exposable {
-		funnel := funnelFor(service)
+		funnel := funnelFor(service, "")
 		if isPublished(published, funnel) {
 			addresses[service.Name] = funnel.PublicURL(hostname)
 		}

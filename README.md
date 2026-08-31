@@ -432,11 +432,11 @@ port = 0
 | `port` | yes | Role-compatible HTTP port, or `0` for a worker. |
 | `health_path` | HTTP only | Absolute path beginning with `/`; omitted for a worker. |
 | `inherit_env` | no | Parent variable names to pass in addition to the safe baseline; `PORT` is reserved, while an approved `BACKEND_URL` overrides automatic backend discovery. |
-| `expose` | no | The single path this service publishes to the internet. Without this section the service cannot be exposed. |
+| `expose` | no | Narrows what `grat expose` publishes to one path. Without this section the whole service is published. |
 
 | Expose field | Required | Meaning |
 | --- | --- | --- |
-| `path` | yes | The only path that goes public, beginning with `/`. Everything else the service serves stays inside. |
+| `path` | yes | The only path that goes public, beginning with `/`. Everything else the service serves stays inside. Required once the section exists. |
 | `public_port` | no | One of `443`, `8443` or `10000`, which are the ports Tailscale Funnel listens on. The default is `443`. |
 
 Two services in one configuration cannot share a port. Every non-worker port
@@ -530,9 +530,9 @@ Service lifecycle
   logs [--follow] NAME       Print or follow a service log
 
 Public access
-  expose NAME                Publish the configured path of a service to the internet
+  expose [--path P] NAME     Publish a service to the internet; --path narrows it to one path
   expose status [name...]    Show what is published, with the public address
-  hide NAME                  Withdraw a published path
+  hide [--path P] NAME       Withdraw a published service or path
 
 Ports
   ports audit                Find configured port collisions and live listeners
@@ -580,11 +580,20 @@ grat expose status    # shows what is open, with the address
 grat hide backend     # closes it again
 ```
 
-What is published is an address, not a service. The `[services.expose]` section
-names one path, and only that path leaves the machine. Everything else the
-service offers stays inside, including whatever a development setup leaves more
-open than production would. A service without that section is refused, with the
-reason.
+Running the command is the decision, so nothing has to be prepared first. A
+service published this way is reachable in full.
+
+Where less than that should leave the machine, name the path. `--path` does it
+for one run, and a `[services.expose]` section does it for good:
+
+```sh
+grat expose --path /api/webhooks/creem backend
+```
+
+That is worth doing for a service whose only business with the internet is a
+callback, because everything else it offers then stays inside, including
+whatever a development setup leaves more open than production would. The path
+given on the command line wins over the one in the configuration.
 
 grat sets Tailscale up when it is missing. It reports each step and does not ask,
 because the change is what the typed command needs in order to work. On a Mac it
@@ -654,9 +663,9 @@ A published path is the one state grat creates that reaches beyond the machine.
 It is deliberately independent of the service behind it and stands until it is
 closed, so stopping or restarting a service leaves it open. `grat status` shows
 every open address in its `PUBLIC` column, `grat expose status` lists them with
-the path they serve, and `grat hide <name>` closes one. Only the path named in
-`[services.expose]` is reachable; nothing else the service serves leaves the
-machine.
+the path they serve, and `grat hide <name>` closes one. A service published
+without a path is reachable in full, so name a path wherever only a callback
+has business with the internet.
 
 If `grat status` reports a legacy process identity after upgrading grat, use
 `grat recover [--yes] [name...]`.

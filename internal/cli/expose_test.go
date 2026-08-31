@@ -15,8 +15,9 @@ import (
 	"github.com/phranck/grat/internal/tailscale/tailscaletest"
 )
 
-// exposeProject writes a project whose backend declares a path to publish and
-// whose worker declares none, and returns its root.
+// exposeProject writes a project with the three cases that matter: a backend that
+// narrows itself to one path, a frontend that says nothing and therefore
+// publishes all of itself, and a worker that has no address at all.
 func exposeProject(t *testing.T, cwd string) string {
 	t.Helper()
 	content := `version = 1
@@ -34,6 +35,14 @@ health_path = "/health"
 
   [services.expose]
   path = "/api/webhooks/creem"
+
+[[services]]
+name = "frontend"
+command = "npm run dev"
+role = "frontend"
+port = 3000
+host = "localhost"
+health_path = "/"
 
 [[services]]
 name = "queue"
@@ -115,7 +124,7 @@ func TestHideWithdrawsExactlyTheSameFunnel(t *testing.T) {
 	}
 }
 
-func TestExposeRefusesAServiceThatDeclaresNoPath(t *testing.T) {
+func TestExposeRefusesAProcessOnlyService(t *testing.T) {
 	t.Parallel()
 
 	store, cwd := newCLITestStore(t)
@@ -125,13 +134,90 @@ func TestExposeRefusesAServiceThatDeclaresNoPath(t *testing.T) {
 	var stderr bytes.Buffer
 	code := runWithEnvironment(context.Background(), []string{"expose", "queue"}, root, &bytes.Buffer{}, &stderr, exposeEnvironment(t, store, root, client))
 	if code == 0 {
-		t.Fatal("expose exit = 0, want a refusal for a service without an expose section")
+		t.Fatal("expose exit = 0, want a refusal for a service with no address")
 	}
-	if !strings.Contains(stderr.String(), "[services.expose]") {
-		t.Fatalf("stderr = %q, want the missing section named", stderr.String())
+	if !strings.Contains(stderr.String(), "no address to publish") {
+		t.Fatalf("stderr = %q, want the reason named", stderr.String())
 	}
 	if len(client.Opened) != 0 {
 		t.Fatalf("opened %+v, want nothing published", client.Opened)
+	}
+}
+
+func TestExposeWithoutAnyConfigurationPublishesTheWholeService(t *testing.T) {
+	t.Parallel()
+
+	store, cwd := newCLITestStore(t)
+	root := exposeProject(t, cwd)
+	client := &tailscaletest.Client{Name: "fixture.tail1234.ts.net"}
+
+	var stdout, stderr bytes.Buffer
+	code := runWithEnvironment(context.Background(), []string{"expose", "frontend"}, root, &stdout, &stderr, exposeEnvironment(t, store, root, client))
+	if code != 0 {
+		t.Fatalf("expose exit = %d, stderr = %s", code, stderr.String())
+	}
+	if len(client.Opened) != 1 {
+		t.Fatalf("opened %d funnels, want exactly one", len(client.Opened))
+	}
+	opened := client.Opened[0]
+	if opened.Path != config.DefaultExposePath || opened.PublicPort != config.DefaultPublicPort {
+		t.Fatalf("opened = %+v, want the whole service on the default port", opened)
+	}
+	if opened.Target != "http://localhost:3000" {
+		t.Fatalf("target = %q, want the local service address", opened.Target)
+	}
+	if !strings.Contains(stdout.String(), "https://fixture.tail1234.ts.net/") {
+		t.Fatalf("output does not report the public address:\n%s", stdout.String())
+	}
+}
+
+func TestThePathFlagNarrowsWhatIsPublished(t *testing.T) {
+	t.Parallel()
+
+	store, cwd := newCLITestStore(t)
+	root := exposeProject(t, cwd)
+	client := &tailscaletest.Client{}
+
+	var stderr bytes.Buffer
+	code := runWithEnvironment(context.Background(), []string{"expose", "--path", "/hooks/stripe", "frontend"}, root, &bytes.Buffer{}, &stderr, exposeEnvironment(t, store, root, client))
+	if code != 0 {
+		t.Fatalf("expose exit = %d, stderr = %s", code, stderr.String())
+	}
+	if client.Opened[0].Path != "/hooks/stripe" {
+		t.Fatalf("path = %q, want the path given on the command line", client.Opened[0].Path)
+	}
+}
+
+func TestThePathFlagWinsOverTheConfiguredPath(t *testing.T) {
+	t.Parallel()
+
+	store, cwd := newCLITestStore(t)
+	root := exposeProject(t, cwd)
+	client := &tailscaletest.Client{}
+
+	var stderr bytes.Buffer
+	code := runWithEnvironment(context.Background(), []string{"expose", "--path", "/other", "backend"}, root, &bytes.Buffer{}, &stderr, exposeEnvironment(t, store, root, client))
+	if code != 0 {
+		t.Fatalf("expose exit = %d, stderr = %s", code, stderr.String())
+	}
+	if client.Opened[0].Path != "/other" {
+		t.Fatalf("path = %q, want the command line to win over the configuration", client.Opened[0].Path)
+	}
+}
+
+func TestARelativePathFlagIsRefused(t *testing.T) {
+	t.Parallel()
+
+	store, cwd := newCLITestStore(t)
+	root := exposeProject(t, cwd)
+
+	var stderr bytes.Buffer
+	code := runWithEnvironment(context.Background(), []string{"expose", "--path", "hooks", "frontend"}, root, &bytes.Buffer{}, &stderr, exposeEnvironment(t, store, root, &tailscaletest.Client{}))
+	if code == 0 {
+		t.Fatal("expose exit = 0, want a relative path to be refused")
+	}
+	if !strings.Contains(stderr.String(), "begin with a slash") {
+		t.Fatalf("stderr = %q, want the reason named", stderr.String())
 	}
 }
 
@@ -201,7 +287,7 @@ func TestTheCommandReferenceNamesBothCommands(t *testing.T) {
 			usage.WriteString(command.Usage + "\n")
 		}
 	}
-	for _, wanted := range []string{"expose NAME", "expose status", "hide NAME"} {
+	for _, wanted := range []string{"expose [--path P] NAME", "expose status", "hide [--path P] NAME"} {
 		if !strings.Contains(usage.String(), wanted) {
 			t.Fatalf("command reference is missing %q:\n%s", wanted, usage.String())
 		}
@@ -217,7 +303,7 @@ func TestTheFunnelTargetDropsTheTrailingSlashOfTheServiceURL(t *testing.T) {
 		Host:   "localhost",
 		Expose: &config.Expose{Path: "/hook", PublicPort: 443},
 	}
-	if got, want := funnelFor(service).Target, "http://localhost:4001"; got != want {
+	if got, want := funnelFor(service, "").Target, "http://localhost:4001"; got != want {
 		t.Fatalf("target = %q, want %q", got, want)
 	}
 }
