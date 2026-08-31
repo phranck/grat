@@ -1,0 +1,820 @@
+/* ===========================================================================
+   grat website
+   ===========================================================================
+   Design: warm paper, a hairline track running through it, and one terracotta
+   accent. The page is light only; the terminal windows are the sole dark
+   surfaces, so real output reads as something quoted rather than as the page's
+   own voice.
+
+   Every value below is a token. Anything that can be derived is derived, so a
+   change moves one line and the page follows. The card geometry states an outer
+   radius and a padding; the nested radius and the text inset come from those.
+   =========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* --- Palette: light ---------------------------------------------------- */
+  --paper: #faf7f2;
+  --paper-raised: #ffffff;
+  --paper-sunken: #f1eae0;
+  --ink: #1a1713;
+  --ink-muted: #6d6459;
+  --rule: #e3d9cb;
+  --accent: #c04a26;
+  --accent-strong: #9a3a1c;
+  --accent-on: #ffffff;
+
+  /* --- grat's terminal palette ------------------------------------------
+     Quoted from internal/presentation/styles.go. These belong to the tool and
+     are used only inside a terminal window, so the output on this page has the
+     colours it actually has. */
+  --term-surface: #16181d;
+  --term-chrome: #0f1115;
+  --term-edge: #2a2f38;
+  --term-accent: #2abef6;
+  --term-project: #f5a524;
+  --term-success: #38d17a;
+  --term-failure: #f05d5e;
+  --term-bright: #d8e0ea;
+  --term-body: #9aa6b5;
+  --term-detail: #8793a2;
+
+  /* --- Derived colours ---------------------------------------------------
+     A tint is the accent at a tenth of its strength, so an active element is
+     never distinguished by colour alone. */
+  --accent-tint: color-mix(in srgb, var(--accent) 10%, transparent);
+  --accent-edge: color-mix(in srgb, var(--accent) 35%, transparent);
+  --track-line: color-mix(in srgb, var(--rule) 60%, transparent);
+  --shadow-card: 0 1px 2px color-mix(in srgb, var(--ink) 6%, transparent);
+  --shadow-window: 0 32px 60px -40px color-mix(in srgb, var(--ink) 60%, transparent);
+
+  /* --- Card geometry -----------------------------------------------------
+     Both derivations live here, on the element that declares what they read.
+     A property containing var() resolves where it is declared, so a derivation
+     placed further down would come back empty. */
+  --card-radius: 24px;
+  --card-padding: 22px;
+  --card-inner-radius: max(calc(var(--card-radius) - var(--card-padding)), 0px);
+  --card-text-inset: calc(var(--card-radius) / 2);
+
+  /* --- Measure and rhythm ------------------------------------------------- */
+  --measure: 70rem;
+  --gutter: 1.5rem;
+  --track: 92px;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+
+  /* --- Type ---------------------------------------------------------------
+     Code keeps a size of its own, because it is read at the size it is written
+     at and must not grow when the reading scale does. */
+  --font-body: "Inter", ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Fira Code", Menlo, monospace;
+
+  --size-display: clamp(2.5rem, 6.5vw, 4.5rem);
+  --size-section: clamp(1.6rem, 3.2vw, 2.25rem);
+  --size-lead: 1.1875rem;
+  --size-body: 1rem;
+  --size-small: 0.875rem;
+  --size-label: 0.6875rem;
+  --size-code: 0.8125rem;
+
+  --leading-display: 1.02;
+  --leading-body: 1.65;
+  --tracking-display: -0.035em;
+  --tracking-label: 0.1em;
+
+  /* --- Motion -------------------------------------------------------------- */
+  --duration-quick: 130ms;
+  --duration-calm: 260ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background-color: var(--paper);
+  /* The track motif: hairlines the page sits on, standing for the lanes that
+     services and ports run in. Painted, not fixed-attachment, so it composites
+     once instead of being repositioned on every scroll frame. */
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--track-line) 0,
+    var(--track-line) 1px,
+    transparent 1px,
+    transparent var(--track)
+  );
+  font-family: var(--font-body);
+  font-size: var(--size-body);
+  line-height: var(--leading-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* --- One measure for the page --------------------------------------------- */
+
+.measure {
+  width: 100%;
+  max-width: var(--measure);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* --- Header ----------------------------------------------------------------
+   A band spanning the window carries the surface and the blur; a row inside it
+   is held to the page measure, so the wordmark begins where the text does. */
+
+.band {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background-color: color-mix(in srgb, var(--paper) 82%, transparent);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--rule);
+}
+
+.band__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  min-height: 4rem;
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.wordmark__glyph {
+  color: var(--accent);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.nav__link {
+  padding: var(--space-2) var(--space-3);
+  border-radius: 999px;
+  color: var(--ink-muted);
+  font-size: var(--size-small);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--duration-quick) var(--ease),
+    background-color var(--duration-quick) var(--ease);
+}
+
+.nav__link:hover {
+  color: var(--ink);
+  background-color: var(--paper-sunken);
+}
+
+/* The current item carries the accent and its tint together, and hovering it
+   keeps the tint rather than replacing it with the neutral one. */
+.nav__link[aria-current="page"],
+.nav__link[aria-current="page"]:hover {
+  color: var(--accent-strong);
+  background-color: var(--accent-tint);
+}
+
+.nav__icon {
+  font-size: 1.125rem;
+  vertical-align: -0.15em;
+}
+
+@media (max-width: 48rem) {
+  .nav__link--optional {
+    display: none;
+  }
+}
+
+/* --- Hero ------------------------------------------------------------------ */
+
+.hero {
+  padding-block: var(--space-20) var(--space-16);
+}
+
+.hero__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-12);
+  align-items: center;
+}
+
+@media (min-width: 62rem) {
+  .hero__grid {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    gap: var(--space-10);
+  }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background-color: var(--paper-raised);
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--size-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.badge__dot {
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 999px;
+  background-color: var(--term-success);
+}
+
+.hero__title {
+  margin: var(--space-6) 0 0;
+  font-size: var(--size-display);
+  line-height: var(--leading-display);
+  letter-spacing: var(--tracking-display);
+  font-weight: 650;
+}
+
+.hero__title em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+.hero__lead {
+  margin: var(--space-6) 0 0;
+  max-width: 34em;
+  color: var(--ink-muted);
+  font-size: var(--size-lead);
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-8);
+}
+
+.hero__note {
+  margin: var(--space-4) 0 0;
+  color: var(--ink-muted);
+  font-size: var(--size-small);
+}
+
+/* --- Buttons ---------------------------------------------------------------
+   A button is as wide as its label. The single exception is a phone-sized
+   viewport, which is the media query at the end of this block rather than a
+   property of any button. */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font: inherit;
+  font-size: var(--size-small);
+  font-weight: 560;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform var(--duration-quick) var(--ease),
+    background-color var(--duration-quick) var(--ease),
+    border-color var(--duration-quick) var(--ease),
+    color var(--duration-quick) var(--ease);
+}
+
+.button:active {
+  transform: translateY(1px);
+}
+
+.button--primary {
+  background-color: var(--accent);
+  color: var(--accent-on);
+}
+
+.button--primary:hover {
+  background-color: var(--accent-strong);
+}
+
+.button--quiet {
+  border-color: var(--rule);
+  background-color: var(--paper-raised);
+  color: var(--ink);
+}
+
+.button--quiet:hover {
+  background-color: var(--paper-sunken);
+}
+
+@media (max-width: 30rem) {
+  .hero__actions {
+    display: grid;
+  }
+  .hero__actions .button {
+    justify-content: center;
+  }
+}
+
+/* --- Sections -------------------------------------------------------------- */
+
+.section {
+  padding-block: var(--space-16);
+  border-top: 1px solid var(--rule);
+}
+
+.section__head {
+  max-width: 46rem;
+  margin-bottom: var(--space-10);
+}
+
+.section__number {
+  display: block;
+  margin-bottom: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--size-label);
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
+  color: var(--accent);
+}
+
+.section__title {
+  margin: 0;
+  font-size: var(--size-section);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  font-weight: 620;
+}
+
+.section__lead {
+  margin: var(--space-4) 0 0;
+  color: var(--ink-muted);
+  font-size: var(--size-lead);
+}
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-8);
+  align-items: start;
+}
+
+@media (min-width: 62rem) {
+  .split {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: var(--space-12);
+  }
+  .split--even {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+/* --- Cards ----------------------------------------------------------------- */
+
+.card {
+  padding: var(--card-padding);
+  border: 1px solid var(--rule);
+  border-radius: var(--card-radius);
+  background-color: var(--paper-raised);
+  box-shadow: var(--shadow-card);
+}
+
+/* Text inside a card meets the card's own corner, so it takes the inset on top
+   of the padding. A code block or a table runs the full width and has an edge
+   of its own, so it does not. */
+.card__title,
+.card__text {
+  padding-inline: var(--card-text-inset);
+}
+
+.card__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-2);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.card__title i {
+  color: var(--accent);
+  font-size: 1.375rem;
+}
+
+.card__text {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: var(--size-small);
+}
+
+.cards {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+/* --- Terminal window -------------------------------------------------------
+   The only dark surface on the page. Everything inside is real output from the
+   built binary. */
+
+.window {
+  border-radius: var(--card-radius);
+  background-color: var(--term-surface);
+  border: 1px solid var(--term-edge);
+  overflow: hidden;
+  box-shadow: var(--shadow-window);
+}
+
+.window__chrome {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--term-chrome);
+  border-bottom: 1px solid var(--term-edge);
+}
+
+.window__dot {
+  width: 0.5625rem;
+  height: 0.5625rem;
+  border-radius: 999px;
+  background-color: color-mix(in srgb, var(--term-detail) 40%, transparent);
+}
+
+.window__title {
+  margin-left: var(--space-2);
+  color: var(--term-detail);
+  font-family: var(--font-mono);
+  font-size: var(--size-label);
+  letter-spacing: 0.05em;
+}
+
+/* The block scrolls inside itself. A pre otherwise reports its longest line as
+   a minimum width, and that figure travels up and widens the page. */
+.window__body {
+  margin: 0;
+  padding: var(--space-4) var(--space-5);
+  overflow-x: auto;
+  contain: inline-size;
+  color: var(--term-body);
+  font-family: var(--font-mono);
+  font-size: var(--size-code);
+  line-height: 1.75;
+}
+
+.t-title { color: var(--term-accent); font-weight: 600; }
+.t-project { color: var(--term-detail); }
+.t-info { color: var(--term-detail); }
+.t-work { color: var(--term-accent); }
+.t-ok { color: var(--term-success); }
+.t-warn { color: var(--term-project); }
+.t-fail { color: var(--term-failure); }
+.t-head { color: var(--term-bright); font-weight: 600; }
+.t-name { color: var(--term-bright); }
+
+/* --- Command line ---------------------------------------------------------- */
+
+.command {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-3) var(--space-5);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background-color: var(--paper-raised);
+  font-family: var(--font-mono);
+  font-size: var(--size-code);
+}
+
+.command__prompt {
+  color: var(--accent);
+  user-select: none;
+}
+
+.command__text {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+/* A copy button is the icon alone: no border, no background. The transition
+   sits on the resting state, so the confirmation arrives at once and drains
+   away afterwards. */
+.copy {
+  margin-left: auto;
+  display: inline-flex;
+  padding: var(--space-1);
+  border: 0;
+  background: none;
+  color: var(--ink-muted);
+  font-size: 1.125rem;
+  cursor: pointer;
+  transition: color var(--duration-calm) var(--ease);
+}
+
+.copy:hover {
+  color: var(--ink);
+}
+
+.copy[data-copied="true"] {
+  color: var(--term-success);
+  transition: none;
+}
+
+/* --- Port scale -------------------------------------------------------------
+   Every role owns a port range. That is the one thing about grat which is
+   quicker to see than to read. */
+
+.scale {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.scale__row {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.scale__role {
+  font-family: var(--font-mono);
+  font-size: var(--size-small);
+  color: var(--ink);
+  text-align: right;
+}
+
+.scale__lane {
+  position: relative;
+  height: 2.5rem;
+  border-radius: 999px;
+  background-color: var(--paper-sunken);
+  border: 1px solid var(--rule);
+}
+
+.scale__span {
+  position: absolute;
+  inset-block: -1px;
+  border: 1px solid var(--accent-edge);
+  border-radius: 999px;
+  background-color: var(--accent-tint);
+}
+
+/* The range is written beside its bar, because 100 ports of 2100 is far too
+   narrow to hold the text. */
+.scale__value {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: var(--space-3);
+  color: var(--accent-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-label);
+  white-space: nowrap;
+}
+
+/* The last range sits at the right end of the lane, so its label goes to the
+   left of its bar instead of past the edge. */
+.scale__value--before {
+  margin-left: 0;
+  margin-right: var(--space-3);
+  transform: translate(-100%, -50%);
+}
+
+
+.scale__legend {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-3);
+  padding-left: calc(8.5rem + var(--space-4));
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--size-label);
+}
+
+@media (max-width: 40rem) {
+  .scale__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-1);
+  }
+  .scale__role {
+    text-align: left;
+  }
+  .scale__legend {
+    padding-left: 0;
+  }
+}
+
+/* --- Table ------------------------------------------------------------------
+   The scroll sits on the wrapper. A table reports its content width upwards and
+   would widen the page. */
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--rule);
+  border-radius: var(--card-radius);
+  background-color: var(--paper-raised);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--size-small);
+}
+
+th,
+td {
+  padding: var(--space-3) var(--space-5);
+  text-align: left;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+
+thead th {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--size-label);
+  font-weight: 500;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+td code,
+th code {
+  font-family: var(--font-mono);
+  font-size: var(--size-code);
+  color: var(--accent-strong);
+}
+
+/* --- Steps ------------------------------------------------------------------ */
+
+.steps {
+  display: grid;
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.steps li {
+  display: grid;
+  grid-template-columns: 1.75rem minmax(0, 1fr);
+  column-gap: var(--space-4);
+  row-gap: var(--space-1);
+}
+
+.steps li::before {
+  counter-increment: step;
+  content: counter(step, decimal-leading-zero);
+  font-family: var(--font-mono);
+  font-size: var(--size-small);
+  color: var(--accent);
+  line-height: var(--leading-body);
+}
+
+.steps strong {
+  display: block;
+  font-weight: 600;
+}
+
+.steps span {
+  color: var(--ink-muted);
+  font-size: var(--size-small);
+}
+
+/* The number, the title and its explanation are placed by hand: a list item is
+   a grid of two columns holding three items, so leaving it to auto-placement
+   wraps the explanation under the number instead of under the title. */
+.steps li::before { grid-column: 1; grid-row: 1; }
+.steps strong { grid-column: 2; grid-row: 1; }
+.steps span { grid-column: 2; grid-row: 2; }
+
+
+/* --- Footer ------------------------------------------------------------------ */
+
+.footer {
+  padding-block: var(--space-12);
+  border-top: 1px solid var(--rule);
+  color: var(--ink-muted);
+  font-size: var(--size-small);
+}
+
+.footer__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+}
+
+.footer a {
+  color: var(--ink-muted);
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+}
+
+.footer a:hover {
+  color: var(--ink);
+  border-bottom-color: currentColor;
+}
+
+/* --- Prose ------------------------------------------------------------------- */
+
+.prose p {
+  margin: 0 0 var(--space-4);
+  color: var(--ink-muted);
+}
+
+.prose p:last-child {
+  margin-bottom: 0;
+}
+
+.prose strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.prose code,
+.inline-code {
+  padding: 0.12em 0.38em;
+  border-radius: 0.4em;
+  background-color: var(--paper-sunken);
+  font-family: var(--font-mono);
+  font-size: var(--size-code);
+  color: var(--ink);
+}
+
+.stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

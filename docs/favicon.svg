@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="grat">
+  <!-- The track motif of the site, reduced to three lanes on the page colour. -->
+  <rect width="32" height="32" rx="7" fill="#faf7f2"/>
+  <rect x="6" y="7" width="4" height="18" rx="2" fill="#c04a26"/>
+  <rect x="14" y="11" width="4" height="14" rx="2" fill="#c04a26" opacity="0.62"/>
+  <rect x="22" y="15" width="4" height="10" rx="2" fill="#c04a26" opacity="0.34"/>
+</svg>
