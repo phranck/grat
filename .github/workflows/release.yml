@@ -57,13 +57,20 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      - name: Generate the manual page
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          chmod +x "dist/grat_${TAG}_linux_amd64"
+          "dist/grat_${TAG}_linux_amd64" manual > dist/grat.1
+          test -s dist/grat.1
       - name: Package Homebrew bottles
         env:
           TAG: ${{ github.ref_name }}
         run: scripts/build-homebrew-bottles.sh --version "$TAG" --input dist --output bottles
       - name: Create checksums
         run: |
-          find dist bottles -type f \( -name 'grat_*' -o -name '*.bottle.tar.gz' \) | sort | xargs sha256sum | sed 's#  \(dist\|bottles\)/#  #' > dist/checksums.txt
+          find dist bottles -type f \( -name 'grat_*' -o -name 'grat.1' -o -name '*.bottle.tar.gz' \) | sort | xargs sha256sum | sed 's#  \(dist\|bottles\)/#  #' > dist/checksums.txt
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}

@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/charmbracelet/x/term"
 	"github.com/phranck/grat/internal/config"
@@ -75,6 +76,10 @@ func runWithEnvironment(ctx context.Context, args []string, cwd string, out io.W
 	case "version":
 		output.Heading("grat", version.Current())
 		return 0
+	case "manual":
+		// Deliberately absent from the command reference: this serves packagers,
+		// not people running grat.
+		err = runManual(out, time.Now())
 	case "directories", "dir":
 		err = runDirectories(args[1:], cwd, environment, output)
 	case "init":

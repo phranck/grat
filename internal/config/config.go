@@ -518,6 +518,25 @@ func (role Role) PortRange() (PortRange, bool) {
 	}
 }
 
+// Roles lists every role grat knows, in the order documentation presents them.
+//
+// It exists so that anything describing the roles, such as the manual page, is
+// built from this list rather than repeating it. A second list would go on
+// naming a role after one was added here, and nothing would say so.
+func Roles() []Role {
+	return []Role{
+		RoleFrontend,
+		RoleWebsite,
+		RoleDeveloper,
+		RoleBackend,
+		RoleAPI,
+		RoleDashboard,
+		RoleAdmin,
+		RoleOther,
+		RoleWorker,
+	}
+}
+
 // InferRole maps conventional service names to the narrowest matching role.
 func InferRole(name string) Role {
 	switch strings.ToLower(strings.TrimSpace(name)) {
