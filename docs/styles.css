@@ -83,11 +83,11 @@
 
   --size-display: clamp(2.5rem, 6.5vw, 4.5rem);
   --size-section: clamp(1.6rem, 3.2vw, 2.25rem);
-  --size-lead: 1.1875rem;
-  --size-body: 1rem;
-  --size-small: 0.875rem;
+  --size-lead: 1.3125rem;
+  --size-body: 1.0625rem;
+  --size-small: 0.9375rem;
   --size-label: 0.6875rem;
-  --size-code: 0.8125rem;
+  --size-code: 0.8125rem; /* stays put when the reading sizes grow */
 
   --leading-display: 1.02;
   --leading-body: 1.65;
