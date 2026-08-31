@@ -46,5 +46,5 @@ func RunSpinner(ctx context.Context, output io.Writer, label string, runner Spin
 }
 
 func renderSpinnerFrame(output io.Writer, label string, frame int) {
-	fprintf(output, "\r%s", lifecycleWorkingStyle.Render(fmt.Sprintf("%s %s", spinnerFrame(frame), label)))
+	fprintf(output, "\r%s", spinnerStyle.Render(fmt.Sprintf("%s %s", spinnerFrame(frame), label)))
 }

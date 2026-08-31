@@ -5,15 +5,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os/exec"
-	"strconv"
-	"strings"
 	"syscall"
 
 	"github.com/phranck/grat/internal/config"
 )
-
-const psExecutable = "/bin/ps"
 
 type readiness struct {
 	Ready  bool
@@ -89,33 +84,6 @@ func isInProcessTree(rootPID, candidatePID int) (bool, error) {
 		currentPID = parentPID
 	}
 	return false, nil
-}
-
-func parentProcessID(pid int) (int, error) {
-	// #nosec G204 -- the executable and arguments are fixed; pid is a typed integer.
-	output, err := exec.Command(psExecutable, "-o", "ppid=", "-p", strconv.Itoa(pid)).Output()
-	if err != nil {
-		return 0, fmt.Errorf("inspect parent for PID %d: %w", pid, err)
-	}
-	parentPID, err := strconv.Atoi(strings.TrimSpace(string(output)))
-	if err != nil {
-		return 0, fmt.Errorf("parse parent for PID %d: %w", pid, err)
-	}
-	return parentPID, nil
-}
-
-func processAlive(pid int) bool {
-	err := syscall.Kill(pid, 0)
-	if err != nil && err != syscall.EPERM {
-		return false
-	}
-	// #nosec G204 -- the executable and arguments are fixed; pid is a typed integer.
-	output, err := exec.Command(psExecutable, "-o", "stat=", "-p", strconv.Itoa(pid)).Output()
-	if err != nil {
-		return false
-	}
-	state := strings.TrimSpace(string(output))
-	return state != "" && !strings.HasPrefix(state, "Z")
 }
 
 func processGroup(pid int) (int, error) {

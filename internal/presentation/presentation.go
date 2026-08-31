@@ -129,10 +129,10 @@ func (renderer Renderer) Write(value []byte) (int, error) {
 // Heading renders the primary operation and an optional contextual detail.
 func (renderer Renderer) Heading(title string, detail string) {
 	if detail == "" {
-		fprintln(renderer.writer, renderer.render(renderer.titleStyle(), title))
+		fprintln(renderer.writer, renderer.render(titleStyle, title))
 		return
 	}
-	fprintf(renderer.writer, "%s  %s\n", renderer.render(renderer.titleStyle(), title), renderer.render(renderer.detailStyle(), detail))
+	fprintf(renderer.writer, "%s  %s\n", renderer.render(titleStyle, title), renderer.render(detailStyle, detail))
 }
 
 // OperationHeading renders the stable, one-time introduction for an operation
@@ -147,8 +147,8 @@ func (renderer Renderer) OperationStep(operation string, kind StepKind, subject 
 	operation = terminalSafe(operation)
 	subject = terminalSafe(subject)
 	detail = terminalSafe(detail)
-	label, styles := stepStyle(kind)
-	prefix := fmt.Sprintf("[%s] %s", renderer.style(label, styles...), subject)
+	label, style := stepStyle(kind)
+	prefix := fmt.Sprintf("[%s] %s", renderer.render(style, label), subject)
 	line := pad(prefix, lipgloss.Width(operation)) + "  " + detail
 	fprintln(renderer.writer, strings.TrimRight(line, " "))
 }
@@ -162,8 +162,8 @@ func (renderer Renderer) Spacer() {
 func (renderer Renderer) Step(kind StepKind, subject string, detail string) {
 	subject = terminalSafe(subject)
 	detail = terminalSafe(detail)
-	label, styles := stepStyle(kind)
-	line := fmt.Sprintf("  [%s] %-16s %s", renderer.style(label, styles...), subject, detail)
+	label, style := stepStyle(kind)
+	line := fmt.Sprintf("  [%s] %-16s %s", renderer.render(style, label), subject, detail)
 	fprintln(renderer.writer, strings.TrimRight(line, " "))
 }
 
@@ -194,12 +194,10 @@ func (renderer Renderer) ProjectRows(groups []ProjectGroup, options ProjectRowsO
 	}
 	if options.RenderProject == nil {
 		options.RenderProject = func(value string) string {
-			return renderer.render(renderer.projectStyle(), value)
+			return renderer.render(projectStyle, value)
 		}
 	}
 	if options.RenderCell == nil {
-		serviceStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#D8E0EA"))
-		bodyStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#9AA6B5"))
 		options.RenderCell = func(column int, value string) string {
 			if column == 0 {
 				return renderer.render(serviceStyle, value)
@@ -323,7 +321,7 @@ func (renderer Renderer) renderAlignedTable(headers []string, rows [][]string) {
 func (renderer Renderer) Error(err error) {
 	const label = "Error"
 	lines := strings.Split(err.Error(), "\n")
-	fprintf(renderer.writer, "%s %s\n", renderer.render(renderer.errorStyle(), label), terminalSafe(lines[0]))
+	fprintf(renderer.writer, "%s %s\n", renderer.render(errorStyle, label), terminalSafe(lines[0]))
 	indent := strings.Repeat(" ", lipgloss.Width(label)+1)
 	for _, line := range lines[1:] {
 		fprintf(renderer.writer, "%s%s\n", indent, terminalSafe(line))
@@ -342,13 +340,6 @@ func fprintln(writer io.Writer, args ...any) {
 	_, _ = fmt.Fprintln(writer, args...)
 }
 
-func (renderer Renderer) style(value string, styles ...string) string {
-	if !renderer.color || len(styles) == 0 {
-		return value
-	}
-	return strings.Join(styles, "") + value + ansiReset
-}
-
 func (renderer Renderer) render(style lipgloss.Style, value string) string {
 	value = terminalSafe(value)
 	if !renderer.color {
@@ -361,22 +352,6 @@ func terminalSafe(value string) string {
 	return textsafe.Sanitize(value)
 }
 
-func (renderer Renderer) titleStyle() lipgloss.Style {
-	return lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#2ABEF6"))
-}
-
-func (renderer Renderer) detailStyle() lipgloss.Style {
-	return lipgloss.NewStyle().Foreground(lipgloss.Color("#7D8794"))
-}
-
-func (renderer Renderer) projectStyle() lipgloss.Style {
-	return lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#F5A524"))
-}
-
-func (renderer Renderer) errorStyle() lipgloss.Style {
-	return lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#F05D5E"))
-}
-
 func isTerminal(writer io.Writer) bool {
 	file, ok := writer.(*os.File)
 	if !ok {
@@ -385,18 +360,19 @@ func isTerminal(writer io.Writer) bool {
 	return term.IsTerminal(file.Fd())
 }
 
-func stepStyle(kind StepKind) (string, []string) {
+// stepStyle returns the label and the style of one step kind.
+func stepStyle(kind StepKind) (string, lipgloss.Style) {
 	switch kind {
 	case StepWorking:
-		return "...", []string{ansiCyan}
+		return "...", stepWorkingStyle
 	case StepSuccess:
-		return "ok", []string{ansiGreen}
+		return "ok", stepSuccessStyle
 	case StepWarning:
-		return "warn", []string{ansiYellow}
+		return "warn", stepWarningStyle
 	case StepFailure:
-		return "fail", []string{ansiRed}
+		return "fail", stepFailureStyle
 	default:
-		return "info", []string{ansiDim}
+		return "info", stepInfoStyle
 	}
 }
 
@@ -417,13 +393,3 @@ func min(left int, right int) int {
 	}
 	return right
 }
-
-const (
-	ansiReset  = "\x1b[0m"
-	ansiBold   = "\x1b[1m"
-	ansiDim    = "\x1b[2m"
-	ansiRed    = "\x1b[31m"
-	ansiGreen  = "\x1b[32m"
-	ansiYellow = "\x1b[33m"
-	ansiCyan   = "\x1b[36m"
-)

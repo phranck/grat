@@ -1,4 +1,10 @@
-package ports
+// Package procnet reads the Linux /proc tables that report which process owns a
+// listening TCP socket.
+//
+// The functions here work on text and on a directory path, so they carry no build
+// constraint and are exercised on every platform grat supports. Only the caller that
+// hands them the live /proc tree is Linux-specific, and that caller carries the tag.
+package procnet
 
 import (
 	"bufio"
@@ -10,9 +16,16 @@ import (
 	"strings"
 )
 
+// tcpListenState is the value /proc/net/tcp uses in its state column for a socket
+// that listens.
 const tcpListenState = "0A"
 
-func linuxListeningSocketInodes(data string, port int) (map[string]struct{}, error) {
+// ListeningSocketInodes returns the inode of every socket in data that listens on
+// port. The data is the content of a /proc/net/tcp or /proc/net/tcp6 table, whose
+// first line is a header and whose local address column holds the port in
+// hexadecimal. A table without a matching socket yields an empty map rather than an
+// error, because a free port is a normal result.
+func ListeningSocketInodes(data string, port int) (map[string]struct{}, error) {
 	inodes := make(map[string]struct{})
 	scanner := bufio.NewScanner(strings.NewReader(data))
 	if !scanner.Scan() {
@@ -41,7 +54,14 @@ func linuxListeningSocketInodes(data string, port int) (map[string]struct{}, err
 	return inodes, nil
 }
 
-func linuxSocketOwnerPIDs(procRoot string, inodes map[string]struct{}) ([]int, error) {
+// SocketOwnerPIDs returns, in ascending order, the PID of every process under
+// procRoot that holds one of the given socket inodes open. procRoot is "/proc" in
+// production and a fixture directory in tests.
+//
+// A process directory that disappears while it is read, or that the current user may
+// not inspect, is skipped rather than reported, because grat sees only part of the
+// process table when it does not run as root.
+func SocketOwnerPIDs(procRoot string, inodes map[string]struct{}) ([]int, error) {
 	entries, err := os.ReadDir(procRoot)
 	if err != nil {
 		return nil, err
@@ -80,6 +100,8 @@ func linuxSocketOwnerPIDs(procRoot string, inodes map[string]struct{}) ([]int, e
 	return pids, nil
 }
 
+// socketInode extracts the inode from a file descriptor link target of the form
+// socket:[12345] and reports whether the target described a socket at all.
 func socketInode(target string) (string, bool) {
 	value, found := strings.CutPrefix(target, "socket:[")
 	if !found || !strings.HasSuffix(value, "]") {
