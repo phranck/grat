@@ -76,7 +76,7 @@ gh attestation verify ./grat_VERSION_OS_ARCH \
   --deny-self-hosted-runners
 ```
 
-To build with Go, install Go 1.25.12 or newer and run:
+To build with Go, install Go 1.25.13 or newer and run:
 
 ```sh
 go install github.com/phranck/grat/cmd/grat@v1.2.2
