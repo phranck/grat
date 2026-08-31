@@ -29,6 +29,14 @@ func helpCommandGroups() []presentation.CommandGroup {
 			},
 		},
 		{
+			Title: "Public access",
+			Commands: []presentation.Command{
+				{Usage: "expose NAME", Description: "Publish the configured path of a service to the internet"},
+				{Usage: "expose status [name...]", Description: "Show what is published, with the public address"},
+				{Usage: "hide NAME", Description: "Withdraw a published path"},
+			},
+		},
+		{
 			Title: "Ports",
 			Commands: []presentation.Command{
 				{Usage: "ports audit", Description: "Find configured port collisions and live listeners"},
