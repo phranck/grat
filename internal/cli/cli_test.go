@@ -381,7 +381,7 @@ func TestPortsReassignGloballyAllocatesConfiguredProjects(t *testing.T) {
 	})
 	writePortFixtureConfig(t, secondRoot, "second", []config.Service{
 		{Name: "frontend", Command: "sleep 30", Role: config.RoleFrontend, Port: 3005, HealthPath: "/"},
-		{Name: "developer", Command: "sleep 30", Role: config.RoleDeveloper, Port: 3105, HealthPath: "/"},
+		{Name: "developer", Command: "sleep 30", Role: config.RoleDeveloper, Port: 3155, HealthPath: "/"},
 	})
 
 	var stdout bytes.Buffer

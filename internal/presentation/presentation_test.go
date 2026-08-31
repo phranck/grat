@@ -225,7 +225,7 @@ func TestRendererSpacerAddsOneBlankLine(t *testing.T) {
 	renderer.OperationStep("Reassigning ports", StepWorking, "Registry", "reading declarative grat.config files")
 	renderer.Spacer()
 
-	if got, want := output.String(), "[...] Registry     reading declarative grat.config files\n\n"; got != want {
+	if got, want := output.String(), "[...]  Registry    reading declarative grat.config files\n\n"; got != want {
 		t.Fatalf("operation spacer output = %q, want %q", got, want)
 	}
 }
