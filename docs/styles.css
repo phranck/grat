@@ -139,6 +139,10 @@ body {
   font-family: var(--font-body);
   font-size: var(--size-body);
   line-height: var(--leading-body);
+  /* Ragged right everywhere. Justified text opens rivers of white space at this
+     measure, and hyphenation to close them is worse than the ragged edge. */
+  text-align: left;
+  hyphens: none;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -628,8 +632,9 @@ body {
    left of its bar instead of past the edge. */
 .scale__value--before {
   margin-left: 0;
-  margin-right: var(--space-3);
-  transform: translate(-100%, -50%);
+  /* The gap has to be part of the transform: a margin cannot push an element
+     that is already being moved by its own width. */
+  transform: translate(calc(-100% - var(--space-3)), -50%);
 }
 
 
