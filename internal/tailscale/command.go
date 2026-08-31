@@ -168,8 +168,12 @@ func portOf(hostPort string) (int, error) {
 }
 
 // status is the part of Tailscale's status output that grat reads.
+//
+// AuthURL carries the sign-in address while a machine is signed out, so grat can
+// open that page itself instead of reading it out of the tool's printed output.
 type status struct {
 	BackendState string `json:"BackendState"`
+	AuthURL      string `json:"AuthURL"`
 	Self         *struct {
 		DNSName string `json:"DNSName"`
 	} `json:"Self"`
