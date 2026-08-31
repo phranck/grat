@@ -450,14 +450,14 @@ select a framework or alter the configured command.
 
 | Role | Intended service | Port range | Readiness |
 | --- | --- | --- | --- |
-| `frontend` | Browser frontend | 3000-3099 | Managed process, owned listener, HTTP 2xx |
-| `website` | Website or SSR frontend | 3000-3099 | Managed process, owned listener, HTTP 2xx |
-| `developer` | Developer portal | 3100-3199 | Managed process, owned listener, HTTP 2xx |
-| `backend` | HTTP backend | 4000-4099 | Managed process, owned listener, HTTP 2xx |
-| `api` | HTTP API | 4000-4099 | Managed process, owned listener, HTTP 2xx |
-| `dashboard` | Dashboard | 4500-4599 | Managed process, owned listener, HTTP 2xx |
-| `admin` | Administrative HTTP service | 4500-4599 | Managed process, owned listener, HTTP 2xx |
-| `other` | Other HTTP service | 5000-5099 | Managed process, owned listener, HTTP 2xx |
+| `frontend` | Browser frontend | 3000-3149 | Managed process, owned listener, HTTP 2xx |
+| `website` | Website or SSR frontend | 3000-3149 | Managed process, owned listener, HTTP 2xx |
+| `developer` | Developer portal | 3150-3299 | Managed process, owned listener, HTTP 2xx |
+| `backend` | HTTP backend | 4000-4149 | Managed process, owned listener, HTTP 2xx |
+| `api` | HTTP API | 4000-4149 | Managed process, owned listener, HTTP 2xx |
+| `dashboard` | Dashboard | 4500-4649 | Managed process, owned listener, HTTP 2xx |
+| `admin` | Administrative HTTP service | 4500-4649 | Managed process, owned listener, HTTP 2xx |
+| `other` | Other HTTP service | 5000-5299 | Managed process, owned listener, HTTP 2xx |
 | `worker` | Process without an HTTP endpoint | no port | Managed process is alive |
 
 During `grat init`, conventional names such as `frontend`, `backend`, `api`,

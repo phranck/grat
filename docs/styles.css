@@ -59,7 +59,7 @@
   --card-text-inset: calc(var(--card-radius) / 2);
 
   /* --- Measure and rhythm ------------------------------------------------- */
-  --measure: 70rem;
+  --measure: 76rem;
   --gutter: 1.5rem;
   --track: 92px;
 
@@ -139,6 +139,10 @@ body {
   font-family: var(--font-body);
   font-size: var(--size-body);
   line-height: var(--leading-body);
+  /* Ragged right everywhere. Justified text opens rivers of white space at this
+     measure, and hyphenation to close them is worse than the ragged edge. */
+  text-align: left;
+  hyphens: none;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -245,7 +249,11 @@ body {
 
 @media (min-width: 62rem) {
   .hero__grid {
-    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    /* The right column holds the lifecycle view, whose longest line is 70
+       characters, so it takes the larger share and that line stands without the
+       block scrolling. The left column keeps enough width for the lead to read
+       at a sensible number of characters per line. */
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
     gap: var(--space-10);
   }
 }
@@ -624,19 +632,57 @@ body {
    left of its bar instead of past the edge. */
 .scale__value--before {
   margin-left: 0;
-  margin-right: var(--space-3);
-  transform: translate(-100%, -50%);
+  /* The gap has to be part of the transform: a margin cannot push an element
+     that is already being moved by its own width. */
+  transform: translate(calc(-100% - var(--space-3)), -50%);
 }
 
 
-.scale__legend {
-  display: flex;
-  justify-content: space-between;
-  margin-top: var(--space-3);
-  padding-left: calc(8.5rem + var(--space-4));
+.scale__axis {
+  position: relative;
+  height: 2.25rem;
+  margin-top: var(--space-2);
+  margin-left: calc(8.5rem + var(--space-4));
+  border-top: 1px solid var(--rule);
+}
+
+/* Each mark sits at its value on the axis and centres itself on it, except at
+   the two ends, where it lines up with the edge instead of hanging past it. */
+.scale__tick {
+  position: absolute;
+  top: var(--space-2);
+  transform: translateX(-50%);
   color: var(--ink-muted);
   font-family: var(--font-mono);
   font-size: var(--size-label);
+  white-space: nowrap;
+}
+
+.scale__tick::before {
+  content: "";
+  position: absolute;
+  top: calc(var(--space-2) * -1);
+  left: 50%;
+  width: 1px;
+  height: var(--space-2);
+  background-color: var(--rule);
+}
+
+.scale__tick--first {
+  transform: none;
+}
+
+.scale__tick--first::before {
+  left: 0;
+}
+
+.scale__tick--last {
+  transform: translateX(-100%);
+}
+
+.scale__tick--last::before {
+  left: auto;
+  right: 0;
 }
 
 @media (max-width: 40rem) {
@@ -647,8 +693,8 @@ body {
   .scale__role {
     text-align: left;
   }
-  .scale__legend {
-    padding-left: 0;
+  .scale__axis {
+    margin-left: 0;
   }
 }
 
@@ -773,6 +819,23 @@ th code {
 
 .footer a:hover {
   color: var(--ink);
+  border-bottom-color: currentColor;
+}
+
+/* --- Links in running text ------------------------------------------------- */
+
+.section__lead a,
+.prose a,
+.card__text a {
+  color: var(--accent-strong);
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent-edge);
+  transition: border-color var(--duration-quick) var(--ease);
+}
+
+.section__lead a:hover,
+.prose a:hover,
+.card__text a:hover {
   border-bottom-color: currentColor;
 }
 

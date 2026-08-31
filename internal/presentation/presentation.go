@@ -148,7 +148,7 @@ func (renderer Renderer) OperationStep(operation string, kind StepKind, subject 
 	subject = terminalSafe(subject)
 	detail = terminalSafe(detail)
 	label, style := stepStyle(kind)
-	prefix := fmt.Sprintf("[%s] %s", renderer.render(style, label), subject)
+	prefix := renderer.stepMarker(label, style) + " " + subject
 	line := pad(prefix, lipgloss.Width(operation)) + "  " + detail
 	fprintln(renderer.writer, strings.TrimRight(line, " "))
 }
@@ -163,7 +163,7 @@ func (renderer Renderer) Step(kind StepKind, subject string, detail string) {
 	subject = terminalSafe(subject)
 	detail = terminalSafe(detail)
 	label, style := stepStyle(kind)
-	line := fmt.Sprintf("  [%s] %-16s %s", renderer.render(style, label), subject, detail)
+	line := fmt.Sprintf("  %s %-16s %s", renderer.stepMarker(label, style), subject, detail)
 	fprintln(renderer.writer, strings.TrimRight(line, " "))
 }
 
@@ -346,6 +346,18 @@ func (renderer Renderer) render(style lipgloss.Style, value string) string {
 		return value
 	}
 	return style.Render(value)
+}
+
+// stepMarkerWidth is the width of the bracketed marker in front of a step, which
+// is the longest label plus its brackets. Padding to it keeps the service name
+// and the detail in one column whatever the step says.
+const stepMarkerWidth = 6
+
+// stepMarker renders the bracketed label at a fixed width. The padding is
+// measured on the rendered text, which ignores the escape sequences the colour
+// adds, so a coloured marker occupies the same width as a plain one.
+func (renderer Renderer) stepMarker(label string, style lipgloss.Style) string {
+	return pad("["+renderer.render(style, label)+"]", stepMarkerWidth)
 }
 
 func terminalSafe(value string) string {
