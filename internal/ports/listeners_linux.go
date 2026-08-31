@@ -5,6 +5,8 @@ package ports
 import (
 	"fmt"
 	"os"
+
+	"github.com/phranck/grat/internal/ports/procnet"
 )
 
 func systemListener(port int) (Listener, error) {
@@ -17,7 +19,7 @@ func systemListener(port int) (Listener, error) {
 			}
 			return Listener{}, fmt.Errorf("read %s: %w", path, err)
 		}
-		found, err := linuxListeningSocketInodes(string(data), port)
+		found, err := procnet.ListeningSocketInodes(string(data), port)
 		if err != nil {
 			return Listener{}, fmt.Errorf("parse %s: %w", path, err)
 		}
@@ -28,7 +30,7 @@ func systemListener(port int) (Listener, error) {
 	if len(inodes) == 0 {
 		return Listener{}, nil
 	}
-	pids, err := linuxSocketOwnerPIDs("/proc", inodes)
+	pids, err := procnet.SocketOwnerPIDs("/proc", inodes)
 	if err != nil {
 		return Listener{}, fmt.Errorf("inspect listener ownership: %w", err)
 	}
