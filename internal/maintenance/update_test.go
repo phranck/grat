@@ -43,8 +43,8 @@ func TestUpdateDelegatesToHomebrewOnlyForOwnedExecutable(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Update() error = %v", err)
 	}
-	if !strings.Contains(result.Message, "Homebrew") {
-		t.Fatalf("Update() message = %q, want Homebrew result", result.Message)
+	if got, want := result.Message, "grat is already up to date (v1.0.0)."; got != want {
+		t.Fatalf("Update() message = %q, want %q", got, want)
 	}
 	if !commands.called(commandKey("brew", "upgrade", HomebrewFormula)) {
 		t.Fatalf("commands = %#v, want brew upgrade", commands.calls)
@@ -438,12 +438,20 @@ type commandResponse struct {
 
 type fakeCommands struct {
 	responses map[string]commandResponse
-	calls     []string
+	// queued answers a command differently on successive calls, which is what the
+	// formula prefix does once an upgrade has moved it to another version. The
+	// first entry is taken and removed; an empty queue falls back to responses.
+	queued map[string][]commandResponse
+	calls  []string
 }
 
 func (commands *fakeCommands) Run(_ context.Context, name string, arguments ...string) ([]byte, error) {
 	key := commandKey(name, arguments...)
 	commands.calls = append(commands.calls, key)
+	if pending := commands.queued[key]; len(pending) > 0 {
+		commands.queued[key] = pending[1:]
+		return pending[0].output, pending[0].err
+	}
 	response, exists := commands.responses[key]
 	if !exists {
 		return nil, errors.New("unexpected command: " + key)
@@ -462,4 +470,112 @@ func (commands *fakeCommands) called(wanted string) bool {
 
 func commandKey(name string, arguments ...string) string {
 	return name + "\x00" + strings.Join(arguments, "\x00")
+}
+
+func TestUpdateNamesBothVersionsAfterAHomebrewUpgrade(t *testing.T) {
+	t.Parallel()
+
+	base := t.TempDir()
+	oldPrefix := filepath.Join(base, "Cellar", "grat", "1.0.0")
+	newPrefix := filepath.Join(base, "Cellar", "grat", "1.1.0")
+	executable := filepath.Join(oldPrefix, "bin", "grat")
+	for _, directory := range []string{filepath.Dir(executable), filepath.Join(newPrefix, "bin")} {
+		if err := os.MkdirAll(directory, 0o700); err != nil {
+			t.Fatalf("create %s: %v", directory, err)
+		}
+	}
+	if err := os.WriteFile(executable, []byte("old"), 0o755); err != nil {
+		t.Fatalf("write formula executable: %v", err)
+	}
+
+	commands := &fakeCommands{
+		responses: map[string]commandResponse{
+			commandKey("brew", "list", "--versions", HomebrewFormula): {output: []byte("grat 1.0.0\n")},
+			commandKey("brew", "upgrade", HomebrewFormula):            {},
+		},
+		// The prefix answers the installed version first and the upgraded one after,
+		// which is what Homebrew does when the upgrade relinks the formula.
+		queued: map[string][]commandResponse{
+			commandKey("brew", "--prefix", HomebrewFormula): {
+				{output: []byte(oldPrefix + "\n")},
+				{output: []byte(newPrefix + "\n")},
+			},
+		},
+	}
+	service := Service{
+		Executable:     func() (string, error) { return executable, nil },
+		EvalSymlinks:   filepath.EvalSymlinks,
+		Command:        commands.Run,
+		CurrentVersion: func() string { return "v1.0.0" },
+	}
+
+	result, err := service.Update(context.Background())
+	if err != nil {
+		t.Fatalf("Update() error = %v", err)
+	}
+	if got, want := result.Message, "Updated grat from v1.0.0 to v1.1.0 with Homebrew."; got != want {
+		t.Fatalf("Update() message = %q, want %q", got, want)
+	}
+}
+
+func TestUpdateStillReportsSuccessWhenTheVersionCannotBeReadBack(t *testing.T) {
+	t.Parallel()
+
+	prefix := filepath.Join(t.TempDir(), "Cellar", "grat", "1.0.0")
+	executable := filepath.Join(prefix, "bin", "grat")
+	if err := os.MkdirAll(filepath.Dir(executable), 0o700); err != nil {
+		t.Fatalf("create formula executable directory: %v", err)
+	}
+	if err := os.WriteFile(executable, []byte("old"), 0o755); err != nil {
+		t.Fatalf("write formula executable: %v", err)
+	}
+
+	commands := &fakeCommands{
+		responses: map[string]commandResponse{
+			commandKey("brew", "list", "--versions", HomebrewFormula): {output: []byte("grat 1.0.0\n")},
+			commandKey("brew", "upgrade", HomebrewFormula):            {},
+		},
+		queued: map[string][]commandResponse{
+			commandKey("brew", "--prefix", HomebrewFormula): {
+				{output: []byte(prefix + "\n")},
+				{err: errors.New("brew is unavailable")},
+			},
+		},
+	}
+	service := Service{
+		Executable:     func() (string, error) { return executable, nil },
+		EvalSymlinks:   filepath.EvalSymlinks,
+		Command:        commands.Run,
+		CurrentVersion: func() string { return "v1.0.0" },
+	}
+
+	result, err := service.Update(context.Background())
+	if err != nil {
+		t.Fatalf("Update() error = %v, want the upgrade to count as done", err)
+	}
+	if got, want := result.Message, "Updated grat with Homebrew."; got != want {
+		t.Fatalf("Update() message = %q, want %q", got, want)
+	}
+}
+
+func TestUpdateMessageWordsEveryCase(t *testing.T) {
+	t.Parallel()
+
+	for _, testCase := range []struct {
+		name   string
+		before string
+		after  string
+		via    string
+		want   string
+	}{
+		{name: "upgraded", before: "v1.0.0", after: "1.1.0", via: "with Homebrew", want: "Updated grat from v1.0.0 to v1.1.0 with Homebrew."},
+		{name: "upgraded without a mechanism", before: "v1.0.0", after: "v1.1.0", want: "Updated grat from v1.0.0 to v1.1.0."},
+		{name: "unchanged", before: "v1.1.0", after: "1.1.0", want: "grat is already up to date (v1.1.0)."},
+		{name: "installed version unknown", before: "", after: "v1.1.0", want: "Updated grat to v1.1.0."},
+		{name: "new version unknown", before: "v1.0.0", after: "", via: "with Homebrew", want: "Updated grat with Homebrew."},
+	} {
+		if got := updateMessage(testCase.before, testCase.after, testCase.via); got != testCase.want {
+			t.Fatalf("%s: updateMessage() = %q, want %q", testCase.name, got, testCase.want)
+		}
+	}
 }
