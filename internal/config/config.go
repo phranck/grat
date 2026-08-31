@@ -32,8 +32,16 @@ const (
 	maxInheritedEnvironmentVariables = 64
 	maxEnvironmentNameBytes          = 128
 	maxExposePathBytes               = 2 << 10
-	defaultPublicPort                = 443
 )
+
+// DefaultPublicPort is the port a funnel uses when nothing names another one. It
+// is exported because the command that publishes a service without an expose
+// section needs the same value.
+const DefaultPublicPort = 443
+
+// DefaultExposePath is what a service publishes when it names no path: all of it.
+// Naming a path in the configuration narrows that to the one address.
+const DefaultExposePath = "/"
 
 // funnelPublicPorts lists the ports a public funnel can listen on. Tailscale
 // accepts no others, so a config naming a different port is rejected on load
@@ -556,7 +564,7 @@ func (value *Config) applyDefaults() {
 			value.Services[index].Host = "localhost"
 		}
 		if value.Services[index].Expose != nil && value.Services[index].Expose.PublicPort == 0 {
-			value.Services[index].Expose.PublicPort = defaultPublicPort
+			value.Services[index].Expose.PublicPort = DefaultPublicPort
 		}
 	}
 }

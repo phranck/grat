@@ -124,8 +124,8 @@ health_path = "/health"
 	if expose == nil {
 		t.Fatal("Load() dropped the expose section")
 	}
-	if expose.PublicPort != defaultPublicPort {
-		t.Fatalf("public_port = %d, want the default %d", expose.PublicPort, defaultPublicPort)
+	if expose.PublicPort != DefaultPublicPort {
+		t.Fatalf("public_port = %d, want the default %d", expose.PublicPort, DefaultPublicPort)
 	}
 	if expose.Path != "/api/webhooks/creem" {
 		t.Fatalf("path = %q, want the configured path", expose.Path)

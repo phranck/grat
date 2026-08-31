@@ -31,9 +31,9 @@ func helpCommandGroups() []presentation.CommandGroup {
 		{
 			Title: "Public access",
 			Commands: []presentation.Command{
-				{Usage: "expose NAME", Description: "Publish the configured path of a service to the internet"},
+				{Usage: "expose [--path P] NAME", Description: "Publish a service to the internet; --path narrows it to one path"},
 				{Usage: "expose status [name...]", Description: "Show what is published, with the public address"},
-				{Usage: "hide NAME", Description: "Withdraw a published path"},
+				{Usage: "hide [--path P] NAME", Description: "Withdraw a published service or path"},
 			},
 		},
 		{

@@ -34,7 +34,7 @@ func runExpose(ctx context.Context, args []string, cwd string, environment envir
 		return runExposeStatus(ctx, args[1:], cwd, environment, output)
 	}
 
-	names, err := parseExposeArguments("expose", args)
+	names, pathOverride, err := parseExposeArguments("expose", args)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func runExpose(ctx context.Context, args []string, cwd string, environment envir
 		return err
 	}
 
-	funnel := funnelFor(service)
+	funnel := funnelFor(service, pathOverride)
 	output.Step(presentation.StepWorking, service.Name, "publishing "+funnel.Path)
 	if err := client.Open(ctx, funnel); err != nil {
 		return err
@@ -73,7 +73,7 @@ func runExpose(ctx context.Context, args []string, cwd string, environment envir
 
 // runHide withdraws the funnel of one configured service.
 func runHide(ctx context.Context, args []string, cwd string, environment environment, output presentation.Renderer) error {
-	names, err := parseExposeArguments("hide", args)
+	names, pathOverride, err := parseExposeArguments("hide", args)
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func runHide(ctx context.Context, args []string, cwd string, environment environ
 	if err != nil {
 		return err
 	}
-	funnel := funnelFor(service)
+	funnel := funnelFor(service, pathOverride)
 	if err := client.Close(ctx, funnel); err != nil {
 		return err
 	}
@@ -105,7 +105,7 @@ func runHide(ctx context.Context, args []string, cwd string, environment environ
 
 // runExposeStatus lists what is published right now, with the address.
 func runExposeStatus(ctx context.Context, args []string, cwd string, environment environment, output presentation.Renderer) error {
-	names, err := parseExposeArguments("expose status", args)
+	names, _, err := parseExposeArguments("expose status", args)
 	if err != nil {
 		return err
 	}
@@ -130,13 +130,13 @@ func runExposeStatus(ctx context.Context, args []string, cwd string, environment
 	output.Heading("Exposed services", value.Project.Name)
 	rows := make([][]string, 0, len(published))
 	for _, service := range value.Services {
-		if service.Expose == nil {
+		if service.Port == 0 {
 			continue
 		}
 		if len(names) > 0 && !containsName(names, service.Name) {
 			continue
 		}
-		funnel := funnelFor(service)
+		funnel := funnelFor(service, "")
 		if !isPublished(published, funnel) {
 			rows = append(rows, []string{service.Name, funnel.Path, "closed", ""})
 			continue
@@ -144,7 +144,7 @@ func runExposeStatus(ctx context.Context, args []string, cwd string, environment
 		rows = append(rows, []string{service.Name, funnel.Path, "open", funnel.PublicURL(hostname)})
 	}
 	if len(rows) == 0 {
-		output.Step(presentation.StepInfo, "Services", "no service in this project declares an expose section")
+		output.Step(presentation.StepInfo, "Services", "this project has no service with an address to publish")
 		return nil
 	}
 	sort.Slice(rows, func(left, right int) bool { return rows[left][0] < rows[right][0] })
@@ -152,37 +152,56 @@ func runExposeStatus(ctx context.Context, args []string, cwd string, environment
 	return nil
 }
 
-// parseExposeArguments reads the service names of the three forms.
-func parseExposeArguments(name string, args []string) ([]string, error) {
+// parseExposeArguments reads the service names and the optional path override.
+func parseExposeArguments(name string, args []string) ([]string, string, error) {
 	flags := flag.NewFlagSet(name, flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
+	path := flags.String("path", "", "publish only this path instead of the whole service")
 	if err := flags.Parse(args); err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	return flags.Args(), nil
+	if *path != "" && !strings.HasPrefix(*path, "/") {
+		return nil, "", fmt.Errorf("--path must begin with a slash, got %q", *path)
+	}
+	return flags.Args(), *path, nil
 }
 
-// exposableService returns the named service, refusing one that declares no path
-// to publish. Publishing is a decision that belongs in the configuration, so a
-// service without the section is refused with the reason rather than guessed at.
+// exposableService returns the named service. Every HTTP service can be
+// published; a process-only worker cannot, because it has no address at all.
 func exposableService(value config.Config, name string) (config.Service, error) {
 	for _, service := range value.Services {
 		if service.Name != name {
 			continue
 		}
-		if service.Expose == nil {
-			return config.Service{}, fmt.Errorf("%s declares no [services.expose] section, so there is no path to publish", name)
+		if service.Port == 0 {
+			return config.Service{}, fmt.Errorf("%s is a process-only service and has no address to publish", name)
 		}
 		return service, nil
 	}
 	return config.Service{}, fmt.Errorf("unknown service %q", name)
 }
 
-// funnelFor turns a configured service into the funnel that publishes it.
-func funnelFor(service config.Service) tailscale.Funnel {
+// funnelFor turns a service into the funnel that publishes it.
+//
+// Running the command is the decision, so a service that says nothing publishes
+// its whole address. Narrowing that to one path is possible in two ways, and the
+// one given on the command line wins over the one in the configuration:
+//
+//   - --path on the command line, for a single run
+//   - a [services.expose] section, for a path that always applies
+func funnelFor(service config.Service, pathOverride string) tailscale.Funnel {
+	path := config.DefaultExposePath
+	publicPort := config.DefaultPublicPort
+	if service.Expose != nil {
+		path = service.Expose.Path
+		publicPort = service.Expose.PublicPort
+	}
+	if pathOverride != "" {
+		path = pathOverride
+	}
 	return tailscale.Funnel{
-		Path:       service.Expose.Path,
-		PublicPort: service.Expose.PublicPort,
+		Path:       path,
+		PublicPort: publicPort,
 		Target:     strings.TrimSuffix(service.URL(), "/"),
 	}
 }
