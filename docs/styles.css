@@ -633,14 +633,51 @@ body {
 }
 
 
-.scale__legend {
-  display: flex;
-  justify-content: space-between;
-  margin-top: var(--space-3);
-  padding-left: calc(8.5rem + var(--space-4));
+.scale__axis {
+  position: relative;
+  height: 2.25rem;
+  margin-top: var(--space-2);
+  margin-left: calc(8.5rem + var(--space-4));
+  border-top: 1px solid var(--rule);
+}
+
+/* Each mark sits at its value on the axis and centres itself on it, except at
+   the two ends, where it lines up with the edge instead of hanging past it. */
+.scale__tick {
+  position: absolute;
+  top: var(--space-2);
+  transform: translateX(-50%);
   color: var(--ink-muted);
   font-family: var(--font-mono);
   font-size: var(--size-label);
+  white-space: nowrap;
+}
+
+.scale__tick::before {
+  content: "";
+  position: absolute;
+  top: calc(var(--space-2) * -1);
+  left: 50%;
+  width: 1px;
+  height: var(--space-2);
+  background-color: var(--rule);
+}
+
+.scale__tick--first {
+  transform: none;
+}
+
+.scale__tick--first::before {
+  left: 0;
+}
+
+.scale__tick--last {
+  transform: translateX(-100%);
+}
+
+.scale__tick--last::before {
+  left: auto;
+  right: 0;
 }
 
 @media (max-width: 40rem) {
@@ -651,8 +688,8 @@ body {
   .scale__role {
     text-align: left;
   }
-  .scale__legend {
-    padding-left: 0;
+  .scale__axis {
+    margin-left: 0;
   }
 }
 
