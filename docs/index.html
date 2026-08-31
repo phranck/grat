@@ -28,7 +28,7 @@
       <a class="nav__link" href="#services">Services</a>
       <a class="nav__link" href="#ports">Ports</a>
       <a class="nav__link nav__link--optional" href="#public">Public access</a>
-      <a class="nav__link" href="https://github.com/phranck/grat"><i class="ph-duotone ph-github-logo nav__icon" aria-hidden="true"></i> GitHub</a>
+      <a target="_blank" rel="noopener noreferrer" class="nav__link" href="https://github.com/phranck/grat"><i class="ph-duotone ph-github-logo nav__icon" aria-hidden="true"></i> GitHub</a>
     </nav>
   </div>
 </header>
@@ -43,7 +43,7 @@
         <p class="hero__lead">grat starts the long-running commands a project needs, waits until each one is genuinely ready, keeps their ports out of each other's way, and can put a single path on the public internet when a webhook has to reach you.</p>
         <div class="hero__actions">
           <a class="button button--primary" href="#install"><i class="ph-duotone ph-download-simple" aria-hidden="true"></i> Install</a>
-          <a class="button button--quiet" href="https://github.com/phranck/grat"><i class="ph-duotone ph-book-open-text" aria-hidden="true"></i> Read the docs</a>
+          <a target="_blank" rel="noopener noreferrer" class="button button--quiet" href="https://github.com/phranck/grat"><i class="ph-duotone ph-book-open-text" aria-hidden="true"></i> Read the docs</a>
         </div>
         <p class="hero__note">MIT licensed. One binary, no daemon, no config server.</p>
       </div>
@@ -54,21 +54,13 @@
           <span class="window__title">grat start</span>
         </div>
 <pre class="window__body"><span class="t-title">Starting services</span>  <span class="t-project">example.com</span>
-  [<span class="t-info">info</span>] <span class="t-name">backend</span>          checking managed state
-  [<span class="t-work">...</span>] <span class="t-name">backend</span>          starting isolated process
-  [<span class="t-work">...</span>] <span class="t-name">backend</span>          waiting for listener and health probe
-  [<span class="t-ok">ok</span>] <span class="t-name">backend</span>          ready on http://127.0.0.1:4001/
-  [<span class="t-info">info</span>] <span class="t-name">frontend</span>         checking managed state
-  [<span class="t-work">...</span>] <span class="t-name">frontend</span>         starting isolated process
-  [<span class="t-ok">ok</span>] <span class="t-name">frontend</span>         ready on http://127.0.0.1:3000/
-  [<span class="t-ok">ok</span>] <span class="t-name">worker</span>           ready
 
-<span class="t-title">Status</span>  <span class="t-project">example.com</span>
+  <span class="t-head">SERVICE             STATE                     ENDPOINT</span>
+  frontend            <span class="t-ok">✓ Ready</span>                   <span class="t-detail">http://localhost:3000/</span>
+  backend             <span class="t-ok">✓ Ready</span>                   <span class="t-detail">http://localhost:4001/</span>
+  worker              <span class="t-ok">✓ Ready</span>
 
-<span class="t-head">SERVICE   STATE    PORT  PID    ENDPOINT                PUBLIC</span>
-frontend  <span class="t-ok">running</span>  3000  16445  http://127.0.0.1:3000/
-backend   <span class="t-ok">running</span>  4001  16435  http://127.0.0.1:4001/
-worker    <span class="t-ok">running</span>  -     16462</pre>
+  <span class="t-ok">3 of 3 services complete</span></pre>
       </div>
     </div>
   </section>
@@ -155,7 +147,7 @@ worker    <span class="t-ok">running</span>  -     16462</pre>
     <div class="section__head">
       <span class="section__number">04. Public access</span>
       <h2 class="section__title">A webhook can reach your laptop</h2>
-      <p class="section__lead">A payment provider confirms from server to server, to an address it reaches from the internet. grat makes one of your services reachable there, at a name that stays the same, and sets Tailscale up on the way if it is missing.</p>
+      <p class="section__lead">Whether you want to show somebody on the other side of the world how your site or web app currently looks, or you need a webhook URL that reaches your local development environment, grat gives you a way to do it. Underneath, the exposing runs on <a href="https://tailscale.com" target="_blank" rel="noopener noreferrer">Tailscale</a>. You configure nothing and set nothing up. Run the command, and grat does the rest.</p>
     </div>
     <div class="split">
       <div class="stack">
@@ -199,9 +191,9 @@ worker    <span class="t-ok">running</span>  -     16462</pre>
   <div class="measure footer__row">
     <span>grat, MIT licensed</span>
     <div class="footer__links">
-      <a href="https://github.com/phranck/grat">Source</a>
-      <a href="https://github.com/phranck/grat/releases">Releases</a>
-      <a href="https://github.com/phranck/grat/issues">Issues</a>
+      <a target="_blank" rel="noopener noreferrer" href="https://github.com/phranck/grat">Source</a>
+      <a target="_blank" rel="noopener noreferrer" href="https://github.com/phranck/grat/releases">Releases</a>
+      <a target="_blank" rel="noopener noreferrer" href="https://github.com/phranck/grat/issues">Issues</a>
     </div>
   </div>
 </footer>

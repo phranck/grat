@@ -59,7 +59,7 @@
   --card-text-inset: calc(var(--card-radius) / 2);
 
   /* --- Measure and rhythm ------------------------------------------------- */
-  --measure: 70rem;
+  --measure: 76rem;
   --gutter: 1.5rem;
   --track: 92px;
 
@@ -245,7 +245,11 @@ body {
 
 @media (min-width: 62rem) {
   .hero__grid {
-    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    /* The right column holds the lifecycle view, whose longest line is 70
+       characters, so it takes the larger share and that line stands without the
+       block scrolling. The left column keeps enough width for the lead to read
+       at a sensible number of characters per line. */
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
     gap: var(--space-10);
   }
 }
@@ -773,6 +777,23 @@ th code {
 
 .footer a:hover {
   color: var(--ink);
+  border-bottom-color: currentColor;
+}
+
+/* --- Links in running text ------------------------------------------------- */
+
+.section__lead a,
+.prose a,
+.card__text a {
+  color: var(--accent-strong);
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent-edge);
+  transition: border-color var(--duration-quick) var(--ease);
+}
+
+.section__lead a:hover,
+.prose a:hover,
+.card__text a:hover {
   border-bottom-color: currentColor;
 }
 
