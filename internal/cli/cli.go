@@ -35,6 +35,7 @@ type environment struct {
 	operationLock func(context.Context, func() error) error
 	maintenance   updateService
 	uninstaller   uninstallService
+	tailscale     tailscaleProvider
 }
 
 type updateService interface {
@@ -53,6 +54,7 @@ func defaultEnvironment() environment {
 		operationLock: operations.WithLock,
 		maintenance:   maintenance.DefaultService(),
 		uninstaller:   maintenance.DefaultService(),
+		tailscale:     prepareTailscale,
 	}
 }
 
@@ -99,6 +101,14 @@ func runWithEnvironment(ctx context.Context, args []string, cwd string, out io.W
 	case "logs":
 		if _, err = configuredRoots(cwd, environment, output); err == nil {
 			err = runLogs(ctx, args[1:], cwd, output)
+		}
+	case "expose":
+		if _, err = configuredRoots(cwd, environment, output); err == nil {
+			err = runExpose(ctx, args[1:], cwd, environment, output)
+		}
+	case "hide":
+		if _, err = configuredRoots(cwd, environment, output); err == nil {
+			err = runHide(ctx, args[1:], cwd, environment, output)
 		}
 	case "ports":
 		roots, rootErr := configuredRoots(cwd, environment, output)

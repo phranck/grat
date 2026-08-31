@@ -27,7 +27,7 @@ func runLifecycleLocked(ctx context.Context, command string, names []string, cwd
 		return err
 	}
 	if output.Live() && term.IsTerminal(os.Stdin.Fd()) {
-		return presentation.RunLifecycle(
+		err := presentation.RunLifecycle(
 			ctx,
 			os.Stdin,
 			output.Writer(),
@@ -38,6 +38,11 @@ func runLifecycleLocked(ctx context.Context, command string, names []string, cwd
 				return executeLifecycle(runContext, manager, command, names)
 			},
 		)
+		if err != nil {
+			return err
+		}
+		reportOrphanedFunnels(ctx, command, manager.Config, services, output)
+		return nil
 	}
 	output.Heading(lifecycleTitle(command), manager.Config.Project.Name)
 	manager.Observer = lifecycleProgressRenderer{output: output}
@@ -45,7 +50,34 @@ func runLifecycleLocked(ctx context.Context, command string, names []string, cwd
 	if err != nil {
 		return err
 	}
-	return renderStatus(ctx, manager, output)
+	if err := renderStatus(ctx, manager, output); err != nil {
+		return err
+	}
+	reportOrphanedFunnels(ctx, command, manager.Config, services, output)
+	return nil
+}
+
+// reportOrphanedFunnels says so when a public address outlives the service behind
+// it, which is what happens after a stop: a funnel stands until somebody closes
+// it, so the address is left pointing at nothing.
+//
+// It reports and does not act, because closing somebody's funnel unasked would be
+// the surprise this warning exists to prevent.
+func reportOrphanedFunnels(ctx context.Context, command string, value config.Config, stopped []config.Service, output presentation.Renderer) {
+	if command != "stop" {
+		return
+	}
+	addresses := publicAddresses(ctx, value)
+	if len(addresses) == 0 {
+		return
+	}
+	for _, service := range stopped {
+		address, open := addresses[service.Name]
+		if !open {
+			continue
+		}
+		output.Step(presentation.StepWarning, service.Name, "is stopped but "+address+" is still open; close it with grat hide "+service.Name)
+	}
 }
 
 func executeLifecycle(ctx context.Context, manager gratruntime.Manager, command string, names []string) error {

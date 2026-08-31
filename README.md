@@ -29,6 +29,7 @@ process groups it started.
 - [Status and readiness](#status-and-readiness)
 - [Shutdown and restart](#shutdown-and-restart)
 - [Commands](#commands)
+- [Public access](#public-access)
 - [Maintenance](#maintenance)
 - [Safety and recovery](#safety-and-recovery)
 
@@ -382,6 +383,18 @@ health_path = "/"
 inherit_env = ["API_TOKEN"]
 
 [[services]]
+name = "backend"
+command = "npm run dev:backend"
+role = "backend"
+host = "localhost"
+port = 4001
+health_path = "/health"
+
+  [services.expose]
+  path = "/api/webhooks/creem"
+  public_port = 443
+
+[[services]]
 name = "watcher"
 command = "npm run watch"
 role = "worker"
@@ -412,6 +425,12 @@ port = 0
 | `port` | yes | Role-compatible HTTP port, or `0` for a worker. |
 | `health_path` | HTTP only | Absolute path beginning with `/`; omitted for a worker. |
 | `inherit_env` | no | Parent variable names to pass in addition to the safe baseline; `PORT` is reserved, while an approved `BACKEND_URL` overrides automatic backend discovery. |
+| `expose` | no | The single path this service publishes to the internet. Without this section the service cannot be exposed. |
+
+| Expose field | Required | Meaning |
+| --- | --- | --- |
+| `path` | yes | The only path that goes public, beginning with `/`. Everything else the service serves stays inside. |
+| `public_port` | no | One of `443`, `8443` or `10000`, which are the ports Tailscale Funnel listens on. The default is `443`. |
 
 Two services in one configuration cannot share a port. Every non-worker port
 must fall inside the range assigned to its role.
@@ -503,6 +522,11 @@ Service lifecycle
   status                   Show managed process and health status
   logs [--follow] NAME     Print or follow a service log
 
+Public access
+  expose NAME              Publish the configured path of a service to the internet
+  expose status [name...]  Show what is published, with the public address
+  hide NAME                Withdraw a published path
+
 Ports
   ports audit              Find configured port collisions and live listeners
   ports assign [name...]   Assign free role-compatible ports
@@ -534,6 +558,42 @@ allocation.
 assigns fresh role-compatible ports, and writes the updated configurations. The
 services remain stopped so their next start uses the new ports. These operations
 hold a per-user lock across scanning, allocation, and configuration writes.
+
+## Public access
+
+A service reachable only on your machine cannot receive a webhook. A payment
+provider, for example, sends its confirmation from server to server, to an
+address it reaches from the internet, and a backend behind a home router is not
+that. `grat expose` makes one path of one service reachable, through Tailscale
+Funnel, at a name that stays the same.
+
+```sh
+grat expose backend   # makes the service reachable from the internet
+grat expose status    # shows what is open, with the address
+grat hide backend     # closes it again
+```
+
+What is published is an address, not a service. The `[services.expose]` section
+names one path, and only that path leaves the machine. Everything else the
+service offers stays inside, including whatever a development setup leaves more
+open than production would. A service without that section is refused, with the
+reason.
+
+grat sets Tailscale up when it is missing. It reports each step and does not ask,
+because the change is what the typed command needs in order to work. On a Mac it
+installs through Homebrew and starts the background service; on Linux it runs the
+vendor's install script. An existing Tailscale is never upgraded, reconfigured or
+removed.
+
+Two steps cannot be taken on your behalf. The background service starts with
+administrator rights, so the system asks for your password, and the sign-in runs
+through the browser because that is where your account is. grat says so
+beforehand, opens the page, and waits until the machine is connected.
+
+A funnel outlives the service behind it. `grat status` therefore carries a
+`PUBLIC` column showing the address of anything currently published, and
+`grat stop` says so when an address is left pointing at a service that is no
+longer running.
 
 ## Maintenance
 

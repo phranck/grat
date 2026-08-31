@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/phranck/grat/internal/config"
 	"github.com/phranck/grat/internal/presentation"
 	gratruntime "github.com/phranck/grat/internal/runtime"
+	"github.com/phranck/grat/internal/tailscale"
 )
 
 func runStatus(ctx context.Context, cwd string, output presentation.Renderer) error {
@@ -21,6 +23,8 @@ func renderStatus(ctx context.Context, manager gratruntime.Manager, output prese
 	if err != nil {
 		return err
 	}
+	public := publicAddresses(ctx, manager.Config)
+
 	output.Heading("Status", manager.Config.Project.Name)
 	unhealthy := false
 	rows := make([][]string, 0, len(statuses))
@@ -37,15 +41,56 @@ func renderStatus(ctx context.Context, manager gratruntime.Manager, output prese
 		if endpoint == "-" {
 			endpoint = ""
 		}
-		rows = append(rows, []string{status.Service.Name, string(status.State), port, pid, endpoint})
+		rows = append(rows, []string{status.Service.Name, string(status.State), port, pid, endpoint, public[status.Service.Name]})
 		if status.State == gratruntime.StateUnhealthy {
 			unhealthy = true
 			output.Step(presentation.StepFailure, "Reason", status.Reason)
 		}
 	}
-	output.Table([]string{"SERVICE", "STATE", "PORT", "PID", "ENDPOINT"}, rows)
+	output.Table([]string{"SERVICE", "STATE", "PORT", "PID", "ENDPOINT", "PUBLIC"}, rows)
 	if unhealthy {
 		return fmt.Errorf("one or more services are unhealthy")
 	}
 	return nil
+}
+
+// publicAddresses returns the public address of every service that is currently
+// published, keyed by service name.
+//
+// This is the place where an address that should not be open stands out, which is
+// why it belongs in the ordinary status rather than only in a command of its own.
+// It never turns status into a command that can fail: a project that publishes
+// nothing asks Tailscale nothing, and a machine that cannot answer leaves the
+// column empty.
+func publicAddresses(ctx context.Context, value config.Config) map[string]string {
+	addresses := make(map[string]string)
+	exposable := make([]config.Service, 0, len(value.Services))
+	for _, service := range value.Services {
+		if service.Expose != nil {
+			exposable = append(exposable, service)
+		}
+	}
+	if len(exposable) == 0 {
+		return addresses
+	}
+
+	stage, client, err := tailscale.Inspect(ctx)
+	if err != nil || stage != tailscale.StageReady {
+		return addresses
+	}
+	published, err := client.Funnels(ctx)
+	if err != nil {
+		return addresses
+	}
+	hostname, err := client.Hostname(ctx)
+	if err != nil {
+		return addresses
+	}
+	for _, service := range exposable {
+		funnel := funnelFor(service)
+		if isPublished(published, funnel) {
+			addresses[service.Name] = funnel.PublicURL(hostname)
+		}
+	}
+	return addresses
 }
