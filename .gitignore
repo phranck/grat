@@ -1,5 +1,9 @@
 /grat
 /.grat/
+/.serena/
 /.worktrees/
 /coverage.out
 /dist/
+
+# Working documents for the operator, synchronised outside this repository.
+Papers
