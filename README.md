@@ -43,6 +43,10 @@ command must stay in the foreground and represent one of these service types:
 - A process-only worker that stays alive without exposing an HTTP port, such as
   a queue consumer or file watcher.
 
+An HTTP service can additionally publish one configured path to the internet, at
+an address that stays the same, which is what a webhook from a payment provider
+or any other server-to-server callback needs. See [Public access](#public-access).
+
 Each command runs from the project root through non-login `/bin/sh`. HTTP
 services receive their configured port in the `PORT` environment variable, so
 commands can use `$PORT` directly or pass it to a framework-specific port
@@ -148,6 +152,9 @@ grat init --name example-api \
 
 The resulting `grat.config` is regular TOML and can be reviewed or edited before
 the first start. `project.name` supplies the project identity shown by grat.
+
+To let a service receive callbacks from the internet, add an
+[expose section](#public-access) and run `grat expose <name>`.
 
 ## Project examples
 
@@ -642,6 +649,14 @@ An interrupted start also cleans up the services started by that operation.
 If a service is unhealthy, use `grat status` for the readiness reason and
 `grat logs <name>` for its output. Correct the command, host, port, or health
 path, then run `grat restart <name>`.
+
+A published path is the one state grat creates that reaches beyond the machine.
+It is deliberately independent of the service behind it and stands until it is
+closed, so stopping or restarting a service leaves it open. `grat status` shows
+every open address in its `PUBLIC` column, `grat expose status` lists them with
+the path they serve, and `grat hide <name>` closes one. Only the path named in
+`[services.expose]` is reachable; nothing else the service serves leaves the
+machine.
 
 If `grat status` reports a legacy process identity after upgrading grat, use
 `grat recover [--yes] [name...]`.
