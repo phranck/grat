@@ -68,7 +68,9 @@ var detectors = []detector{
 	detectNode,
 	detectLaravel,
 	detectVapor,
+	detectDjango,
 	detectPython,
+	detectRails,
 	detectGo,
 }
 
