@@ -369,7 +369,7 @@ func TestAFrameworkWinsOverTheBuildToolUnderIt(t *testing.T) {
 	finding := Directory(project(t, map[string]string{
 		"package.json": `{"devDependencies": {"@sveltejs/kit": "^2.0.0", "vite": "^6.0.0"}}`,
 	}))
-	want := "npx vite dev --port $PORT --host 127.0.0.1"
+	want := "npx vite dev --port $PORT --host 127.0.0.1 --strictPort"
 	if got := commandOf(t, finding, "frontend"); got != want {
 		t.Fatalf("command = %q, want %q", got, want)
 	}

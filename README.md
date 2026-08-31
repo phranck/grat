@@ -117,7 +117,7 @@ gh attestation verify ./grat_VERSION_OS_ARCH \
 To build with Go, install Go 1.25.13 or newer and run:
 
 ```sh
-go install github.com/phranck/grat/cmd/grat@v1.3.2
+go install github.com/phranck/grat/cmd/grat@v1.4.0
 ```
 
 grat uses `/bin/sh` to run configured commands. On macOS it inspects listeners
@@ -219,8 +219,9 @@ defaults apply when the `[runtime]` table is omitted.
 
 ### React with Vite
 
-This example runs the `dev` script from a React project that uses Vite.
-`--strictPort` makes Vite exit instead of selecting a different port.
+This is what `grat init` writes for a React project that uses Vite.
+`--strictPort` makes Vite exit instead of selecting a different port, which is
+what keeps it from answering somewhere grat is not looking.
 
 ```toml
 version = 1
@@ -230,7 +231,7 @@ name = "react-app"
 
 [[services]]
 name = "frontend"
-command = "npm run dev -- --host 127.0.0.1 --port $PORT --strictPort"
+command = "npx vite dev --port $PORT --host 127.0.0.1 --strictPort"
 role = "frontend"
 host = "127.0.0.1"
 port = 3000
@@ -570,7 +571,7 @@ with status 130.
 
 ```text
 $ grat
-grat  v1.3.2
+grat  v1.4.0
 Usage
   grat [global options] <command> [arguments]
 
