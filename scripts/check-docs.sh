@@ -168,14 +168,26 @@ for text in \
 	'Recovery never starts services.' \
 	'~/Library/Application Support/grat/settings.toml' \
 	'$XDG_CONFIG_HOME/grat/settings.toml' \
-	'Delete all .grat directories? [Y/n]:' \
-	'Delete all grat.config files? [Y/n]:' \
 	'registered directories' \
 	'`grat.config`' \
 	'`.grat/`' \
 	'`grat update` shows an animated spinner in an interactive terminal.' \
 	'Redirected or color-disabled output receives an immediate static working step'; do
 	require_doc "$text"
+done
+
+# Every prompt the uninstall asks is read out of the source rather than repeated
+# here, so a question whose wording or default changes cannot leave the
+# documentation showing the old one. That has happened once already: the answer
+# for grat.config files became [y/N] in the code whilst both this check and the
+# documentation went on showing [Y/n].
+uninstall_prompts="$(sed -n 's/.*"\(.*[?] \[[YyNn]\/[YyNn]\]\): ".*/\1/p' internal/maintenance/uninstall.go)"
+if [ -z "$uninstall_prompts" ]; then
+	echo "no uninstall prompts found in internal/maintenance/uninstall.go" >&2
+	exit 1
+fi
+printf '%s\n' "$uninstall_prompts" | while IFS= read -r prompt; do
+	require_doc "$prompt"
 done
 
 if grep -Fq 'legacy PID files' Documentation.md; then

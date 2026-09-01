@@ -131,34 +131,6 @@ func TestUninstallUsesOperationLockBeforePreflight(t *testing.T) {
 	}
 }
 
-func TestUninstallAbortsBeforePromptsForActiveManagedService(t *testing.T) {
-	t.Parallel()
-
-	store, root := newUninstallStore(t)
-	project := filepath.Join(root, "project")
-	state := filepath.Join(project, ".grat")
-	config := filepath.Join(project, "grat.config")
-	writeUninstallFixture(t, state, config)
-	executable := filepath.Join(t.TempDir(), "grat")
-	if err := os.WriteFile(executable, []byte("binary"), 0o755); err != nil {
-		t.Fatalf("write executable: %v", err)
-	}
-	service := fakeUninstallService(executable)
-	service.InspectProject = func(context.Context, string) (bool, error) { return true, nil }
-	var output bytes.Buffer
-
-	_, err := service.Uninstall(context.Background(), store, []string{root}, strings.NewReader("\n\n"), &output, true)
-	if err == nil || !strings.Contains(err.Error(), "active managed service") {
-		t.Fatalf("Uninstall() error = %v, want active-service refusal", err)
-	}
-	if output.Len() != 0 {
-		t.Fatalf("Uninstall() prompted before active-service preflight:\n%s", output.String())
-	}
-	if _, err := os.Stat(state); err != nil {
-		t.Fatalf("state was removed after active-service refusal: %v", err)
-	}
-}
-
 func TestUninstallSkipsSymlinkedDirectoriesOutsideRegisteredRoots(t *testing.T) {
 	t.Parallel()
 
@@ -297,7 +269,7 @@ func fakeUninstallService(executable string) Service {
 		DetectInstallation: func(context.Context) (installation, error) {
 			return installation{kind: installationDirect, executable: executable}, nil
 		},
-		InspectProject: func(context.Context, string) (bool, error) { return false, nil },
+		InspectProject: func(context.Context, string) ([]string, error) { return nil, nil },
 		Remove:         os.Remove,
 	}
 }

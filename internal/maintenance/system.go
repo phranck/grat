@@ -41,7 +41,8 @@ type Service struct {
 	Rename                  func(string, string) error
 	Remove                  func(string) error
 	DetectInstallation      func(context.Context) (installation, error)
-	InspectProject          func(context.Context, string) (bool, error)
+	InspectProject          func(context.Context, string) ([]string, error)
+	StopProject             func(context.Context, string) error
 	OperationLock           func(context.Context, func() error) error
 	VerifyAttestation       func(context.Context, string, string) error
 }
