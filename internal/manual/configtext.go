@@ -129,6 +129,19 @@ the backend role, every other service also receives BACKEND_URL, which is that
 backend's own origin without a trailing slash.
 `
 
+// environmentTailnetHost explains the one variable grat sets that answers to
+// another program's rule rather than to grat's own.
+const environmentTailnetHost = `
+A started service also receives %s, set to this machine's name inside the
+tailnet, where the machine belongs to one. A Vite development server answers only
+to localhost and to IP addresses unless it is told otherwise, which stops a
+malicious page reaching it through DNS rebinding, and a request arriving through
+a funnel carries the tailnet name instead. Without this, everything published
+with grat expose would answer with an error page. grat names that one host rather
+than allowing every host, and a service that lists the variable in inherit_env
+keeps the value it inherits.
+`
+
 // configSeeAlso points back to the command page.
 const configSeeAlso = `
 grat(1) describes the commands that read this file. The full documentation is in

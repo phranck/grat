@@ -9,6 +9,7 @@ import (
 	"github.com/phranck/grat/internal/config"
 	"github.com/phranck/grat/internal/presentation"
 	gratruntime "github.com/phranck/grat/internal/runtime"
+	"github.com/phranck/grat/internal/tailscale"
 )
 
 func runLifecycle(ctx context.Context, command string, names []string, cwd string, lock func(context.Context, func() error) error, output presentation.Renderer) error {
@@ -21,6 +22,11 @@ func runLifecycleLocked(ctx context.Context, command string, names []string, cwd
 	manager, err := loadManager(cwd)
 	if err != nil {
 		return err
+	}
+	// Only a command that launches something needs the tailnet name, and looking
+	// it up costs a call to Tailscale, so stop and status do without it.
+	if command == "start" || command == "restart" {
+		manager.TailnetHost = tailnetHostname(ctx)
 	}
 	services, err := manager.Services(names)
 	if err != nil {
@@ -192,4 +198,23 @@ func lifecycleTitle(command string) string {
 	default:
 		return "Restarting services"
 	}
+}
+
+// tailnetHostname returns this machine's name inside the tailnet, or nothing.
+//
+// Every failure is a reason to leave the name out rather than to stop: a machine
+// with no Tailscale, one that has not signed in, and one whose daemon does not
+// answer all mean the same thing here, which is that no request will arrive
+// under a tailnet name. Refusing to start a service over that would be refusing
+// over something the service does not need.
+func tailnetHostname(ctx context.Context) string {
+	stage, client, err := tailscale.Inspect(ctx)
+	if err != nil || stage != tailscale.StageReady {
+		return ""
+	}
+	hostname, err := client.Hostname(ctx)
+	if err != nil {
+		return ""
+	}
+	return hostname
 }
