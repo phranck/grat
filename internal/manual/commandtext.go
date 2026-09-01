@@ -150,7 +150,7 @@ standard output and the error output of the command go there.
 	{
 		usage: "expose [--path P] NAME...",
 		detail: `
-Publishes one service to the internet through Tailscale Funnel, at a name that
+Publishes services to the internet through Tailscale Funnel, at a name that
 stays the same between runs. This is what a webhook from another server needs,
 since a service on your machine cannot otherwise be reached from outside.
 

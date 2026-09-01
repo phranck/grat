@@ -206,13 +206,17 @@ command exits with status 130.
 // publicAccess describes expose, hide and the Tailscale setup.
 const publicAccess = `
 A service reachable only on your machine cannot receive a webhook. grat expose
-makes one service reachable from the internet through Tailscale Funnel, at a name
-that stays the same between runs.
+makes a service reachable from the internet through Tailscale Funnel, at a name
+that stays the same between runs. Several can be named at once, and the word all
+takes every service that has an address to publish. grat hide withdraws them
+again, and takes all as well, which there means every funnel this project has
+open.
 
 The whole service is published unless a path narrows it, with --path for one run
 or a [services.expose] table for good. The path on the command line wins. Naming
 one is worth it for a service whose only business outside is a callback, because
-everything else it serves then stays on the machine.
+everything else it serves then stays on the machine. A path names one path, so it
+goes with one service.
 
 Where Tailscale is missing, grat installs it, starts its background service and
 signs the machine in, reporting each step. It does not ask, because that is what
