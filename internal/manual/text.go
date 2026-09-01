@@ -226,8 +226,8 @@ Where the tailnet has not enabled Funnel, grat says so and opens the page that
 grants it, which only the owner of that tailnet can do.
 
 A funnel outlives the service behind it, which is why grat status carries the
-public address in a column of its own and grat stop says when an address is left
-pointing at a service that is no longer running.
+public address in a column of its own and grat stop offers to close one that is
+left pointing at a service no longer running.
 `
 
 // portAllocation describes how ports are chosen.

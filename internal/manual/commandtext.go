@@ -91,8 +91,11 @@ with it, such as the Vapor application under swift run or a reload process under
 Vite. SIGTERM comes first, then SIGKILL after shutdown_timeout if the recorded
 process is still there.
 
-Where a service is still published, the command says so, because a funnel
-outlives the service behind it.
+Where a service is still published, the command says so and offers to close it,
+because a funnel outlives the service behind it and the address now points at
+nothing. Declining leaves it open and says how to close it later. Where there is
+no terminal to ask in, it is reported and left alone, since closing somebody's
+public address unasked is not something to do quietly.
 `,
 	},
 	{
