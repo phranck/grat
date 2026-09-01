@@ -14,6 +14,7 @@ import (
 	"github.com/phranck/grat/internal/detect"
 	"github.com/phranck/grat/internal/ports"
 	"github.com/phranck/grat/internal/presentation"
+	"github.com/phranck/grat/internal/project"
 )
 
 func runInit(ctx context.Context, args []string, cwd string, input io.Reader, interactive bool, roots []string, output presentation.Renderer) error {
@@ -38,7 +39,7 @@ func runInitWithInput(ctx context.Context, args []string, cwd string, input io.R
 	if err != nil {
 		return fmt.Errorf("resolve current directory: %w", err)
 	}
-	configPath := filepath.Join(root, configFileName)
+	configPath := filepath.Join(root, project.ConfigFileName)
 	if _, err := os.Stat(configPath); err == nil && !*force {
 		return fmt.Errorf("%s already exists; use --force to replace it", configPath)
 	} else if err != nil && !errors.Is(err, os.ErrNotExist) {

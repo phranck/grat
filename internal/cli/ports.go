@@ -12,6 +12,7 @@ import (
 	"github.com/phranck/grat/internal/config"
 	"github.com/phranck/grat/internal/ports"
 	"github.com/phranck/grat/internal/presentation"
+	"github.com/phranck/grat/internal/project"
 	gratruntime "github.com/phranck/grat/internal/runtime"
 )
 
@@ -139,7 +140,7 @@ func runPortAssignLocked(names []string, cwd string, roots []string, output pres
 		rows = append(rows, []string{service.Name, service.URL()})
 	}
 	output.Step(presentation.StepWorking, "Configuration", "writing grat.config")
-	if err := config.Write(filepath.Join(root, configFileName), value); err != nil {
+	if err := config.Write(filepath.Join(root, project.ConfigFileName), value); err != nil {
 		return err
 	}
 	output.Step(presentation.StepSuccess, "Configuration", "saved new port allocation")
@@ -318,7 +319,7 @@ func assignReassignedPorts(projects []ports.ProjectConfig) ([]portReassignment, 
 func writeReassignedConfigs(projects []ports.ProjectConfig) error {
 	writes := make([]config.FileWrite, 0, len(projects))
 	for _, projectConfig := range projects {
-		writes = append(writes, config.FileWrite{Path: filepath.Join(projectConfig.Root, configFileName), Config: projectConfig.Config})
+		writes = append(writes, config.FileWrite{Path: filepath.Join(projectConfig.Root, project.ConfigFileName), Config: projectConfig.Config})
 	}
 	if err := config.WriteAll(writes); err != nil {
 		return fmt.Errorf("write reassigned grat.config files: %w", err)

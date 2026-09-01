@@ -8,7 +8,10 @@ import (
 	"path/filepath"
 )
 
-const configFileName = "grat.config"
+// ConfigFileName is the file that marks a directory as a grat project. It is
+// declared once, here, because a scan that looks for one name and a writer that
+// creates another would disagree about which directories are projects.
+const ConfigFileName = "grat.config"
 
 // ErrConfigNotFound means no grat.config exists between the start path and the
 // filesystem root.
@@ -31,7 +34,7 @@ func FindRoot(start string) (string, error) {
 	}
 
 	for directory := absStart; ; directory = filepath.Dir(directory) {
-		configPath := filepath.Join(directory, configFileName)
+		configPath := filepath.Join(directory, ConfigFileName)
 		if info, err := os.Stat(configPath); err == nil && info.Mode().IsRegular() {
 			return directory, nil
 		} else if err != nil && !errors.Is(err, os.ErrNotExist) {

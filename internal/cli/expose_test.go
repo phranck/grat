@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"context"
+	"github.com/phranck/grat/internal/project"
 	"os"
 	"path/filepath"
 	"strings"
@@ -50,7 +51,7 @@ command = "node worker.mjs"
 role = "worker"
 port = 0
 `
-	path := filepath.Join(cwd, configFileName)
+	path := filepath.Join(cwd, project.ConfigFileName)
 	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 		t.Fatalf("write %s: %v", path, err)
 	}
