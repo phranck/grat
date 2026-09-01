@@ -157,7 +157,7 @@ func (model *SelectionModel) Render() string {
 
 	above := model.top
 	if above > 0 {
-		lines = append(lines, lifecycleDetailStyle.Render(fmt.Sprintf("  %d more above", above)))
+		lines = append(lines, detailStyle.Render(fmt.Sprintf("  %d more above", above)))
 	}
 
 	last := min(model.top+model.height, len(model.items))
@@ -167,10 +167,10 @@ func (model *SelectionModel) Render() string {
 
 	below := len(model.items) - last
 	if below > 0 {
-		lines = append(lines, lifecycleDetailStyle.Render(fmt.Sprintf("  %d more below", below)))
+		lines = append(lines, detailStyle.Render(fmt.Sprintf("  %d more below", below)))
 	}
 
-	lines = append(lines, "", lifecycleDetailStyle.Render(model.prompt))
+	lines = append(lines, "", detailStyle.Render(model.prompt))
 	return strings.Join(lines, "\n")
 }
 
@@ -193,12 +193,12 @@ func (model *SelectionModel) renderRow(index int) string {
 
 	title := serviceStyle.Render(item.Title)
 	if item.Fixed {
-		title = lifecycleDetailStyle.Render(item.Title)
+		title = detailStyle.Render(item.Title)
 	}
 
 	line := cursor + mark + " " + title
 	if item.Detail != "" {
-		line += "  " + lifecycleDetailStyle.Render(item.Detail)
+		line += "  " + detailStyle.Render(item.Detail)
 	}
 	return lipgloss.NewStyle().MaxWidth(model.width).Render(line)
 }

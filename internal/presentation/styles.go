@@ -4,24 +4,26 @@ import "charm.land/lipgloss/v2"
 
 // The palette. Every style in this package is built from these values, so a colour
 // is decided once and read everywhere.
-//
-// colorDetail and colorLifecycleDetail are two separate greys that sit next to each
-// other in the same output. Whether they should become one is a design question and
-// is tracked separately; the values here are the ones that ship today.
 const (
-	colorAccent          = "#2ABEF6"
-	colorProject         = "#F5A524"
-	colorSuccess         = "#38D17A"
-	colorFailure         = "#F05D5E"
-	colorBright          = "#D8E0EA"
-	colorBody            = "#9AA6B5"
-	colorDetail          = "#7D8794"
-	colorLifecycleDetail = "#8793A2"
+	colorAccent  = "#2ABEF6"
+	colorProject = "#F5A524"
+	colorSuccess = "#38D17A"
+	colorFailure = "#F05D5E"
+	colorBright  = "#D8E0EA"
+	colorBody    = "#9AA6B5"
+
+	// One grey for everything subordinate, whichever view prints it. There were
+	// two, a few percent apart, and a heading of the line-based output sitting
+	// beside the footer of the lifecycle view read as an inconsistency rather
+	// than as a distinction.
+	colorDetail = "#8793A2"
 )
 
 // Styles of the line-based output.
 var (
-	titleStyle   = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(colorAccent))
+	titleStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(colorAccent))
+	// One style, read by both views. Two identical definitions are how the two
+	// greys drifted apart in the first place, so there is only one to change.
 	detailStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color(colorDetail))
 	projectStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(colorProject))
 	errorStyle   = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(colorFailure))
@@ -43,7 +45,6 @@ var (
 // accent whilst something is in progress.
 var (
 	lifecycleHeaderStyle  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(colorBright))
-	lifecycleDetailStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color(colorLifecycleDetail))
 	lifecycleWorkingStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(colorAccent))
 	lifecycleSuccessStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(colorSuccess))
 	lifecycleFailureStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(colorFailure))
