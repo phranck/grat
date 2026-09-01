@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="grat">
   <title>grat</title>
-  <rect width="512" height="512" rx="112.64" fill="#faf7f2"/>
+  <rect width="512" height="512" fill="#faf7f2"/>
   <rect x="97.28" y="97.28" width="73.81" height="317.44" rx="36.91" fill="#c04a26"/>
   <rect x="219.09" y="174.42" width="73.81" height="240.30" rx="36.91" fill="#c04a26" opacity="0.62"/>
   <rect x="340.91" y="251.56" width="73.81" height="163.16" rx="36.91" fill="#c04a26" opacity="0.34"/>

@@ -12,9 +12,24 @@
 <meta property="og:url" content="https://grat.layered.work/">
 <meta property="og:title" content="grat, a safe local service manager">
 <meta property="og:description" content="Start your project's services, wait until each one genuinely answers, keep their ports apart, and publish one path to the internet when a webhook has to reach you.">
-<meta name="twitter:card" content="summary">
+<meta property="og:site_name" content="grat">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://grat.layered.work/og-image.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The grat wordmark beside a terminal window showing three services reported ready.">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="grat, a safe local service manager">
+<meta name="twitter:description" content="Start your project's services, wait until each one genuinely answers, keep their ports apart, and publish one path to the internet when a webhook has to reach you.">
+<meta name="twitter:image" content="https://grat.layered.work/og-image.png">
+<meta name="twitter:image:alt" content="The grat wordmark beside a terminal window showing three services reported ready.">
 
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/duotone/style.css">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -22,7 +37,21 @@
 
 <header class="band">
   <div class="measure band__row">
-    <a class="wordmark" href="#top"><span class="wordmark__glyph">▚</span> grat</a>
+    <a class="wordmark" href="#top" aria-label="grat">
+      <svg class="wordmark__mark" viewBox="0 0 3615 898" role="img" aria-hidden="true" focusable="false">
+          <g transform="translate(0 673) scale(1 -1)">
+            <rect x="0" y="0" width="163" height="673" rx="82" fill="#c04a26"/>
+            <rect x="269" y="0" width="163" height="509" rx="82" fill="#c04a26" opacity="0.62"/>
+            <rect x="538" y="0" width="163" height="346" rx="82" fill="#c04a26" opacity="0.34"/>
+            <g transform="translate(916 0)" fill="currentColor">
+              <path transform="translate(0 0)" d="M177 -225V-110H479Q539 -110 539 -49V0H319Q185 0 110.0 66.0Q35 132 35 257Q35 383 110.0 449.0Q185 515 319 515H684V-67Q684 -138 643.0 -181.5Q602 -225 515 -225ZM319 115H539V400H319Q254 400 219.5 364.5Q185 329 185 257Q185 186 219.5 150.5Q254 115 319 115Z"/>
+              <path transform="translate(739 0)" d="M55 0V515H449Q536 515 577.0 471.5Q618 428 618 357V250H471V339Q471 399 411 399H202V0Z"/>
+              <path transform="translate(1382 0)" d="M192 0Q111 0 68.0 41.0Q25 82 25 158Q25 233 68.0 274.0Q111 315 192 315H576V339Q576 400 516 400H92V515H554Q645 515 683.0 473.5Q721 432 721 357V0ZM218 115H576V200H218Q199 200 188.5 188.5Q178 177 178 158Q178 139 188.5 127.0Q199 115 218 115Z"/>
+              <path transform="translate(2158 0)" d="M323 0Q236 0 195.0 43.5Q154 87 154 158V400H5V515H154V673H299V515H513V400H299V176Q299 115 359 115H541V0Z"/>
+            </g>
+          </g>
+      </svg>
+    </a>
     <button class="nav__toggle" type="button" aria-expanded="false" aria-controls="site-nav">
       <i class="ph-duotone ph-list nav__toggle-open" aria-hidden="true"></i>
       <i class="ph-duotone ph-x nav__toggle-close" aria-hidden="true"></i>

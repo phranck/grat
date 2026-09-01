@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>grat share card</title>
+<!--
+  The card a shared link shows, rendered rather than drawn.
+
+  It takes the site's own stylesheet, so the colours, the typefaces and the
+  terminal are the page's and not a second set kept in step by hand. Rendering it
+  is scripts/build-og-image.sh, and the result is docs/og-image.png.
+-->
+<link rel="stylesheet" href="../styles.css">
+<style>
+  /* The card is a fixed canvas rather than a page, so it states its own size and
+     centres its content in it. Everything else comes from the stylesheet. */
+  html, body { margin: 0; padding: 0; background: var(--paper); }
+  body { width: 1200px; height: 630px; overflow: hidden; }
+
+  .card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: var(--space-12);
+    width: 100%;
+    height: 100%;
+    padding: 64px 72px;
+    box-sizing: border-box;
+    background:
+      radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 60%),
+      var(--paper);
+  }
+
+  /* The same mark the site header carries, at the size a share card is read at.
+     It is the drawn wordmark rather than set text, so the card and the site
+     cannot show different letters. */
+  .card__mark { display: block; width: 420px; height: auto; color: var(--ink); }
+
+  .card__line {
+    margin: var(--space-5) 0 0;
+    max-width: 22ch;
+    font-family: var(--font-body);
+    font-size: 28px;
+    line-height: 1.35;
+    color: var(--ink-muted);
+  }
+
+  .card__foot {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-8);
+    font-family: var(--font-mono);
+    font-size: 17px;
+    letter-spacing: var(--tracking-label);
+    color: var(--accent);
+  }
+  .card__rule { flex: 1; height: 2px; background: var(--accent-edge); border-radius: 1px; }
+
+  /* The window keeps the page's chrome and colours, at the one size that reads
+     from a thumbnail. */
+  .card .window { box-shadow: var(--shadow-window); }
+  .card .window__body { font-size: 15px; line-height: 1.7; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div>
+      <img class="card__mark" src="../wordmark.svg" alt="grat">
+      <p class="card__line">Your project's services, started and actually ready.</p>
+      <div class="card__foot"><span>macOS &amp; Linux</span><span class="card__rule"></span><span>grat.layered.work</span></div>
+    </div>
+
+    <div class="window">
+      <div class="window__chrome">
+        <span class="window__dot"></span><span class="window__dot"></span><span class="window__dot"></span>
+        <span class="window__title">grat start</span>
+      </div>
+<pre class="window__body"><span class="t-title">Starting services</span>  <span class="t-project">example.com</span>
+
+  <span class="t-head">SERVICE     STATE        ENDPOINT</span>
+  frontend    <span class="t-ok">✓ Ready</span>      <span class="t-detail">localhost:3000</span>
+  backend     <span class="t-ok">✓ Ready</span>      <span class="t-detail">localhost:4001</span>
+  worker      <span class="t-ok">✓ Ready</span>
+
+  <span class="t-ok">3 of 3 services complete</span></pre>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "grat",
+  "short_name": "grat",
+  "description": "Start your project's services, wait until each one genuinely answers, keep their ports apart, and publish one path to the internet when a webhook has to reach you.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "browser",
+  "background_color": "#f0ece8",
+  "theme_color": "#faf7f2",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
