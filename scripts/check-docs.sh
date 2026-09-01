@@ -28,14 +28,22 @@ require_doc() {
 	require_in Documentation.md "$1"
 }
 
-first_line=$(sed -n '1p' README.md)
-case "$first_line" in
-	'[!['*) ;;
-	*)
-		echo "README.md must begin with a dynamic badge" >&2
-		exit 1
-		;;
-esac
+# The badges open the README and every one of them reads its value at the moment
+# somebody looks, so none of them can go stale. A hand-written figure at the top
+# of a README is read as current and is the first thing to stop being true.
+if ! sed -n '1,12p' README.md | grep -q 'img.shields.io'; then
+	echo "README.md must open with badges that update themselves" >&2
+	exit 1
+fi
+for badge in \
+	'github/v/release/phranck/grat' \
+	'github/go-mod/go-version/phranck/grat' \
+	'github/downloads/phranck/grat/total' \
+	'github/license/phranck/grat' \
+	'github/last-commit/phranck/grat' \
+	'github/repo-size/phranck/grat'; do
+	require "$badge"
+done
 
 if [ ! -s Documentation.md ]; then
 	echo "missing document: Documentation.md" >&2
