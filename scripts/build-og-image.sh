@@ -72,6 +72,25 @@ fi
 
 # A share card is fetched by whoever renders the preview, so its weight is worth
 # the one pass. pngquant is optional: without it the card is simply larger.
+# The banner the README carries is the same card with its corners taken off.
+# GitHub strips a style attribute from Markdown, so a rounded corner has to be in
+# the image rather than asked for around it. The share card keeps its square
+# corners, because a social preview is composited on a background nobody controls
+# and a transparent corner shows as whatever that happens to be.
+python3 - <<'PYEOF_INNER'
+from PIL import Image, ImageDraw
+
+card = Image.open("docs/og-image.png").convert("RGBA")
+radius = round(card.height * 0.035)
+
+mask = Image.new("L", card.size, 0)
+ImageDraw.Draw(mask).rounded_rectangle([0, 0, card.width - 1, card.height - 1], radius=radius, fill=255)
+banner = Image.new("RGBA", card.size, (0, 0, 0, 0))
+banner.paste(card, (0, 0), mask)
+banner.save("docs/banner.png")
+print(f"wrote docs/banner.png with a {radius}px corner")
+PYEOF_INNER
+
 if command -v pngquant > /dev/null 2>&1; then
 	before=$(wc -c < "$output")
 	pngquant --quality 70-95 --speed 1 --force --output "$output" "$output"
