@@ -464,6 +464,8 @@ grat scans for configurations only below registered directories. On the first co
 
 A scan looks at most six levels below a registered directory, because a grat.config sits at a project root, and it never descends into what a tool wrote or a package manager unpacked, such as node_modules, vendor, build, dist, target or a framework's cache.
 
+A registered directory that is no longer there is reported once and skipped. Nothing refuses over it, because a directory somebody deleted is an ordinary thing to happen and says nothing about the other entries, and refusing would stop the command that removes it. grat directories list marks it as missing, and grat directories remove takes it out whether or not it is still there.
+
 Lifecycle commands are not affected by any of this: they take the nearest grat.config from the current directory.
 
 ## Maintenance
