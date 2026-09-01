@@ -30,11 +30,24 @@ if [ -n "$unformatted" ]; then
 	exit 1
 fi
 
-step "Vet"
-go vet ./...
+# Both platforms, because a file guarded by a build tag is not compiled for the
+# other one and therefore not checked there either. Running only the host's side
+# is how a capitalised error string in the Linux-only file reached CI whilst
+# every local gate was green.
+# The linter is built once for this machine and then pointed at each platform.
+# go tool builds the tool for GOOS as well, which produces a binary this machine
+# cannot execute, so the build and the analysis need their platforms set apart.
+linter=$(mktemp -d)/staticcheck
+trap 'rm -rf "$(dirname "$linter")"' EXIT
+go build -o "$linter" honnef.co/go/tools/cmd/staticcheck
 
-step "Lint"
-go tool staticcheck ./...
+for platform in darwin linux; do
+	step "Vet ($platform)"
+	GOOS=$platform go vet ./...
+
+	step "Lint ($platform)"
+	GOOS=$platform "$linter" ./...
+done
 
 step "Tests"
 go test -race ./...

@@ -18,7 +18,7 @@ func processIdentity(pid int) (string, error) {
 	}
 	bootIdentity := strings.TrimSpace(string(bootID))
 	if bootIdentity == "" {
-		return "", fmt.Errorf("Linux boot identity is empty")
+		return "", fmt.Errorf("the Linux boot identity is empty")
 	}
 
 	statPath := fmt.Sprintf("/proc/%d/stat", pid)
