@@ -16,7 +16,7 @@ func processIdentity(pid int) (string, error) {
 	}
 	bootIdentity := strings.TrimSpace(bootSession)
 	if bootIdentity == "" {
-		return "", fmt.Errorf("Darwin boot identity is empty")
+		return "", fmt.Errorf("the Darwin boot identity is empty")
 	}
 
 	process, err := unix.SysctlKinfoProc("kern.proc.pid", pid)

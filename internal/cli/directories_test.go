@@ -140,7 +140,7 @@ func TestFunctionalCommandWithoutRootsFailsNonInteractively(t *testing.T) {
 	store, cwd := newCLITestStore(t)
 	var stderr bytes.Buffer
 	code := runWithEnvironment(context.Background(), []string{"status"}, cwd, io.Discard, &stderr, environmentForTest(store))
-	if code != 1 || !strings.Contains(stderr.String(), "No scan directory configured. Run: grat directories add PATH") {
+	if code != 1 || !strings.Contains(stderr.String(), "no scan directory configured; run: grat directories add PATH") {
 		t.Fatalf("status without roots = (%d, %q), want setup error", code, stderr.String())
 	}
 }

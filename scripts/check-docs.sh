@@ -99,7 +99,11 @@ fi
 for page in grat.1 grat.config.7; do
 	section=${page##*.}
 	name=${page%.*}
-	rendered=$(mktemp -t "grat-manual").$section
+	# mktemp -t means a prefix on BSD and a template needing X's on GNU, so
+	# neither form is portable. A plain mktemp and a rename is.
+	rendered=$(mktemp)
+	mv "$rendered" "$rendered.$section"
+	rendered="$rendered.$section"
 	if ! GOTOOLCHAIN=go1.25.13 go run ./cmd/grat manual "$name" > "$rendered" 2>/dev/null; then
 		echo "could not render the manual page $name" >&2
 		rm -f "$rendered"
@@ -118,7 +122,10 @@ done
 
 require_in go.mod 'go 1.25.13'
 require_in go.mod 'module github.com/phranck/grat'
-require_in go.mod 'tool golang.org/x/vuln/cmd/govulncheck'
+# The pinned tools, named without the tool keyword because go.mod writes one
+# directive per line and a block once there is more than one.
+require_in go.mod 'golang.org/x/vuln/cmd/govulncheck'
+require_in go.mod 'honnef.co/go/tools/cmd/staticcheck'
 require_in README.md 'Go 1.25.13 or newer'
 
 # The site states the released version in its badge. The version to compare it

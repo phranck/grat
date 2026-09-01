@@ -30,6 +30,20 @@ jobs:
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version-file: go.mod
+      # Formatting first, because a file that is not gofmt clean makes every
+      # diff after it noisy and the check costs nothing.
+      - name: Formatting
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "not gofmt clean:" >&2
+            echo "$unformatted" >&2
+            exit 1
+          fi
+      - name: Vet
+        run: go vet ./...
+      - name: Lint
+        run: go tool staticcheck ./...
       - name: Tests
         run: go test -race ./...
       - name: Typechecks
