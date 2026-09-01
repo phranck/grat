@@ -368,9 +368,32 @@ body {
   background-color: var(--accent-tint);
 }
 
+/* --- Icons -----------------------------------------------------------------
+   Phosphor's own duotone artwork, inlined as a sprite rather than fetched as a
+   font. The page uses nine icons and the font cost 231,484 bytes of stylesheet
+   and 164,420 bytes of woff2 to deliver them, against 23,227 bytes for the page.
+
+   An icon is sized by font-size, the way the glyphs it replaced were, so every
+   rule that placed one still reads the same way. */
+
+.sprite {
+  display: none;
+}
+
+.icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  fill: currentColor;
+  flex: none;
+}
+
 .nav__icon {
   font-size: 1.125rem;
-  vertical-align: -0.15em;
+  /* Centred on the cap height of the label beside it, measured against a capital
+     drawn on its own so no ascender or descender moves the reference. At 18px
+     the mark sat 1.38px low, which is 0.077em of its own size. */
+  vertical-align: -0.073em;
 }
 
 /* The toggle exists only where the bar cannot hold the sections. Measured: the
@@ -677,7 +700,7 @@ body {
   letter-spacing: -0.01em;
 }
 
-.card__title i {
+.card__title .icon {
   color: var(--accent);
   /* A shade over the heading it sits beside, because a drawn mark reads smaller
      than letters of the same size. Derived, so the two stay in step. */
@@ -685,16 +708,18 @@ body {
   line-height: 1;
   /* Centred on the midline of the cap height, which is what centring a mark
      against text means. Aligning the two boxes is a different thing and leaves
-     the mark riding high, because a glyph box is taller than what is drawn in
-     it and because a line box carries leading the letters do not use.
+     the mark riding high, because a box is taller than what is drawn in it and
+     because a line box carries leading the letters do not use.
 
-     Measured from the drawn pixels rather than from the font metrics, because a
-     duotone mark is two glyphs laid over each other and the reported boxes are
-     wider than what is inked. At 27px the capital runs from 20px above the
-     baseline to 1px above it, so its midline is 10.5px up; the mark runs from
-     24px to 1px, centred 12.5px up. The difference is 2px, which at the 28px of
-     the mark is 0.071em. */
-  transform: translateY(0.071em);
+     Measured rather than guessed, and against the layout that is actually used:
+     this row is centred as boxes, so the icon starts on the line box's middle,
+     and the line box reaches below the baseline for descenders whilst the cap
+     band does not. The icon therefore sits low to begin with rather than high.
+
+     The heading's own ink was painted at its own size and read back, giving a
+     cap band whose midline is 4.86px above the icon's, at an icon of 27.99px.
+     That is 0.1736em, upwards. */
+  transform: translateY(-0.026em);
 }
 
 .card__text {
