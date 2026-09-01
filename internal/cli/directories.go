@@ -50,12 +50,24 @@ func runDirectories(args []string, cwd string, environment environment, output p
 		if err != nil {
 			return err
 		}
+		settingsValue, _, err := environment.settings.Load()
+		if err != nil {
+			return err
+		}
+		missing := make(map[string]struct{})
+		for _, gone := range settingsValue.Missing() {
+			missing[gone] = struct{}{}
+		}
 		rows := make([][]string, 0, len(roots))
 		for _, root := range roots {
-			rows = append(rows, []string{root})
+			state := "present"
+			if _, gone := missing[root]; gone {
+				state = "missing"
+			}
+			rows = append(rows, []string{root, state})
 		}
 		output.Heading("Directories", "configured scan roots")
-		output.Table([]string{"DIRECTORY"}, rows)
+		output.Table([]string{"DIRECTORY", "STATE"}, rows)
 		return nil
 	default:
 		return fmt.Errorf("unknown directories command %q", args[0])
@@ -68,6 +80,14 @@ func configuredRoots(cwd string, environment environment, output presentation.Re
 		return nil, err
 	}
 	if exists && len(settingsValue.Directories) > 0 {
+		// A directory that is gone is said once and then skipped. Refusing over
+		// it would stop every command including the one that removes it, and
+		// staying silent would leave somebody wondering why a project of theirs
+		// is no longer found.
+		for _, gone := range settingsValue.Missing() {
+			output.Step(presentation.StepWarning, "Directories",
+				gone+" is registered but no longer exists; remove it with: grat directories remove "+gone)
+		}
 		return settingsValue.Directories, nil
 	}
 	if !environment.interactive {

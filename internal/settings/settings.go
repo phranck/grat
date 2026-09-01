@@ -166,7 +166,7 @@ func (store Store) Add(path string, cwd string) (Settings, error) {
 // Remove normalizes path, removes a matching root when present, and persists
 // the remaining settings. removed is false for an unconfigured root.
 func (store Store) Remove(path string, cwd string) (settings Settings, removed bool, result error) {
-	directory, err := store.Normalize(path, cwd)
+	directory, err := store.resolveForRemoval(path, cwd)
 	if err != nil {
 		return Settings{}, false, err
 	}
@@ -193,6 +193,52 @@ func (store Store) Remove(path string, cwd string) (settings Settings, removed b
 		return Settings{}, false, err
 	}
 	return settings, true, nil
+}
+
+// resolveForRemoval turns what somebody typed into the value stored for it.
+//
+// Normalize resolves symlinks and insists the directory is there, which is right
+// for adding one and wrong for removing one: not being there is usually the
+// reason. Where it cannot be resolved, the path is expanded and made absolute
+// without touching the filesystem, which is what a deleted directory still
+// matches on.
+func (store Store) resolveForRemoval(path string, cwd string) (string, error) {
+	if directory, err := store.Normalize(path, cwd); err == nil {
+		return directory, nil
+	}
+	return store.lexicalPath(path, cwd)
+}
+
+// lexicalPath expands a leading home marker and makes the path absolute, reading
+// nothing from the filesystem.
+func (store Store) lexicalPath(path string, cwd string) (string, error) {
+	value := strings.TrimSpace(path)
+	if value == "" {
+		return "", errors.New("directory path is required")
+	}
+	if value == "~" || strings.HasPrefix(value, "~/") {
+		home, err := store.homeDirectory()
+		if err != nil {
+			return "", err
+		}
+		if value == "~" {
+			value = home
+		} else {
+			value = filepath.Join(home, strings.TrimPrefix(value, "~/"))
+		}
+	}
+	if !filepath.IsAbs(value) {
+		base := cwd
+		if strings.TrimSpace(base) == "" {
+			var err error
+			base, err = store.workingDirectory()
+			if err != nil {
+				return "", err
+			}
+		}
+		value = filepath.Join(base, value)
+	}
+	return filepath.Clean(value), nil
 }
 
 // Normalize expands a leading home marker and returns an existing canonical
@@ -279,19 +325,29 @@ func (store Store) validate(settings Settings) error {
 		if !filepath.IsAbs(directory) {
 			return fmt.Errorf("settings directory %q must be absolute", directory)
 		}
-		canonical, err := canonicalExistingDirectory(directory, directory)
-		if err != nil {
-			return fmt.Errorf("settings directory %q: %w", directory, err)
-		}
-		if canonical != directory {
-			return fmt.Errorf("settings directory %q is not canonical", directory)
-		}
 		if _, exists := seen[directory]; exists {
 			return fmt.Errorf("duplicate settings directory %q", directory)
 		}
 		seen[directory] = struct{}{}
 	}
 	return nil
+}
+
+// Missing reports the registered directories that are no longer on this machine.
+//
+// Whether one exists is deliberately not part of validate. A directory somebody
+// deleted is an ordinary thing to happen and says nothing about the other
+// entries, whilst treating it as a broken file made every command fail, including
+// the one that removes it. So it is reported here and skipped by whatever walks
+// it, rather than refusing to read the settings at all.
+func (settings Settings) Missing() []string {
+	gone := []string{}
+	for _, directory := range settings.Directories {
+		if _, err := os.Stat(directory); err != nil {
+			gone = append(gone, directory)
+		}
+	}
+	return gone
 }
 
 func (store Store) canonicalize(settings Settings) (Settings, error) {
@@ -302,7 +358,12 @@ func (store Store) canonicalize(settings Settings) (Settings, error) {
 	for _, directory := range settings.Directories {
 		canonical, err := store.Normalize(directory, "")
 		if err != nil {
-			return Settings{}, err
+			// A directory that cannot be resolved is one that is no longer there,
+			// and it was canonical when it was stored. Keeping it as it stands is
+			// what lets it be removed: failing here made every save fail, which
+			// included the save that would have taken it out.
+			directories = append(directories, directory)
+			continue
 		}
 		directories = append(directories, canonical)
 	}
