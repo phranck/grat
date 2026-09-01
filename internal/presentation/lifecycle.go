@@ -213,7 +213,7 @@ func (model *LifecycleModel) Render() string {
 func (model *LifecycleModel) finalFooter() string {
 	width := model.renderWidth()
 	if model.groupedReassignment() && model.err == nil {
-		return lifecycleDetailStyle.Render(DividerLine(lifecycleReassignDividerWidth)) + "\n"
+		return detailStyle.Render(DividerLine(lifecycleReassignDividerWidth)) + "\n"
 	}
 	return strings.Repeat(" ", lifecycleHorizontalInset) + model.footerLine(model.contentWidth(width))
 }
@@ -255,7 +255,7 @@ func (model *LifecycleModel) serviceColumnWidth() int {
 
 func (model *LifecycleModel) titleLine(width int) string {
 	title := titleStyle.Render(model.operation.Title)
-	project := lifecycleDetailStyle.Render(model.operation.Project)
+	project := detailStyle.Render(model.operation.Project)
 	return truncateStyled(lipgloss.JoinHorizontal(lipgloss.Top, title, "  ", project), width)
 }
 
@@ -291,14 +291,14 @@ func (model *LifecycleModel) rowLines(width int) string {
 		if width < 48 {
 			lines = append(lines, pad(truncate(row.service.Name, 14), 14)+"  "+style.Render(truncate(state, max(10, width-16))))
 			if row.service.Endpoint != "" {
-				lines = append(lines, lifecycleDetailStyle.Render("  "+truncate(row.service.Endpoint, width-2)))
+				lines = append(lines, detailStyle.Render("  "+truncate(row.service.Endpoint, width-2)))
 			}
 			continue
 		}
 		name := pad(truncate(row.service.Name, lifecycleNameColumnWidth), lifecycleNameColumnWidth)
 		status := style.Render(pad(truncate(state, lifecycleStateColumnWidth), lifecycleStateColumnWidth))
 		endpoint := truncate(row.service.Endpoint, max(8, width-lifecycleWideFixedColumns))
-		lines = append(lines, name+strings.Repeat(" ", lifecycleColumnGap)+status+strings.Repeat(" ", lifecycleColumnGap)+lifecycleDetailStyle.Render(endpoint))
+		lines = append(lines, name+strings.Repeat(" ", lifecycleColumnGap)+status+strings.Repeat(" ", lifecycleColumnGap)+detailStyle.Render(endpoint))
 	}
 	return strings.Join(lines, "\n")
 }
@@ -350,7 +350,7 @@ func (model *LifecycleModel) footerLine(width int) string {
 	if model.completed {
 		return lifecycleSuccessStyle.Render(fmt.Sprintf("%d of %d services complete", ready, len(model.rows)))
 	}
-	return lifecycleDetailStyle.Render(fmt.Sprintf("%d of %d services complete", ready, len(model.rows)))
+	return detailStyle.Render(fmt.Sprintf("%d of %d services complete", ready, len(model.rows)))
 }
 
 func (model *LifecycleModel) stateLabel(row lifecycleRow) (string, lipgloss.Style) {
@@ -378,7 +378,7 @@ func lifecycleStateStyle(stage LifecycleStage, frame int) (string, lipgloss.Styl
 	case LifecycleFailed:
 		return "× Failed", lifecycleFailureStyle
 	default:
-		return "· Pending", lifecycleDetailStyle
+		return "· Pending", detailStyle
 	}
 }
 
