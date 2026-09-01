@@ -38,27 +38,29 @@ func runExpose(ctx context.Context, args []string, cwd string, environment envir
 	if err != nil {
 		return err
 	}
-	if len(names) != 1 {
-		return errors.New("expose requires exactly one service name")
+	if len(names) == 0 {
+		return errors.New("expose requires a service name, several of them, or all")
 	}
 
 	_, value, err := loadConfig(cwd)
 	if err != nil {
 		return err
 	}
-	service, err := exposableService(value, names[0])
+	services, err := selectExposable(value, names, pathOverride)
 	if err != nil {
 		return err
 	}
 
-	output.Heading("Exposing service", value.Project.Name)
+	output.Heading("Exposing services", value.Project.Name)
 	client, err := environment.tailscale(ctx, environment, output)
 	if err != nil {
 		return err
 	}
+	hostname, err := client.Hostname(ctx)
+	if err != nil {
+		return err
+	}
 
-	funnel := funnelFor(service, pathOverride)
-	output.Step(presentation.StepWorking, service.Name, "publishing "+funnel.Path)
 	// Enabling Funnel is a permission on the tailnet, so it cannot be granted from
 	// here. grat opens the page the moment Tailscale asks for it and keeps
 	// waiting, which is the least this can cost: one click, no second command.
@@ -67,17 +69,72 @@ func runExpose(ctx context.Context, args []string, cwd string, environment envir
 		output.Step(presentation.StepWorking, "Funnel", "opening the page that enables it")
 		_ = tailscale.OpenInBrowser(ctx, address)
 	}
-	if err := client.Open(ctx, funnel, announceEnabling); err != nil {
-		return err
+
+	published := make([]string, 0, len(services))
+	for _, service := range services {
+		funnel := funnelFor(service, pathOverride)
+		output.Step(presentation.StepWorking, service.Name, "publishing "+funnel.Path)
+		// One service failing does not undo the ones already published, so each
+		// says what became of it rather than the command reporting a single
+		// outcome for all of them.
+		if err := client.Open(ctx, funnel, announceEnabling); err != nil {
+			output.Step(presentation.StepFailure, service.Name, err.Error())
+			continue
+		}
+		output.Step(presentation.StepSuccess, service.Name, "reachable at "+funnel.PublicURL(hostname))
+		published = append(published, service.Name)
 	}
-	hostname, err := client.Hostname(ctx)
-	if err != nil {
-		return err
+	if len(published) == 0 {
+		return errors.New("nothing was published")
 	}
-	output.Step(presentation.StepSuccess, service.Name, "reachable at "+funnel.PublicURL(hostname))
-	output.Step(presentation.StepInfo, "Reminder", "the address stays open until you run grat hide "+service.Name)
+	output.Step(presentation.StepInfo, "Reminder",
+		"the addresses stay open until you run grat hide "+strings.Join(published, " "))
 	return nil
 }
+
+// selectExposable resolves the names a command was given into services.
+//
+// The word all means every service that has an address to publish, so a
+// process-only service is passed over rather than refused: all is everything
+// that can be published rather than everything there is. Named explicitly, that
+// same service is still an error, because the name says what somebody meant.
+func selectExposable(value config.Config, names []string, pathOverride string) ([]config.Service, error) {
+	if len(names) == 1 && names[0] == allServices {
+		services := make([]config.Service, 0, len(value.Services))
+		for _, service := range value.Services {
+			if service.Port != 0 {
+				services = append(services, service)
+			}
+		}
+		if len(services) == 0 {
+			return nil, errors.New("this project has no service with an address to publish")
+		}
+		return services, nil
+	}
+
+	// A path narrows one publication to one path, which cannot mean anything
+	// across several services, so it is refused rather than applied to each.
+	if pathOverride != "" && len(names) > 1 {
+		return nil, errors.New("--path names one path, so it takes one service")
+	}
+	services := make([]config.Service, 0, len(names))
+	for _, name := range names {
+		if name == allServices {
+			return nil, errors.New("all selects every service, so it takes no other name beside it")
+		}
+		service, err := exposableService(value, name)
+		if err != nil {
+			return nil, err
+		}
+		services = append(services, service)
+	}
+	return services, nil
+}
+
+// allServices is the word that stands where a service name stands and selects
+// every one of them. A word rather than a flag, because it reads as what it
+// selects and sits where the thing it replaces sits.
+const allServices = "all"
 
 // runHide withdraws the funnel of one configured service.
 func runHide(ctx context.Context, args []string, cwd string, environment environment, output presentation.Renderer) error {
@@ -85,29 +142,54 @@ func runHide(ctx context.Context, args []string, cwd string, environment environ
 	if err != nil {
 		return err
 	}
-	if len(names) != 1 {
-		return errors.New("hide requires exactly one service name")
+	if len(names) == 0 {
+		return errors.New("hide requires a service name, several of them, or all")
 	}
 
 	_, value, err := loadConfig(cwd)
 	if err != nil {
 		return err
 	}
-	service, err := exposableService(value, names[0])
+	services, err := selectExposable(value, names, pathOverride)
 	if err != nil {
 		return err
 	}
 
-	output.Heading("Hiding service", value.Project.Name)
+	output.Heading("Hiding services", value.Project.Name)
 	client, err := environment.tailscale(ctx, environment, output)
 	if err != nil {
 		return err
 	}
-	funnel := funnelFor(service, pathOverride)
-	if err := client.Close(ctx, funnel); err != nil {
-		return err
+
+	// What is actually published decides what all covers, since closing a funnel
+	// that was never open says something happened that did not. A named service
+	// is closed either way, so somebody who knows better than grat can still say
+	// so.
+	open, listed := []tailscale.Funnel{}, false
+	if len(names) == 1 && names[0] == allServices {
+		open, err = client.Funnels(ctx)
+		if err != nil {
+			return err
+		}
+		listed = true
 	}
-	output.Step(presentation.StepSuccess, service.Name, "no longer reachable from the internet")
+
+	closed := 0
+	for _, service := range services {
+		funnel := funnelFor(service, pathOverride)
+		if listed && !funnel.IsAmong(open) {
+			continue
+		}
+		if err := client.Close(ctx, funnel); err != nil {
+			output.Step(presentation.StepFailure, service.Name, err.Error())
+			continue
+		}
+		output.Step(presentation.StepSuccess, service.Name, "no longer reachable from the internet")
+		closed++
+	}
+	if closed == 0 {
+		output.Step(presentation.StepInfo, "Public access", "nothing of this project was published")
+	}
 	return nil
 }
 

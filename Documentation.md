@@ -196,13 +196,17 @@ Prints the log of one service, which grat wrote whilst that service ran. Both th
 
 Keep printing as the service writes, rather than stopping at the end of the file.
 
-### grat expose [--path P] NAME
+### grat expose [--path P] NAME...
 
-Publish a service to the internet; --path narrows it to one path.
+Publish services to the internet; all takes every one, --path narrows a single one.
 
 Publishes one service to the internet through Tailscale Funnel, at a name that stays the same between runs. This is what a webhook from another server needs, since a service on your machine cannot otherwise be reached from outside.
 
-The whole service is published unless a path narrows it. Naming a path is worth it for a service whose only business outside is a callback, because everything else it serves then stays on the machine.
+Several services can be named at once, and the word all takes every service that has an address to publish. A process-only service has none, so all passes over it rather than refusing; named on its own it is still an error, because the name says what you meant.
+
+The whole service is published unless a path narrows it. Naming a path is worth it for a service whose only business outside is a callback, because everything else it serves then stays on the machine. A path names one path, so it goes with one service and is refused beside several.
+
+Each service says what became of it. One that cannot be published does not undo the ones already published.
 
 Where Tailscale is missing, grat installs it, starts its background service and signs the machine in. It reports each step and does not ask, because that is what the typed command needs in order to work. Two steps cannot be taken for you: the background service starts with administrator rights, so the system asks for your password, and the sign-in happens in the browser, which grat opens. An existing Tailscale is never upgraded, reconfigured or removed.
 
@@ -218,11 +222,13 @@ Show what is published, with the public address.
 
 Reports what is currently published and at which address, for the named services or for all of them.
 
-### grat hide [--path P] NAME
+### grat hide [--path P] NAME...
 
-Withdraw a published service or path.
+Withdraw published services; all takes every one this project has open.
 
-Withdraws a published service, so its address stops answering. It closes exactly what was published and leaves every other funnel standing, including one you set up yourself.
+Withdraws published services, so their addresses stop answering. It closes exactly what was published and leaves every other funnel standing, including one you set up yourself.
+
+Several services can be named at once, and the word all takes every funnel this project currently has open, which grat reads from Tailscale rather than assuming. A service named explicitly is closed either way, so somebody who knows better than grat can still say so.
 
 **`--path PATH`**
 

@@ -148,15 +148,24 @@ standard output and the error output of the command go there.
 		},
 	},
 	{
-		usage: "expose [--path P] NAME",
+		usage: "expose [--path P] NAME...",
 		detail: `
 Publishes one service to the internet through Tailscale Funnel, at a name that
 stays the same between runs. This is what a webhook from another server needs,
 since a service on your machine cannot otherwise be reached from outside.
 
+Several services can be named at once, and the word all takes every service that
+has an address to publish. A process-only service has none, so all passes over it
+rather than refusing; named on its own it is still an error, because the name
+says what you meant.
+
 The whole service is published unless a path narrows it. Naming a path is worth
 it for a service whose only business outside is a callback, because everything
-else it serves then stays on the machine.
+else it serves then stays on the machine. A path names one path, so it goes with
+one service and is refused beside several.
+
+Each service says what became of it. One that cannot be published does not undo
+the ones already published.
 
 Where Tailscale is missing, grat installs it, starts its background service and
 signs the machine in. It reports each step and does not ask, because that is what
@@ -180,11 +189,16 @@ or for all of them.
 `,
 	},
 	{
-		usage: "hide [--path P] NAME",
+		usage: "hide [--path P] NAME...",
 		detail: `
-Withdraws a published service, so its address stops answering. It closes exactly
-what was published and leaves every other funnel standing, including one you set
-up yourself.
+Withdraws published services, so their addresses stop answering. It closes
+exactly what was published and leaves every other funnel standing, including one
+you set up yourself.
+
+Several services can be named at once, and the word all takes every funnel this
+project currently has open, which grat reads from Tailscale rather than assuming.
+A service named explicitly is closed either way, so somebody who knows better
+than grat can still say so.
 `,
 		options: []commandOption{
 			{flag: "--path PATH", meaning: "Withdraw only this path, where the service was published on more than one."},
