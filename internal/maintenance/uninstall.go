@@ -563,7 +563,7 @@ func (service Service) withdrawFunnels(ctx context.Context, artifacts uninstallA
 				PublicPort: publicPort,
 				Target:     strings.TrimSuffix(configured.URL(), "/"),
 			}
-			if !funnelIsPublished(published, funnel) {
+			if !funnel.IsAmong(published) {
 				continue
 			}
 			if closeErr := client.Close(ctx, funnel); closeErr != nil {
@@ -575,18 +575,6 @@ func (service Service) withdrawFunnels(ctx context.Context, artifacts uninstallA
 		}
 	}
 	return nil
-}
-
-// funnelIsPublished reports whether Tailscale currently serves that funnel. The
-// path and the port identify one; the target is grat's own and does not decide
-// whether this is the same publication.
-func funnelIsPublished(published []tailscale.Funnel, funnel tailscale.Funnel) bool {
-	for _, candidate := range published {
-		if candidate.Path == funnel.Path && candidate.PublicPort == funnel.PublicPort {
-			return true
-		}
-	}
-	return false
 }
 
 // writeTailscaleFootnote says what a person still has to do themselves.

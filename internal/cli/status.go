@@ -103,7 +103,7 @@ func publicAddresses(ctx context.Context, value config.Config, ready readyTailsc
 	}
 	for _, service := range exposable {
 		funnel := funnelFor(service, "")
-		if isPublished(published, funnel) {
+		if funnel.IsAmong(published) {
 			addresses[service.Name] = funnel.PublicURL(hostname)
 		}
 	}

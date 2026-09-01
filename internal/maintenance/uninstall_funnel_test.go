@@ -26,12 +26,20 @@ func TestOnlyWhatGratOpenedIsClosed(t *testing.T) {
 	}
 
 	mine := tailscale.Funnel{Path: gratPath, PublicPort: gratPort, Target: "http://localhost:4001"}
-	if !funnelIsPublished(published, mine) {
+	if !mine.IsAmong(published) {
 		t.Fatalf("grat's own funnel was not recognised among %+v", published)
 	}
 	theirs := tailscale.Funnel{Path: "/never-opened-by-grat", PublicPort: 443}
-	if funnelIsPublished(published, theirs) {
+	if theirs.IsAmong(published) {
 		t.Fatalf("a funnel grat never opened was treated as its own")
+	}
+
+	// The path and the port alone are not enough. Another service of the same
+	// project publishes the same default path, and matching on those two would
+	// have grat close a funnel that belongs to somewhere else entirely.
+	sameSlot := tailscale.Funnel{Path: gratPath, PublicPort: gratPort, Target: "http://localhost:9999"}
+	if sameSlot.IsAmong(published) {
+		t.Fatalf("a funnel sharing only the path and the port was treated as the same publication")
 	}
 }
 

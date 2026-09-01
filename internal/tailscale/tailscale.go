@@ -26,6 +26,29 @@ type Funnel struct {
 	Target string
 }
 
+// SameAs reports whether two funnels are the same publication.
+//
+// All three fields decide it, and the target is the one that matters most. A
+// path and a port say which slot is taken; only the target says which service is
+// behind it. Comparing the first two alone made every service sharing the
+// default path look published whilst one funnel existed, so grat status showed
+// one address on every row.
+func (funnel Funnel) SameAs(other Funnel) bool {
+	return funnel.Path == other.Path &&
+		funnel.PublicPort == other.PublicPort &&
+		funnel.Target == other.Target
+}
+
+// IsAmong reports whether this funnel is one of those.
+func (funnel Funnel) IsAmong(published []Funnel) bool {
+	for _, candidate := range published {
+		if funnel.SameAs(candidate) {
+			return true
+		}
+	}
+	return false
+}
+
 // PublicURL returns the address the outside world reaches this funnel at.
 // hostname is the machine's name inside the tailnet, with or without the trailing
 // dot that Tailscale reports. The default port is left out of the URL, because a

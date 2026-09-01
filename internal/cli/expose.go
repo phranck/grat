@@ -159,7 +159,7 @@ func runExposeStatus(ctx context.Context, args []string, cwd string, environment
 			continue
 		}
 		funnel := funnelFor(service, "")
-		if !isPublished(published, funnel) {
+		if !funnel.IsAmong(published) {
 			rows = append(rows, []string{service.Name, funnel.Path, "closed", ""})
 			continue
 		}
@@ -221,18 +221,6 @@ func funnelFor(service config.Service, pathOverride string) tailscale.Funnel {
 		PublicPort: publicPort,
 		Target:     strings.TrimSuffix(service.URL(), "/"),
 	}
-}
-
-// isPublished reports whether the given funnel is among what Tailscale serves.
-// Only the path and the port are compared, because those are what identify one
-// funnel; the target is grat's own and not what makes it the same publication.
-func isPublished(published []tailscale.Funnel, funnel tailscale.Funnel) bool {
-	for _, candidate := range published {
-		if candidate.Path == funnel.Path && candidate.PublicPort == funnel.PublicPort {
-			return true
-		}
-	}
-	return false
 }
 
 func containsName(names []string, name string) bool {
