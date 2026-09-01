@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"errors"
-	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -17,41 +16,29 @@ import (
 	"github.com/phranck/grat/internal/project"
 )
 
-func runInit(ctx context.Context, args []string, cwd string, input io.Reader, interactive bool, roots []string, output presentation.Renderer) error {
-	return runInitWithInput(ctx, args, cwd, input, interactive, roots, output)
-}
-
-func runInitWithInput(ctx context.Context, args []string, cwd string, input io.Reader, interactive bool, roots []string, output presentation.Renderer) error {
-	flags := flag.NewFlagSet("init", flag.ContinueOnError)
-	flags.SetOutput(io.Discard)
-	name := flags.String("name", "", "project name")
-	force := flags.Bool("force", false, "replace an existing grat.config")
-	var serviceSpecs repeatedValue
-	flags.Var(&serviceSpecs, "service", "service definition in name=command form; repeatable")
-	if err := flags.Parse(args); err != nil {
-		return err
-	}
-	if flags.NArg() != 0 {
-		return fmt.Errorf("init does not accept positional arguments")
-	}
-
+// discoverHere writes the configuration for the project the command was run in.
+//
+// This is grat discover without a path. It writes straight away rather than
+// asking which projects to take, because there is only one and you named it by
+// standing in it.
+func discoverHere(ctx context.Context, cwd string, input io.Reader, interactive bool, roots []string, name string, force bool, serviceSpecs []string, output presentation.Renderer) error {
 	root, err := filepath.Abs(cwd)
 	if err != nil {
 		return fmt.Errorf("resolve current directory: %w", err)
 	}
 	configPath := filepath.Join(root, project.ConfigFileName)
-	if _, err := os.Stat(configPath); err == nil && !*force {
+	if _, err := os.Stat(configPath); err == nil && !force {
 		return fmt.Errorf("%s already exists; use --force to replace it", configPath)
 	} else if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("inspect %s: %w", configPath, err)
 	}
-	if !interactive && strings.TrimSpace(*name) == "" {
-		return fmt.Errorf("init requires --name when standard input is not a terminal")
+	if !interactive && strings.TrimSpace(name) == "" {
+		return fmt.Errorf("discover requires --name when standard input is not a terminal")
 	}
 
-	output.Heading("Initializing project", root)
+	output.Heading("Discovering project", root)
 	output.Step(presentation.StepWorking, "Services", "resolving configured commands")
-	definitions, unresolved, err := initServiceSuggestions(root, serviceSpecs)
+	definitions, unresolved, err := serviceSuggestions(root, serviceSpecs)
 	if err != nil {
 		return err
 	}
@@ -60,9 +47,9 @@ func runInitWithInput(ctx context.Context, args []string, cwd string, input io.R
 	for _, item := range unresolved {
 		output.Step(presentation.StepInfo, item.Marker, item.Reason)
 	}
-	projectName := strings.TrimSpace(*name)
+	projectName := strings.TrimSpace(name)
 	if interactive {
-		projectName, definitions, err = collectInitInterview(input, output.Writer(), projectName, definitions)
+		projectName, definitions, err = collectProjectInterview(input, output.Writer(), projectName, definitions)
 		if err != nil {
 			return err
 		}
@@ -73,7 +60,7 @@ func runInitWithInput(ctx context.Context, args []string, cwd string, input io.R
 	output.Step(presentation.StepWorking, "Ports", "scanning configured directories and live listeners")
 	services := make([]config.Service, 0, len(definitions))
 	err = ports.WithRegistryLock(ctx, func() error {
-		if _, statErr := os.Stat(configPath); statErr == nil && !*force {
+		if _, statErr := os.Stat(configPath); statErr == nil && !force {
 			return fmt.Errorf("%s already exists; use --force to replace it", configPath)
 		} else if statErr != nil && !errors.Is(statErr, os.ErrNotExist) {
 			return fmt.Errorf("inspect %s: %w", configPath, statErr)
@@ -139,7 +126,7 @@ func (values *repeatedValue) Set(value string) error {
 	return nil
 }
 
-func initServiceSuggestions(root string, explicit []string) ([]serviceDefinition, []detect.Unresolved, error) {
+func serviceSuggestions(root string, explicit []string) ([]serviceDefinition, []detect.Unresolved, error) {
 	if len(explicit) == 0 {
 		return detectServices(root)
 	}

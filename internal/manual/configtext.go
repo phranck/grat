@@ -3,7 +3,7 @@ package manual
 // configDescription opens the page.
 const configDescription = `
 grat.config sits in the root of a project and says what that project runs. It
-is ordinary TOML, written to be read and edited by hand, and grat init writes a
+is ordinary TOML, written to be read and edited by hand, and grat discover writes a
 first version of it from what it finds in the directory.
 
 Every service in it is one long-running command. grat starts it, gives it a

@@ -9,7 +9,7 @@
 grat replaces the terminal tabs used to run a local development stack. Declare the commands for a frontend, an API, a dashboard, or a background worker once in `grat.config`, then manage them together.
 
 ```sh
-grat init      # reads the project and writes grat.config
+grat discover  # reads the project and writes grat.config
 grat start     # starts every service and waits until each one answers
 grat status    # what runs, on which port, under which PID
 grat stop
@@ -62,23 +62,29 @@ Run the setup in a project directory:
 
 ```sh
 cd ~/Developer/example
-grat init
+grat discover
 grat start
 grat status
 ```
 
-`grat init` reads the project and proposes the services it recognises, so most projects need nothing written by hand. Angular, Astro, Next.js, Nuxt, React Router, SvelteKit and Vite are recognised on the frontend, Django, Laravel, Rails and FastAPI on the backend, along with Go modules and Swift packages using Vapor.
+`grat discover` reads the project and proposes the services it recognises, so most projects need nothing written by hand. Angular, Astro, Next.js, Nuxt, React Router, SvelteKit and Vite are recognised on the frontend, Django, Laravel, Rails and FastAPI on the backend, along with Go modules and Swift packages using Vapor.
 
 Express, Fastify, NestJS and Go are different: none of them reads `PORT` on its own and none has a flag for it, so the port lives in the line of your own code that starts the server. grat looks there, and where it does not find it, it says so instead of proposing a command that would never become ready. [What grat recognises](Documentation.md#what-grat-recognises) explains why.
 
 Anything grat does not propose can be given explicitly:
 
 ```sh
-grat init --name example-api \
+grat discover --name example-api \
   --service 'backend=swift run App serve --hostname 127.0.0.1 --port $PORT'
 ```
 
 The resulting `grat.config` is regular TOML and can be read and edited before the first start.
+
+Given a path, `grat discover` searches below it instead and shows what it found as a list you move through, so a folder of twenty projects is set up in one pass and you decide per project whether its configuration is written:
+
+```sh
+grat discover ~/Developer
+```
 
 ## Reading further
 

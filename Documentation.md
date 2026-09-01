@@ -11,6 +11,7 @@ the version on your machine rather than the one this file was written against.
 
 - [Installation](#installation)
 - [What grat recognises](#what-grat-recognises)
+- [Setting up projects](#setting-up-projects)
 - [Directory discovery](#directory-discovery)
 - [Project examples](#project-examples)
 - [Ports](#ports)
@@ -73,7 +74,7 @@ pages.
 
 ## What grat recognises
 
-`grat init` reads the project directory and proposes the services it finds, so
+`grat discover` reads the project directory and proposes the services it finds, so
 most projects need no configuration written by hand. What it proposes depends on
 one question, and it is not which framework the project uses. It is who decides
 the port.
@@ -110,6 +111,50 @@ in the process that dispatched it and gets no worker. Every other connection
 does, because jobs otherwise sit in the queue and nothing tells you. Where
 neither file states the connection, grat says it could not read it rather than
 deciding for you. Nothing else from `.env` is read.
+
+## Setting up projects
+
+`grat discover` writes the configuration. The argument decides how far it
+reaches.
+
+Without one it means the project you are standing in. It detects the services,
+lets you review them, and writes `grat.config` there. That is the ordinary case
+and it writes straight away, since standing in a directory is how you named it.
+
+```sh
+cd ~/Developer/example
+grat discover
+```
+
+With a path it means every project below there. It shows what it found as a list
+you move through, and you decide per project whether its configuration is
+written. Projects that already have one are shown too, marked as such, and left
+alone. Use the arrow keys to move, space to mark a project, `a` to mark all, `n`
+to clear, enter to write the marked ones and `q` to leave without writing
+anything.
+
+```sh
+grat discover ~/Developer
+```
+
+Every port is allocated in one pass over all the projects you chose, so twenty
+projects set up together do not collide with each other or with anything already
+registered. The searched path is added to the scan directories in the same step,
+because a configuration grat cannot find afterwards reserves no port and appears
+in no status.
+
+Where there is no terminal to ask in, the command lists what it found and writes
+nothing. `--write` takes all of them without asking, which is the form for a
+script.
+
+Anything grat does not propose can be given by hand, for the current project:
+
+```sh
+grat discover --name example-api \
+  --service 'backend=swift run App serve --hostname 127.0.0.1 --port $PORT'
+```
+
+`--force` replaces a configuration that already exists.
 
 ## Directory discovery
 
@@ -157,7 +202,7 @@ defaults apply when the `[runtime]` table is omitted.
 
 ### React with Vite
 
-This is what `grat init` writes for a React project that uses Vite.
+This is what `grat discover` writes for a React project that uses Vite.
 `--strictPort` makes Vite exit instead of selecting a different port, which is
 what keeps it from answering somewhere grat is not looking.
 
@@ -468,8 +513,8 @@ select a framework or alter the configured command.
 | `other` | Other HTTP service | 5000-5299 | Managed process, owned listener, HTTP 2xx |
 | `worker` | Process without an HTTP endpoint | no port | Managed process is alive |
 
-During `grat init`, conventional names such as `frontend`, `backend`, `api`,
-`dashboard`, and `worker` select the matching role. Other names select `other`.
+During `grat discover`, conventional names such as `frontend`, `backend`, `api`,
+`dashboard`, `queue`, and `worker` select the matching role. Other names select `other`.
 The role remains explicit and reviewable in `grat.config`.
 
 ## Status and readiness

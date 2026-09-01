@@ -14,7 +14,7 @@ func helpCommandGroups() []presentation.CommandGroup {
 		{
 			Title: "Project setup",
 			Commands: []presentation.Command{
-				{Usage: "init", Description: "Create a declarative grat.config for this project"},
+				{Usage: "discover [PATH]", Description: "Write a grat.config for this project, or choose from the projects below PATH"},
 			},
 		},
 		{

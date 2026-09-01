@@ -30,7 +30,7 @@ func TestInitReportsWhatItCouldNotResolve(t *testing.T) {
 		}
 	}
 
-	definitions, unresolved, err := initServiceSuggestions(root, nil)
+	definitions, unresolved, err := serviceSuggestions(root, nil)
 	if err != nil {
 		t.Fatalf("suggest: %v", err)
 	}

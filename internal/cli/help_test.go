@@ -45,7 +45,7 @@ func TestHelpListsProjectLifecycleAndPortCommandsWithoutWorker(t *testing.T) {
 
 func TestSubcommandHelpReturnsUsageBeforeExecutingCommands(t *testing.T) {
 	for _, arguments := range [][]string{
-		{"init", "--help"},
+		{"discover", "--help"},
 		{"start", "--help"},
 		{"stop", "--help"},
 		{"restart", "--help"},
