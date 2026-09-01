@@ -11,6 +11,17 @@ A release touches two repositories and has waiting points between its steps. The
 
 Read `git log --no-merges v<last>..HEAD`. A `Feat:` in there makes it a minor bump. Only `Fix:`, `Chore:`, `Docs:`, `Test:` and `Refactor:` make it a patch. Removing a command is a breaking change and belongs in the conversation before it is tagged, not in the tag.
 
+## Write the note whilst writing the commit
+
+The notes are built from the commit subjects, and a subject is written for
+somebody who has the diff in front of them. Where the reader of a release page
+would need a different sentence, put it in the commit as a `Release-note:`
+trailer and that is what goes out. `scripts/release-notes.sh` explains the shape.
+
+The grouping comes from the prefix, so a change somebody using grat would notice
+is `Feat:`, `Fix:` or `Docs:`. `Chore:`, `Test:` and `Refactor:` never appear in
+the notes at all, which is right for repository work and wrong for anything else.
+
 ## The order
 
 1. **Raise the site badge in `docs/index.html`** to the version being prepared, on a `release/vX.Y.Z` branch. This is the one place the repository names a version.

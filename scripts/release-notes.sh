@@ -23,6 +23,20 @@ set -eu
 # A reader wants to know what they can now do, what reads differently and what
 # stopped being broken. The full changelog at the end carries the rest.
 #
+# A subject is written for somebody reading the history, who has the diff beside
+# it. A release note is read by somebody who has neither. Where the two want
+# different sentences, the commit says so in a Release-note trailer and that
+# sentence is what goes out:
+#
+#   Fix: take service names however they were typed
+#
+#   Release-note: grat expose frontend, developer no longer fails with unknown
+#   service "frontend,". Names separated by spaces, by commas or by both are the
+#   same list.
+#
+# Without the trailer the subject is used, which is right whenever the subject
+# already says what changed for the reader.
+#
 # Usage: scripts/release-notes.sh <tag> [previous-tag]
 
 tag=${1:?a tag is required}
@@ -38,25 +52,42 @@ else
 	range="$tag"
 fi
 
-git log --no-merges --reverse --format='%s' "$range" | awk '
+# Each commit is one record, holding the subject and the trailer, parted by a
+# unit separator. Both are characters a commit message cannot contain, so a
+# subject carrying a bar or a colon cannot split its own record.
+git log --no-merges --reverse --format='%s%x1f%(trailers:key=Release-note,valueonly,separator=%x20)%x1e' "$range" | awk '
+  BEGIN { RS = "\036"; FS = "\037" }
+
   # The version bump is the commit that made this release, so it says nothing
   # about what is in it.
-  /^Chore: prepare v/ { next }
+  { subject = $1; gsub(/^[ \t\n]+|[ \t\n]+$/, "", subject) }
+
+  # git writes a record separator after the last commit too, so the stream ends
+  # with an empty record that is not a commit.
+  subject == "" { next }
+
+  subject ~ /^Chore: prepare v/ { next }
 
   # Work on the repository, its website and its tooling, which a release is not
   # the place to report.
-  /^Chore: /    { next }
-  /^Test: /     { next }
-  /^Refactor: / { next }
+  subject ~ /^Chore: /    { next }
+  subject ~ /^Test: /     { next }
+  subject ~ /^Refactor: / { next }
 
   {
-    line = $0
-    sub(/^[A-Za-z]+: /, "", line)
-    # A subject continues its prefix and therefore starts lower case. On its own
-    # in a list it is the beginning of a sentence.
-    line = toupper(substr(line, 1, 1)) substr(line, 2)
-    if ($0 ~ /^Feat: /) { added[++a] = line; next }
-    if ($0 ~ /^Fix: /)  { fixed[++f] = line; next }
+    note = $2
+    gsub(/^[ \t\n]+|[ \t\n]+$/, "", note)
+    if (note != "") {
+      line = note
+    } else {
+      line = subject
+      sub(/^[A-Za-z]+: /, "", line)
+      # A subject continues its prefix and therefore starts lower case. On its
+      # own in a list it is the beginning of a sentence.
+      line = toupper(substr(line, 1, 1)) substr(line, 2)
+    }
+    if (subject ~ /^Feat: /) { added[++a] = line; next }
+    if (subject ~ /^Fix: /)  { fixed[++f] = line; next }
     changed[++c] = line
   }
 
