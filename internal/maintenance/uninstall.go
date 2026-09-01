@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"syscall"
 
@@ -72,8 +73,12 @@ func (service Service) uninstallLocked(ctx context.Context, store settings.Store
 	if err != nil {
 		return Result{}, err
 	}
-	if err := service.ensureNoActiveServices(ctx, artifacts); err != nil {
+	proceed, err := service.settleActiveServices(ctx, artifacts, input, output)
+	if err != nil {
 		return Result{}, err
+	}
+	if !proceed {
+		return Result{Message: "Nothing was uninstalled, because the running services were left alone."}, nil
 	}
 	// The state below .grat is grat's own and is regenerated on the next start,
 	// so removing it is the expected answer.
@@ -187,7 +192,15 @@ func discoverUninstallArtifactsWithLimits(roots []string, limits artifactScanLim
 	return artifacts, nil
 }
 
-func (service Service) ensureNoActiveServices(ctx context.Context, artifacts uninstallArtifacts) error {
+// settleActiveServices makes sure nothing grat manages is still running, and
+// reports whether the uninstall should go on.
+//
+// grat started these processes, so it can stop them, and a command that refuses
+// with the name of one project makes somebody run it once per project. It lists
+// everything that is running, asks once, and stops all of it when the answer is
+// yes. When the answer is no it says so and the uninstall ends, because deciding
+// against it is not a failure.
+func (service Service) settleActiveServices(ctx context.Context, artifacts uninstallArtifacts, input io.Reader, output io.Writer) (bool, error) {
 	stateByProject := make(map[string]struct{}, len(artifacts.stateDirectories))
 	for _, stateDirectory := range artifacts.stateDirectories {
 		stateByProject[filepath.Dir(stateDirectory)] = struct{}{}
@@ -198,19 +211,87 @@ func (service Service) ensureNoActiveServices(ctx context.Context, artifacts uni
 	}
 	for projectRoot := range stateByProject {
 		if _, exists := configByProject[projectRoot]; !exists {
-			return fmt.Errorf("cannot inspect managed state in %s because grat.config is missing", projectRoot)
+			// Without the configuration grat cannot read what those processes
+			// are, so it can neither describe them nor stop them.
+			return false, fmt.Errorf("cannot inspect managed state in %s because grat.config is missing", projectRoot)
 		}
 	}
+
+	active, err := service.activeProjects(ctx, stateByProject, configByProject)
+	if err != nil {
+		return false, err
+	}
+	if len(active) == 0 {
+		return true, nil
+	}
+
+	if err := writeActiveProjects(output, active); err != nil {
+		return false, err
+	}
+	// Stopping is the expected answer, the way removing the .grat directories is:
+	// these are processes grat started, and nothing can be uninstalled whilst
+	// they run, so declining ends the command rather than changing it.
+	stop, err := confirm(output, input, "Stop them and continue? [Y/n]: ", true)
+	if err != nil {
+		return false, err
+	}
+	if !stop {
+		return false, nil
+	}
+
+	for _, found := range active {
+		if err := service.stopProject(ctx, found.Root); err != nil {
+			return false, fmt.Errorf("stop services in %s: %w", found.Root, err)
+		}
+	}
+
+	// Read back rather than trust the stop. A service that survived it would
+	// otherwise be left running by a machine that no longer has grat to stop it.
+	remaining, err := service.activeProjects(ctx, stateByProject, configByProject)
+	if err != nil {
+		return false, err
+	}
+	if len(remaining) > 0 {
+		return false, fmt.Errorf("services in %s are still running after being stopped", remaining[0].Root)
+	}
+	return true, nil
+}
+
+// activeProject is one project whose services are still running.
+type activeProject struct {
+	Root     string
+	Services []string
+}
+
+// activeProjects lists every project that still has something running, in a
+// stable order so two runs read the same.
+func (service Service) activeProjects(ctx context.Context, stateByProject map[string]struct{}, configByProject map[string]string) ([]activeProject, error) {
+	active := []activeProject{}
 	for projectRoot := range configByProject {
 		if _, hasState := stateByProject[projectRoot]; !hasState {
 			continue
 		}
-		active, err := service.inspectProject(ctx, projectRoot)
+		running, err := service.inspectProject(ctx, projectRoot)
 		if err != nil {
-			return fmt.Errorf("inspect managed state in %s: %w", projectRoot, err)
+			return nil, fmt.Errorf("inspect managed state in %s: %w", projectRoot, err)
 		}
-		if active {
-			return fmt.Errorf("active managed service found in %s; stop it before uninstalling grat", projectRoot)
+		if len(running) > 0 {
+			active = append(active, activeProject{Root: projectRoot, Services: running})
+		}
+	}
+	sort.Slice(active, func(left, right int) bool { return active[left].Root < active[right].Root })
+	return active, nil
+}
+
+// writeActiveProjects says what is running before anything is asked about it.
+func writeActiveProjects(output io.Writer, active []activeProject) error {
+	if _, err := io.WriteString(output, "These services are still running:\n"); err != nil {
+		return err
+	}
+	for _, found := range active {
+		line := "  " + found.Root + ": " + strings.Join(found.Services, ", ") + "\n"
+		if _, err := io.WriteString(output, line); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -352,24 +433,37 @@ func (service Service) removeInstallation(ctx context.Context, owner installatio
 	}
 }
 
-func (service Service) inspectProject(ctx context.Context, root string) (bool, error) {
+func (service Service) inspectProject(ctx context.Context, root string) ([]string, error) {
 	if service.InspectProject != nil {
 		return service.InspectProject(ctx, root)
 	}
 	value, err := config.Load(filepath.Join(root, project.ConfigFileName))
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 	statuses, err := (gratruntime.Manager{Root: root, Config: value}).Status(ctx)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
+	running := []string{}
 	for _, status := range statuses {
 		if status.State != gratruntime.StateStopped {
-			return true, nil
+			running = append(running, status.Service.Name)
 		}
 	}
-	return false, nil
+	return running, nil
+}
+
+// stopProject stops everything grat manages in one project.
+func (service Service) stopProject(ctx context.Context, root string) error {
+	if service.StopProject != nil {
+		return service.StopProject(ctx, root)
+	}
+	value, err := config.Load(filepath.Join(root, project.ConfigFileName))
+	if err != nil {
+		return err
+	}
+	return (gratruntime.Manager{Root: root, Config: value}).Stop(ctx, nil)
 }
 
 func (service Service) remove(path string) error {

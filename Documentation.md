@@ -638,19 +638,49 @@ it prints:
 go install github.com/phranck/grat/cmd/grat@latest
 ```
 
-`grat uninstall` first checks registered directories for active grat-managed
-services. Stop any listed service before running the command again. It then
-asks once for each class of project-local artifact:
+`grat uninstall` first checks registered directories for services it still
+manages. Where it finds any, it lists them and offers to stop them, because
+nothing can be uninstalled whilst they run and grat started them itself:
+
+```text
+These services are still running:
+  /Users/you/Developer/example: frontend, backend
+Stop them and continue? [Y/n]:
+```
+
+Answering no ends the command and changes nothing. Answering yes stops them,
+checks that they really stopped, and goes on. A service that survives being
+stopped stops the uninstall, so nothing is left running on a machine that no
+longer has grat to stop it.
+
+It then asks once for each class of project-local artifact:
 
 ```text
 Delete all .grat directories? [Y/n]:
-Delete all grat.config files? [Y/n]:
+Delete all grat.config files? [y/N]:
 ```
 
-An empty answer means yes. grat removes only matching files below registered
-directories, then removes its settings, port lock, and the installation it can
-identify safely. It does not search unrelated parts of your home directory or
-remove shared Homebrew state.
+The capital letter is what an empty answer means. The `.grat` directories are
+grat's own state and go by default. A `grat.config` is your work and survives a
+reinstall, so it is kept unless you ask for it to go.
+
+Where grat installed Tailscale itself, it offers to take that away too:
+
+```text
+Remove Tailscale, which grat installed? [Y/n]:
+```
+
+The question only appears when two things agree: a note grat wrote when it
+installed Tailscale, and an executable still sitting where the documented
+installation puts it. A Tailscale you installed yourself is never touched,
+because of the two possible mistakes only that one cannot be undone. Answering
+yes signs the machine out of the tailnet, stops the background service, removes
+the package, and clears the paths Homebrew takes root ownership of, which is why
+those steps ask for your password.
+
+grat removes only matching files below registered directories, then removes its
+settings, port lock, and the installation it can identify safely. It does not
+search unrelated parts of your home directory or remove shared Homebrew state.
 
 ## Safety and recovery
 
