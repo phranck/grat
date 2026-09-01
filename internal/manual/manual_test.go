@@ -29,7 +29,9 @@ func TestEveryCommandOfTheReferenceReachesThePage(t *testing.T) {
 	t.Parallel()
 
 	page := Page("v1.2.3", "2026-09-01", groups())
-	for _, want := range []string{".SS Service lifecycle", `.B grat start [name...]`, "Start services"} {
+	// The group opens the section as an overview and each command follows as a
+	// heading of its own.
+	for _, want := range []string{".B Service lifecycle", ".SS grat start [name...]", "Start services"} {
 		if !strings.Contains(page, want) {
 			t.Fatalf("the page is missing %q", want)
 		}

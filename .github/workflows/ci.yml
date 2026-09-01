@@ -38,3 +38,10 @@ jobs:
         run: go build -trimpath -o dist/grat ./cmd/grat
       - name: Vulnerability scan
         run: go tool govulncheck ./...
+      # Documentation.md is generated from the manual, so this is what stops a
+      # change to the manual reaching main without the document following it.
+      # The gate existed before and nothing ran it, which is how four wrong
+      # statements survived until they were found by hand.
+      - name: Documentation
+        if: matrix.name == 'Linux Intel'
+        run: sh scripts/check-docs.sh

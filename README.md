@@ -47,7 +47,7 @@ chmod +x grat
 sudo install -m 0755 grat /usr/local/bin/grat
 ```
 
-The version is read from the newest release rather than written here, so this stays current. Use `linux_arm64` on ARM. macOS binaries are published the same way, as `darwin_amd64` and `darwin_arm64`. A binary installed this way carries no man pages; `grat.1` and `grat.config.7` sit beside it in the same release, and [Documentation.md](Documentation.md#the-man-pages) says where to put them.
+The version is read from the newest release rather than written here, so this stays current. Use `linux_arm64` on ARM. macOS binaries are published the same way, as `darwin_amd64` and `darwin_arm64`. A binary installed this way carries no man pages; `grat.1` and `grat.config.7` sit beside it in the same release, and [Documentation.md](Documentation.md#installation) says where to put them.
 
 Or build it with Go 1.25.13 or newer:
 
@@ -70,7 +70,7 @@ grat status
 
 `grat discover` reads the project and proposes the services it recognises, so most projects need nothing written by hand. Angular, Astro, Next.js, Nuxt, React Router, SvelteKit and Vite are recognised on the frontend, Django, Laravel, Rails and FastAPI on the backend, along with Go modules and Swift packages using Vapor.
 
-Express, Fastify, NestJS and Go are different: none of them reads `PORT` on its own and none has a flag for it, so the port lives in the line of your own code that starts the server. grat looks there, and where it does not find it, it says so instead of proposing a command that would never become ready. [What grat recognises](Documentation.md#what-grat-recognises) explains why.
+Express, Fastify, NestJS and Go are different: none of them reads `PORT` on its own and none has a flag for it, so the port lives in the line of your own code that starts the server. grat looks there, and where it does not find it, it says so instead of proposing a command that would never become ready. [What grat recognises](Documentation.md#how-grat-decides-what-a-project-runs) explains why.
 
 Anything grat does not propose can be given explicitly:
 

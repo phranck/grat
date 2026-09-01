@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/phranck/grat/internal/manual"
 )
 
 // TestTheManualCarriesEveryCommandOfTheReference is what keeps the page and the
@@ -17,11 +19,11 @@ func TestTheManualCarriesEveryCommandOfTheReference(t *testing.T) {
 	page := plainManual(t, time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC))
 
 	for _, group := range helpCommandGroups() {
-		if !strings.Contains(page, ".SS "+group.Title) {
+		if !strings.Contains(page, ".B "+group.Title) {
 			t.Fatalf("the page is missing the group %q", group.Title)
 		}
 		for _, command := range group.Commands {
-			if !strings.Contains(page, ".B grat "+command.Usage) {
+			if !strings.Contains(page, ".SS grat "+command.Usage) {
 				t.Fatalf("the page is missing the command %q", command.Usage)
 			}
 		}
@@ -81,5 +83,34 @@ func TestBothManualPagesAreReachable(t *testing.T) {
 	var out bytes.Buffer
 	if err := runManual(&out, time.Now(), []string{"nope"}); err == nil {
 		t.Fatal("an unknown page name was accepted")
+	}
+}
+
+// TestEveryCommandOfTheReferenceHasAManualEntry holds the command reference and
+// the manual together.
+//
+// This test lives here because the reference is built here and the manual cannot
+// import this package without a cycle. Without it a command added to the
+// reference alone ships with its one line and nothing renders the manual during
+// ordinary work, so nobody sees the gap.
+func TestEveryCommandOfTheReferenceHasAManualEntry(t *testing.T) {
+	t.Parallel()
+
+	shipped := map[string]struct{}{}
+	for _, group := range helpCommandGroups() {
+		for _, command := range group.Commands {
+			shipped[command.Usage] = struct{}{}
+			if !manual.HasCommandEntry(command.Usage) {
+				t.Fatalf("the command %q has no entry in the manual", command.Usage)
+			}
+		}
+	}
+
+	// And the other direction, since an entry left behind after its command was
+	// removed describes something a reader cannot run.
+	for _, documented := range manual.DocumentedCommands() {
+		if _, found := shipped[documented]; !found {
+			t.Fatalf("the manual describes %q, which is in no command group", documented)
+		}
 	}
 }
