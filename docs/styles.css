@@ -1,26 +1,90 @@
 /* ===========================================================================
    grat website
    ===========================================================================
-   Design: warm paper, a hairline track running through it, and one terracotta
-   accent. The page is light only; the terminal windows are the sole dark
-   surfaces, so real output reads as something quoted rather than as the page's
-   own voice.
+   Design: warm paper and one terracotta accent. The page is light only, and the
+   two terminal windows are its only dark surfaces, so real output reads as
+   something quoted rather than as the page's own voice.
 
    Every value below is a token. Anything that can be derived is derived, so a
    change moves one line and the page follows. The card geometry states an outer
    radius and a padding; the nested radius and the text inset come from those.
    =========================================================================== */
 
+
+/* --- Fonts -----------------------------------------------------------------
+   Served from this repository rather than from a font service, so a visitor's
+   browser talks to nobody but the host serving the site. Latin subset only, and
+   docs/fonts/README.md says what that leaves out. Both families are under the
+   SIL Open Font License, whose text sits beside the files. */
+
+@font-face {
+  font-family: "Barlow";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/barlow-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Barlow";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/barlow-600.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Barlow Condensed";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/barlow-condensed-600.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Barlow Condensed";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("fonts/barlow-condensed-700.woff2") format("woff2");
+}
+
+/* One file covers the whole range, because Fira Code is a variable font. */
+@font-face {
+  font-family: "Fira Code";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("fonts/fira-code-300-700.woff2") format("woff2");
+}
+
 :root {
   color-scheme: light;
 
   /* --- Palette: light ---------------------------------------------------- */
-  --paper: #faf7f2;
+  --paper: #f0ece8;
   --paper-raised: #ffffff;
-  --paper-sunken: #f1eae0;
+
+  /* The two bars that close the page at the top and the bottom. They keep their
+     own colour rather than following the page, so the page can move without
+     taking the frame with it. */
+  --bar-surface: #faf7f2;
+  /* A shade below the page. Derived rather than stated, because a fixed value
+     stops reading as sunken the moment the page colour moves. */
+  --paper-sunken: color-mix(in srgb, var(--paper) 95%, var(--ink));
+
+  /* The lane a port range runs in. Derived from the page rather than from the
+     sunken surface, because a lane is read against the page and only has to sit
+     a little under it. */
+  --lane-surface: color-mix(in srgb, var(--paper) 97%, var(--ink));
   --ink: #1a1713;
   --ink-muted: #6d6459;
   --rule: #e3d9cb;
+
+  /* The line between two rows of a table. Lighter than the rule that draws an
+     edge, because it separates rather than bounds, and it is read against the
+     card it sits on. */
+  --rule-soft: color-mix(in srgb, var(--rule) 45%, var(--paper-raised));
   --accent: #c04a26;
   --accent-strong: #9a3a1c;
   --accent-on: #ffffff;
@@ -54,7 +118,6 @@
      never distinguished by colour alone. */
   --accent-tint: color-mix(in srgb, var(--accent) 10%, transparent);
   --accent-edge: color-mix(in srgb, var(--accent) 35%, transparent);
-  --track-line: color-mix(in srgb, var(--rule) 60%, transparent);
   /* Two layers, because one is either invisible or hard. The close layer draws
      the edge off the page, the far one gives it somewhere to sit. */
   --shadow-card:
@@ -71,14 +134,17 @@
   /* The corner of a small interactive element that is not a capsule. Well under
      half the height it sits on, because at half the height it would become one. */
   --control-radius: 8px;
-  --card-padding: 22px;
+
+  /* The corner of a window. Tighter than a card, because a window is a frame
+     around content rather than a surface holding it. */
+  --window-radius: 12px;
+  --card-padding: 18px;
   --card-inner-radius: max(calc(var(--card-radius) - var(--card-padding)), 0px);
   --card-text-inset: calc(var(--card-radius) / 2);
 
   /* --- Measure and rhythm ------------------------------------------------- */
   --measure: 76rem;
   --gutter: 1.5rem;
-  --track: 92px;
 
   /* How far the range pill sits inside its lane. The pill and the lane are both
      capsules, so each takes half its own height as its radius and the two stay
@@ -101,16 +167,43 @@
   /* --- Type ---------------------------------------------------------------
      Code keeps a size of its own, because it is read at the size it is written
      at and must not grow when the reading scale does. */
-  --font-body: "Inter", ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Fira Code", Menlo, monospace;
+  --font-body: "Barlow", ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+
+  /* Headings take the condensed cut. It is the same voice narrowed, so a title
+     reads as the same typeface rather than as a second one. */
+  --font-display: "Barlow Condensed", "Barlow", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Fira Code", ui-monospace, "SF Mono", Menlo, monospace;
 
   --size-display: clamp(2.5rem, 6.5vw, 4.5rem);
   --size-section: clamp(1.6rem, 3.2vw, 2.25rem);
-  --size-lead: 1.3125rem;
-  --size-body: 1.0625rem;
-  --size-small: 0.9375rem;
-  --size-label: 0.6875rem;
-  --size-code: 0.8125rem; /* stays put when the reading sizes grow */
+  --size-lead: 1.4375rem;
+
+  /* A heading below section level, such as the one on a card. It has to sit
+     above the body it introduces, which the condensed cut narrows rather than
+     shrinks. */
+  --size-heading: 1.6875rem;
+  --size-body: 1.25rem;
+  --size-small: 1.125rem;
+
+  /* Text that is subordinate to the page rather than part of it, such as the
+     line in the footer. */
+  --size-fine: 1rem;
+  /* One size for the monospaced family standing on its own, whether that is a
+     transcript, a label or a table head. It stays put when the reading sizes
+     grow, because code is read at the size it is written at. */
+  --size-code: 0.8125rem;
+
+  /* An identifier inside a sentence is a different case. It is read against the
+     prose around it, so at the transcript size it would look shrunken. */
+  --size-code-inline: 1.125rem;
+
+  /* A command shown to be copied and typed. Above a transcript, because it is
+     the one line on the page a reader is meant to act on. */
+  --size-command: 0.9375rem;
+
+  /* A value a reader takes off the page: a port range, a mark on the scale under
+     it, a command in a table. Read closely rather than skimmed, but not typed. */
+  --size-figure: 0.875rem;
 
   --leading-display: 1.02;
   --leading-body: 1.65;
@@ -153,17 +246,11 @@ body {
   margin: 0;
   color: var(--ink);
   background-color: var(--paper);
-  /* The track motif: hairlines the page sits on, standing for the lanes that
-     services and ports run in. Painted, not fixed-attachment, so it composites
-     once instead of being repositioned on every scroll frame. */
-  background-image: repeating-linear-gradient(
-    to right,
-    var(--track-line) 0,
-    var(--track-line) 1px,
-    transparent 1px,
-    transparent var(--track)
-  );
   font-family: var(--font-body);
+  /* Fira Code carries its ligatures as contextual alternates, so this is what
+     turns them on. Stated once and inherited, rather than repeated at each of
+     the places that reach for the monospaced family. */
+  font-variant-ligatures: contextual;
   font-size: var(--size-body);
   line-height: var(--leading-body);
   /* Ragged right everywhere. Justified text opens rivers of white space at this
@@ -210,7 +297,7 @@ body {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background-color: color-mix(in srgb, var(--paper) 82%, transparent);
+  background-color: color-mix(in srgb, var(--bar-surface) 82%, transparent);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
 }
@@ -280,16 +367,80 @@ body {
   vertical-align: -0.15em;
 }
 
-@media (max-width: 48rem) {
-  .nav__link--optional {
-    display: none;
+/* The toggle exists only where the bar cannot hold the sections. Measured: the
+   full row needs 726px of window, so it folds a little above that. */
+.nav__toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-1);
+  border: 0;
+  border-radius: var(--control-radius);
+  background: none;
+  color: var(--ink-muted);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.nav__toggle:hover {
+  color: var(--ink);
+  background-color: var(--paper-sunken);
+}
+
+/* One of the two marks is shown at a time, so the button says which way it
+   goes rather than only that it is a menu. */
+.nav__toggle-close,
+.band[data-nav="open"] .nav__toggle-open {
+  display: none;
+}
+
+.band[data-nav="open"] .nav__toggle-close {
+  display: inline-flex;
+}
+
+@media (max-width: 46rem) {
+  .nav__toggle {
+    display: inline-flex;
+  }
+
+  /* The sections drop out of the bar and become a panel under it, spanning the
+     band rather than the measure, so its edge reaches both sides like the bar's
+     own. Absolute against the band, which is positioned because it is sticky. */
+  .nav {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    height: 0;
+    overflow: hidden;
+    background-color: var(--bar-surface);
+    /* Lets the height reach the keyword on the browser's own timeline. Without
+       it a transition to auto does nothing at all. */
+    interpolate-size: allow-keywords;
+    transition: height var(--duration-calm) var(--ease);
+  }
+
+  .band[data-nav="open"] .nav {
+    height: auto;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .nav__link {
+    padding: var(--space-3) var(--gutter);
+    border-radius: 0;
   }
 }
 
 /* --- Hero ------------------------------------------------------------------ */
 
 .hero {
-  padding-block: var(--space-20) var(--space-16);
+  /* Close under the bar, because the badge is a label for the page rather than
+     the first thing in it. The foot keeps its room. */
+  padding-block: var(--space-8) var(--space-16);
 }
 
 .hero__grid {
@@ -320,9 +471,23 @@ body {
   background-color: var(--paper-raised);
   color: var(--ink-muted);
   font-family: var(--font-mono);
-  font-size: var(--size-label);
+  font-size: var(--size-code);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
+}
+
+/* On a narrow screen the page is one column, so the badge labelling it sits over
+   the middle of that column. It keeps its own width, which an inline box cannot
+   be centred at, so it becomes a block of that width.
+
+   This block follows the one above deliberately: both have the same specificity,
+   so the later one wins, and a media query placed earlier would not. */
+@media (max-width: 46rem) {
+  .badge {
+    display: flex;
+    width: fit-content;
+    margin-inline: auto;
+  }
 }
 
 .badge__dot {
@@ -334,10 +499,11 @@ body {
 
 .hero__title {
   margin: var(--space-6) 0 0;
+  font-family: var(--font-display);
   font-size: var(--size-display);
   line-height: var(--leading-display);
   letter-spacing: var(--tracking-display);
-  font-weight: 650;
+  font-weight: 700;
 }
 
 .hero__title em {
@@ -360,12 +526,6 @@ body {
   margin-top: var(--space-8);
 }
 
-.hero__note {
-  margin: var(--space-4) 0 0;
-  color: var(--ink-muted);
-  font-size: var(--size-small);
-}
-
 /* --- Buttons ---------------------------------------------------------------
    A button is as wide as its label. The single exception is a phone-sized
    viewport, which is the media query at the end of this block rather than a
@@ -380,7 +540,7 @@ body {
   border-radius: var(--control-radius);
   font: inherit;
   font-size: var(--size-small);
-  font-weight: 560;
+  font-weight: 600;
   /* One line that never wraps, so it takes none of the leading the body needs. */
   line-height: 1.3;
   text-decoration: none;
@@ -438,7 +598,7 @@ body {
   display: block;
   margin-bottom: var(--space-3);
   font-family: var(--font-mono);
-  font-size: var(--size-label);
+  font-size: var(--size-code);
   font-weight: 600;
   letter-spacing: var(--tracking-label);
   color: var(--accent);
@@ -446,10 +606,11 @@ body {
 
 .section__title {
   margin: 0;
+  font-family: var(--font-display);
   font-size: var(--size-section);
   line-height: 1.15;
   letter-spacing: -0.025em;
-  font-weight: 620;
+  font-weight: 600;
 }
 
 .section__lead {
@@ -473,6 +634,12 @@ body {
   .split--even {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
+  /* A fixed right column, for a terminal whose lines need a stated width rather
+     than a share of one. The left column takes what is left, so the page stays
+     within its measure. */
+  .split--wide {
+    grid-template-columns: minmax(0, 1fr) 610px;
+  }
 }
 
 /* --- Cards ----------------------------------------------------------------- */
@@ -493,33 +660,43 @@ body {
   border-radius: var(--card-radius);
 }
 
-/* Text inside a card meets the card's own corner, so it takes the inset on top
-   of the padding. A code block or a table runs the full width and has an edge
-   of its own, so it does not. */
-.card__title,
-.card__text {
-  padding-inline: var(--card-text-inset);
-}
-
 .card__title {
   display: flex;
+  font-family: var(--font-display);
   align-items: center;
   gap: var(--space-3);
   margin: 0 0 var(--space-2);
-  font-size: 1.0625rem;
+  font-size: var(--size-heading);
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 
 .card__title i {
   color: var(--accent);
-  font-size: 1.375rem;
+  /* A shade over the heading it sits beside, because a drawn mark reads smaller
+     than letters of the same size. Derived, so the two stay in step. */
+  font-size: calc(var(--size-heading) * 1.037);
+  line-height: 1;
+  /* Centred on the midline of the cap height, which is what centring a mark
+     against text means. Aligning the two boxes is a different thing and leaves
+     the mark riding high, because a glyph box is taller than what is drawn in
+     it and because a line box carries leading the letters do not use.
+
+     Measured from the drawn pixels rather than from the font metrics, because a
+     duotone mark is two glyphs laid over each other and the reported boxes are
+     wider than what is inked. At 27px the capital runs from 20px above the
+     baseline to 1px above it, so its midline is 10.5px up; the mark runs from
+     24px to 1px, centred 12.5px up. The difference is 2px, which at the 28px of
+     the mark is 0.071em. */
+  transform: translateY(0.071em);
 }
 
 .card__text {
   margin: 0;
   color: var(--ink-muted);
-  font-size: var(--size-small);
+  /* Prose in a card is the same kind of text as prose in a section, so it is
+     read at the same size. The small size is for what is genuinely an aside. */
+  font-size: var(--size-body);
 }
 
 .cards {
@@ -533,7 +710,7 @@ body {
    built binary. */
 
 .window {
-  border-radius: var(--card-radius);
+  border-radius: var(--window-radius);
   background-color: var(--term-surface);
   border: 1px solid var(--term-edge);
   overflow: hidden;
@@ -569,7 +746,7 @@ body {
   transform: translateX(-50%);
   color: var(--term-detail);
   font-family: var(--font-mono);
-  font-size: var(--size-label);
+  font-size: var(--size-code);
   letter-spacing: 0.05em;
 }
 
@@ -606,7 +783,7 @@ body {
   padding: var(--space-3) var(--space-4) var(--space-3) var(--space-5);
   border-radius: 999px;
   font-family: var(--font-mono);
-  font-size: var(--size-code);
+  font-size: var(--size-command);
 }
 
 .command__prompt {
@@ -672,7 +849,7 @@ body {
   position: relative;
   height: 2.5rem;
   border-radius: 999px;
-  background-color: var(--paper-sunken);
+  background-color: var(--lane-surface);
   border: 1px solid var(--rule);
 }
 
@@ -701,7 +878,7 @@ body {
   margin-left: var(--space-3);
   color: var(--accent-strong);
   font-family: var(--font-mono);
-  font-size: var(--size-label);
+  font-size: var(--size-figure);
   white-space: nowrap;
 }
 
@@ -734,7 +911,7 @@ body {
   transform: translateX(-50%);
   color: var(--ink-muted);
   font-family: var(--font-mono);
-  font-size: var(--size-label);
+  font-size: var(--size-figure);
   white-space: nowrap;
 }
 
@@ -797,14 +974,14 @@ th,
 td {
   padding: var(--space-3) var(--space-5);
   text-align: left;
-  border-bottom: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule-soft);
   vertical-align: top;
 }
 
 thead th {
   color: var(--ink-muted);
   font-family: var(--font-mono);
-  font-size: var(--size-label);
+  font-size: var(--size-code);
   font-weight: 500;
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
@@ -814,10 +991,17 @@ tbody tr:last-child td {
   border-bottom: 0;
 }
 
-td code,
+/* The head of a table is a label and keeps the label size. A cell carries a
+   value, and takes the size a value is read at. */
 th code {
   font-family: var(--font-mono);
   font-size: var(--size-code);
+  color: var(--accent-strong);
+}
+
+td code {
+  font-family: var(--font-mono);
+  font-size: var(--size-figure);
   color: var(--accent-strong);
 }
 
@@ -837,6 +1021,9 @@ th code {
   grid-template-columns: 1.75rem minmax(0, 1fr);
   column-gap: var(--space-4);
   row-gap: var(--space-1);
+  /* The number and the label sit on one baseline. They are set at different
+     sizes, so aligning their boxes would leave the two sitting apart. */
+  align-items: baseline;
 }
 
 .steps li::before {
@@ -869,18 +1056,23 @@ th code {
 /* --- Footer ------------------------------------------------------------------ */
 
 .footer {
-  padding-block: var(--space-12);
   border-top: 1px solid var(--rule);
+  /* The same surface the header carries, so the page is closed by two bars that
+     read alike. */
+  background-color: var(--bar-surface);
   color: var(--ink-muted);
-  font-size: var(--size-small);
+  font-size: var(--size-fine);
 }
 
+/* The same height as the row in the header, so the page is bounded by two bars
+   of one measure rather than by a bar at the top and a block at the bottom. */
 .footer__row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
+  min-height: 4rem;
 }
 
 .footer__links {
@@ -939,7 +1131,7 @@ th code {
   border-radius: 0.4em;
   background-color: var(--paper-sunken);
   font-family: var(--font-mono);
-  font-size: var(--size-code);
+  font-size: var(--size-code-inline);
   color: var(--ink);
 }
 

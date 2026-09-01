@@ -78,7 +78,7 @@ done
 for heading in \
 	'# grat documentation' \
 	'## Installation' \
-	'### The manual page' \
+	'### The man pages' \
 	'## What grat recognises' \
 	'## Directory discovery' \
 	'## Project examples' \
@@ -102,6 +102,9 @@ done
 
 # Commands and their flags, as the dispatch in internal/cli/cli.go accepts them.
 for text in \
+	'grat.config(7)' \
+	'man grat.config' \
+	'grat manual grat.config' \
 	'grat directories add PATH' \
 	'grat dir add PATH' \
 	'grat directories remove PATH' \

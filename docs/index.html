@@ -23,12 +23,17 @@
 <header class="band">
   <div class="measure band__row">
     <a class="wordmark" href="#top"><span class="wordmark__glyph">▚</span> grat</a>
-    <nav class="nav" aria-label="Sections">
+    <button class="nav__toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+      <i class="ph-duotone ph-list nav__toggle-open" aria-hidden="true"></i>
+      <i class="ph-duotone ph-x nav__toggle-close" aria-hidden="true"></i>
+      <span class="visually-hidden">Sections</span>
+    </button>
+    <nav class="nav" id="site-nav" aria-label="Sections">
       <a class="nav__link" aria-current="page" href="#install">Install</a>
-      <a class="nav__link nav__link--optional" href="#what">What it runs</a>
+      <a class="nav__link" href="#what">What it runs</a>
       <a class="nav__link" href="#services">Services</a>
       <a class="nav__link" href="#ports">Ports</a>
-      <a class="nav__link nav__link--optional" href="#public">Public access</a>
+      <a class="nav__link" href="#public">Public access</a>
       <a target="_blank" rel="noopener noreferrer" class="nav__link" href="https://github.com/phranck/grat"><i class="ph-duotone ph-github-logo nav__icon" aria-hidden="true"></i> GitHub</a>
     </nav>
   </div>
@@ -46,7 +51,6 @@
           <a class="button button--primary" href="#install"><i class="ph-duotone ph-download-simple" aria-hidden="true"></i> Install</a>
           <a target="_blank" rel="noopener noreferrer" class="button button--quiet" href="https://github.com/phranck/grat"><i class="ph-duotone ph-book-open-text" aria-hidden="true"></i> Read the docs</a>
         </div>
-        <p class="hero__note">MIT licensed. One binary, no daemon, no config server.</p>
       </div>
 
       <div class="window">
@@ -78,14 +82,16 @@
           <span class="command__text">brew install phranck/grat/grat</span>
           <button class="copy" type="button" data-copy="brew install phranck/grat/grat" aria-label="Copy command"><i class="ph-duotone ph-copy" aria-hidden="true"></i></button>
         </div>
+        <div class="prose">
+          <p>Release binaries are published for macOS and Linux on Intel and ARM.</p>
+        </div>
         <div class="command">
           <span class="command__prompt">$</span>
           <span class="command__text">man grat</span>
           <button class="copy" type="button" data-copy="man grat" aria-label="Copy command"><i class="ph-duotone ph-copy" aria-hidden="true"></i></button>
         </div>
         <div class="prose">
-          <p>Release binaries are published for macOS and Linux on Intel and ARM, verified against their checksums and GitHub's signed attestation.</p>
-          <p>The manual is installed with grat, and grat generates it itself, so it describes the version on your machine rather than the one the documentation was written against.</p>
+          <p><code class="inline-code">grat help</code> prints a short overview of every command there is. For a full description, the package ships a complete set of man pages. <code class="inline-code">man grat</code>, or <code class="inline-code">man 1 grat</code>, describes every command along with how grat works. <code class="inline-code">man grat.config</code>, or <code class="inline-code">man 7 grat.config</code>, describes every option the configuration file takes.</p>
         </div>
       </div>
       <ol class="steps">
@@ -200,7 +206,7 @@
       <h2 class="section__title">A webhook can reach your laptop</h2>
       <p class="section__lead">Whether you want to show somebody on the other side of the world how your site or web app currently looks, or you need a webhook URL that reaches your local development environment, grat gives you a way to do it. Underneath, the exposing runs on <a href="https://tailscale.com" target="_blank" rel="noopener noreferrer">Tailscale</a>. You prepare nothing: where Tailscale is missing, grat installs it and says so as it goes. Two steps stay with you, because they cannot be taken on your behalf. The background service starts with administrator rights, so the system asks for your password, and the sign-in runs through your browser because that is where your account is.</p>
     </div>
-    <div class="split">
+    <div class="split split--wide">
       <div class="stack">
         <div class="command">
           <span class="command__prompt">$</span>
@@ -240,16 +246,38 @@
 
 <footer class="footer">
   <div class="measure footer__row">
-    <span>grat, MIT licensed</span>
     <div class="footer__links">
-      <a target="_blank" rel="noopener noreferrer" href="https://github.com/phranck/grat">Source</a>
       <a target="_blank" rel="noopener noreferrer" href="https://github.com/phranck/grat/releases">Releases</a>
       <a target="_blank" rel="noopener noreferrer" href="https://github.com/phranck/grat/issues">Issues</a>
     </div>
+    <span>made by <a target="_blank" rel="noopener noreferrer" href="https://layered.work">LAYERED</a></span>
   </div>
 </footer>
 
 <script>
+  // The sections fold into a panel where the bar cannot hold them. The button
+  // says its state through aria-expanded; the panel's own height carries the
+  // motion, so nothing else has to be moved by hand.
+  const bar = document.querySelector(".band");
+  const navToggle = bar.querySelector(".nav__toggle");
+  const setNav = (open) => {
+    bar.dataset.nav = open ? "open" : "closed";
+    navToggle.setAttribute("aria-expanded", String(open));
+  };
+  setNav(false);
+  navToggle.addEventListener("click", () => {
+    setNav(navToggle.getAttribute("aria-expanded") !== "true");
+  });
+  bar.querySelector(".nav").addEventListener("click", (event) => {
+    if (event.target.closest("a")) setNav(false);
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    if (navToggle.getAttribute("aria-expanded") !== "true") return;
+    setNav(false);
+    navToggle.focus();
+  });
+
   // An in-page link scrolls rather than jumps, but in a time the page decides
   // rather than the distance. Anything that asks for less motion gets none.
   const scrollDuration = 320;
