@@ -277,7 +277,9 @@ grat.config from the current directory.
 // maintenance describes update and uninstall.
 const maintenance = `
 grat says when a newer version exists. The line comes after a command has done
-what it was asked, so nothing waits on it, and every failure is silent: a machine
+what it was asked, so the work never waits on it, and the request is given two
+seconds, which is the most a command can take longer to end because of it. Every
+failure is silent: a machine
 with no network, a rate-limited API and a GitHub that is down all mean the same
 thing, which is that grat has nothing to say about versions today. It asks at
 most once a day and keeps the answer in update-check beside the settings.

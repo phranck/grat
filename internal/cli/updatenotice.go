@@ -45,10 +45,14 @@ var commandsWithoutUpdateCheck = map[string]struct{}{
 
 // reportNewerVersion says one line when a newer grat exists.
 //
-// It runs after the command has done what it was asked, so nothing waits on it
-// and nothing fails because of it. Every failure is silent: a machine with no
-// network, a rate-limited API and a GitHub that is down all mean the same thing
-// here, which is that grat has nothing to say about versions today.
+// It runs after the command has done what it was asked, so the work never waits
+// on it and nothing fails because of it. The request is bounded, so the most this
+// costs is a command ending up to updateCheckTimeout later on a slow network,
+// once a day.
+//
+// Every failure is silent: a machine with no network, a rate-limited API and a
+// GitHub that is down all mean the same thing here, which is that grat has
+// nothing to say about versions today.
 func reportNewerVersion(ctx context.Context, command string, environment environment, output presentation.Renderer) {
 	if _, skip := commandsWithoutUpdateCheck[command]; skip {
 		return

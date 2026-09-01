@@ -476,7 +476,7 @@ Lifecycle commands are not affected by any of this: they take the nearest grat.c
 
 ## Maintenance
 
-grat says when a newer version exists. The line comes after a command has done what it was asked, so nothing waits on it, and every failure is silent: a machine with no network, a rate-limited API and a GitHub that is down all mean the same thing, which is that grat has nothing to say about versions today. It asks at most once a day and keeps the answer in update-check beside the settings. GRAT_NO_UPDATE_CHECK set to anything turns it off. help, version, manual, update and uninstall never ask.
+grat says when a newer version exists. The line comes after a command has done what it was asked, so the work never waits on it, and the request is given two seconds, which is the most a command can take longer to end because of it. Every failure is silent: a machine with no network, a rate-limited API and a GitHub that is down all mean the same thing, which is that grat has nothing to say about versions today. It asks at most once a day and keeps the answer in update-check beside the settings. GRAT_NO_UPDATE_CHECK set to anything turns it off. help, version, manual, update and uninstall never ask.
 
 grat update follows the route that installed the running binary. Homebrew is handed to Homebrew. A release binary is replaced by grat itself, which needs an authenticated GitHub CLI, restricts every address to the grat release infrastructure, and verifies both the running and the downloaded binary against the published checksums and GitHub's signed attestation before replacing anything. An installation made with go install is not replaced; grat prints the command that updates it.
 

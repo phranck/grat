@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/phranck/grat/internal/presentation"
+	"github.com/phranck/grat/internal/settings"
 	"github.com/phranck/grat/internal/version"
 )
 
@@ -133,5 +134,45 @@ func TestTheCheckCanBeTurnedOff(t *testing.T) {
 	}
 	if asked != 0 {
 		t.Fatalf("the release was asked for despite %s", noUpdateCheck)
+	}
+}
+
+// TestTheNoticeReachesARealCommand is what holds the wiring, not just the
+// function. Every other test here calls reportNewerVersion directly, so removing
+// its one call from the dispatch left them all green. This one runs a command.
+func TestTheNoticeReachesARealCommand(t *testing.T) {
+	store, cwd := newCLITestStore(t)
+	value := environmentForTest(store)
+	value.latestRelease = func(context.Context) (string, error) { return "v99.0.0", nil }
+
+	root := exposeProject(t, cwd)
+	if err := store.Save(settings.Settings{Version: settings.CurrentVersion, Directories: []string{root}}); err != nil {
+		t.Fatalf("save settings: %v", err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	code := runWithEnvironment(context.Background(), []string{"directories", "list"}, root, &stdout, &stderr, value)
+	if code != 0 {
+		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "v99.0.0") {
+		t.Fatalf("a command ran without the notice reaching its output:\n%s", stdout.String())
+	}
+}
+
+// TestAFailedCommandIsNotToldAboutAVersion keeps the notice out of the way of
+// what the reader is actually there for.
+func TestAFailedCommandIsNotToldAboutAVersion(t *testing.T) {
+	store, cwd := newCLITestStore(t)
+	value := environmentForTest(store)
+	value.latestRelease = func(context.Context) (string, error) { return "v99.0.0", nil }
+
+	var stdout, stderr bytes.Buffer
+	code := runWithEnvironment(context.Background(), []string{"directories", "remove"}, cwd, &stdout, &stderr, value)
+	if code == 0 {
+		t.Fatalf("the command was expected to fail")
+	}
+	if strings.Contains(stdout.String()+stderr.String(), "v99.0.0") {
+		t.Fatalf("a failed command carried a version notice:\n%s%s", stdout.String(), stderr.String())
 	}
 }
