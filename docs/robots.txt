@@ -1,0 +1,5 @@
+# One page, nothing to keep out.
+User-agent: *
+Allow: /
+
+Sitemap: https://grat.layered.work/sitemap.xml
