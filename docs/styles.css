@@ -318,17 +318,18 @@ body {
 .wordmark {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  font-family: var(--font-mono);
-  font-size: 1.0625rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
   color: var(--ink);
   text-decoration: none;
 }
 
-.wordmark__glyph {
-  color: var(--accent);
+/* The mark is drawn rather than set, so the letters are the same shapes here, on
+   the share card and in the README without Zen Dots being installed anywhere.
+   Its height is stated and its width follows from the viewBox, which keeps the
+   lanes in proportion to the letters at any size. */
+.wordmark__mark {
+  display: block;
+  height: 22px;
+  width: auto;
 }
 
 .nav {

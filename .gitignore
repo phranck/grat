@@ -7,3 +7,9 @@
 
 # Working documents for the operator, synchronised outside this repository.
 Papers
+
+# The wordmark's sources: the Zen Dots font it is drawn from and the SVG built
+# beside it. What ships is docs/wordmark.svg, whose letters are outlines, so the
+# repository needs neither the font nor a font licence to render the mark.
+# Kept out for now because the directory layout is about to change.
+Graphics

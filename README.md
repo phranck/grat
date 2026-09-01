@@ -2,6 +2,8 @@
 [![Release](https://img.shields.io/github/v/release/phranck/grat?display_name=tag)](https://github.com/phranck/grat/releases)
 [![License](https://img.shields.io/github/license/phranck/grat)](LICENSE)
 
+![grat](docs/og-image.png)
+
 # grat
 
 `grat = grat runs approved tasks`
