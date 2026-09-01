@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"slices"
 	"strconv"
 	"strings"
 	"syscall"
@@ -67,9 +68,21 @@ func (manager Manager) launch(service config.Service) (processState, error) {
 	}, nil
 }
 
+// inheritedEnvironment is the small, non-secret set of parent variables every
+// command receives. Anything beyond it has to be listed by the service.
+var inheritedEnvironment = []string{
+	"HOME", "LANG", "LC_ALL", "LC_CTYPE", "LOGNAME",
+	"PATH", "SHELL", "TERM", "TMPDIR", "USER",
+}
+
+// InheritedEnvironment returns the baseline, so that documentation describing it
+// is built from the same list the runtime uses rather than from a second copy.
+func InheritedEnvironment() []string {
+	return slices.Clone(inheritedEnvironment)
+}
+
 func (manager Manager) commandEnvironment(service config.Service) []string {
-	baseline := []string{"HOME", "LANG", "LC_ALL", "LC_CTYPE", "LOGNAME", "PATH", "SHELL", "TERM", "TMPDIR", "USER"}
-	names := append(baseline, service.InheritEnv...)
+	names := append(slices.Clone(inheritedEnvironment), service.InheritEnv...)
 	environment := make([]string, 0, len(names)+2)
 	processed := make(map[string]struct{}, len(names))
 	present := make(map[string]struct{}, len(names)+1)
