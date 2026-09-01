@@ -267,7 +267,36 @@ func parseExposeArguments(name string, args []string) ([]string, string, error) 
 	if *path != "" && !strings.HasPrefix(*path, "/") {
 		return nil, "", fmt.Errorf("--path must begin with a slash, got %q", *path)
 	}
-	return flags.Args(), *path, nil
+	names, err := serviceNames(flags.Args())
+	if err != nil {
+		return nil, "", err
+	}
+	return names, *path, nil
+}
+
+// serviceNames splits what was typed into names.
+//
+// A shell decides where arguments break and a person does not think about that,
+// so "frontend, developer" arrives as "frontend," and "developer" whilst
+// "frontend,developer" arrives as one. Both are the same list to whoever typed
+// it, and a comma left in a name is why "unknown service \"frontend,\"" was the
+// answer to a perfectly ordinary line.
+func serviceNames(arguments []string) ([]string, error) {
+	names := make([]string, 0, len(arguments))
+	for _, argument := range arguments {
+		for _, name := range strings.Split(argument, ",") {
+			name = strings.TrimSpace(name)
+			if name != "" {
+				names = append(names, name)
+			}
+		}
+	}
+	// A line that is only punctuation named no service, and saying so beats
+	// carrying on as though nothing had been asked for.
+	if len(names) == 0 && len(arguments) > 0 {
+		return nil, fmt.Errorf("no service name in %q", strings.Join(arguments, " "))
+	}
+	return names, nil
 }
 
 // exposableService returns the named service. Every HTTP service can be
