@@ -57,7 +57,7 @@ done
 
 for text in \
 	'brew install phranck/grat/grat' \
-	'go install github.com/phranck/grat/cmd/grat@v1.4.0' \
+	'go install github.com/phranck/grat/cmd/grat@v1.5.0' \
 	'Go 1.25.13 or newer' \
 	'man grat' \
 	'Documentation.md' \
@@ -264,6 +264,11 @@ require_in go.mod 'go 1.25.13'
 require_in go.mod 'module github.com/phranck/grat'
 require_in go.mod 'tool golang.org/x/vuln/cmd/govulncheck'
 require_in README.md 'Go 1.25.13 or newer'
+
+# The site states the released version in its badge, and nothing derives it, so
+# a bump that forgets the badge leaves the front page advertising the previous
+# release. This is what makes that impossible to miss.
+require_in docs/index.html 'v1.5.0 · macOS'
 require_in CONTRIBUTING.md 'Go 1.25.13 or newer'
 require_in SECURITY.md '`BACKEND_URL`'
 require_in .github/workflows/ci.yml 'go build -trimpath -o dist/grat ./cmd/grat'

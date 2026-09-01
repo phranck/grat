@@ -39,7 +39,7 @@ That installs the man pages as well, so `man grat` works straight away.
 Release binaries cover macOS and Linux on `amd64` and `arm64`. Download the matching asset from [Releases](https://github.com/phranck/grat/releases), or build it with Go 1.25.13 or newer:
 
 ```sh
-go install github.com/phranck/grat/cmd/grat@v1.4.0
+go install github.com/phranck/grat/cmd/grat@v1.5.0
 ```
 
 [Documentation.md](Documentation.md#installation) covers verifying a release binary against its checksums and its signed attestation, and says which install route carries the man pages.
