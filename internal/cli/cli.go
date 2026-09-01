@@ -18,6 +18,7 @@ import (
 	"github.com/phranck/grat/internal/project"
 	gratruntime "github.com/phranck/grat/internal/runtime"
 	"github.com/phranck/grat/internal/settings"
+	"github.com/phranck/grat/internal/tailscale"
 	"github.com/phranck/grat/internal/version"
 )
 
@@ -35,7 +36,16 @@ type environment struct {
 	maintenance   updateService
 	uninstaller   uninstallService
 	tailscale     tailscaleProvider
+	// tailscaleReady returns a client only where Tailscale is already set up,
+	// and never installs or signs in. It is what a command that merely reports
+	// asks with, since grat status must not change the machine, and it is a seam
+	// so a test can answer it without a tailnet.
+	tailscaleReady readyTailscaleProvider
 }
+
+// readyTailscaleProvider answers with a client where the machine is on a tailnet
+// already, and with false where it is not.
+type readyTailscaleProvider func(context.Context) (tailscale.Client, bool)
 
 type updateService interface {
 	Update(context.Context) (maintenance.Result, error)
@@ -47,13 +57,14 @@ type uninstallService interface {
 
 func defaultEnvironment() environment {
 	return environment{
-		input:         os.Stdin,
-		interactive:   term.IsTerminal(os.Stdin.Fd()),
-		settings:      settings.Store{},
-		operationLock: operations.WithLock,
-		maintenance:   maintenance.DefaultService(),
-		uninstaller:   maintenance.DefaultService(),
-		tailscale:     prepareTailscale,
+		input:          os.Stdin,
+		interactive:    term.IsTerminal(os.Stdin.Fd()),
+		settings:       settings.Store{},
+		operationLock:  operations.WithLock,
+		maintenance:    maintenance.DefaultService(),
+		uninstaller:    maintenance.DefaultService(),
+		tailscale:      prepareTailscale,
+		tailscaleReady: readyTailscale,
 	}
 }
 
@@ -89,7 +100,7 @@ func runWithEnvironment(ctx context.Context, args []string, cwd string, out io.W
 		}
 	case "start", "stop", "restart":
 		if _, err = configuredRoots(cwd, environment, output); err == nil {
-			err = runLifecycle(ctx, args[0], args[1:], cwd, environment.operationLock, output)
+			err = runLifecycle(ctx, args[0], args[1:], cwd, environment.operationLock, environment, output)
 		}
 	case "recover":
 		if _, err = configuredRoots(cwd, environment, output); err == nil {
@@ -99,7 +110,7 @@ func runWithEnvironment(ctx context.Context, args []string, cwd string, out io.W
 		}
 	case "status":
 		if _, err = configuredRoots(cwd, environment, output); err == nil {
-			err = runStatus(ctx, cwd, output)
+			err = runStatus(ctx, cwd, environment.tailscaleReady, output)
 		}
 	case "logs":
 		if _, err = configuredRoots(cwd, environment, output); err == nil {

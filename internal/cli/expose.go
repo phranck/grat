@@ -111,6 +111,20 @@ func runHide(ctx context.Context, args []string, cwd string, environment environ
 	return nil
 }
 
+// readyTailscale returns a client where the machine is already on a tailnet.
+//
+// Every failure means the same thing here, which is that nothing is published
+// from this machine, so none of them is worth a message: no Tailscale, no
+// sign-in, and a daemon that does not answer all leave the caller with nothing
+// to report and nothing to close.
+func readyTailscale(ctx context.Context) (tailscale.Client, bool) {
+	stage, client, err := tailscale.Inspect(ctx)
+	if err != nil || stage != tailscale.StageReady {
+		return nil, false
+	}
+	return client, true
+}
+
 // runExposeStatus lists what is published right now, with the address.
 func runExposeStatus(ctx context.Context, args []string, cwd string, environment environment, output presentation.Renderer) error {
 	names, _, err := parseExposeArguments("expose status", args)

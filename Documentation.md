@@ -156,7 +156,7 @@ grat signals only what it can prove is its own: the recorded process must still 
 
 The signal goes to the whole process group, which is what takes the descendants with it, such as the Vapor application under swift run or a reload process under Vite. SIGTERM comes first, then SIGKILL after shutdown_timeout if the recorded process is still there.
 
-Where a service is still published, the command says so, because a funnel outlives the service behind it.
+Where a service is still published, the command says so and offers to close it, because a funnel outlives the service behind it and the address now points at nothing. Declining leaves it open and says how to close it later. Where there is no terminal to ask in, it is reported and left alone, since closing somebody's public address unasked is not something to do quietly.
 
 ### grat restart [name...]
 
@@ -448,7 +448,7 @@ Where Tailscale is missing, grat installs it, starts its background service and 
 
 Where the tailnet has not enabled Funnel, grat says so and opens the page that grants it, which only the owner of that tailnet can do.
 
-A funnel outlives the service behind it, which is why grat status carries the public address in a column of its own and grat stop says when an address is left pointing at a service that is no longer running.
+A funnel outlives the service behind it, which is why grat status carries the public address in a column of its own and grat stop offers to close one that is left pointing at a service no longer running.
 
 ## Ports
 

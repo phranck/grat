@@ -3,7 +3,9 @@ package cli
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
+	"strings"
 
 	"github.com/charmbracelet/x/term"
 	"github.com/phranck/grat/internal/config"
@@ -12,13 +14,13 @@ import (
 	"github.com/phranck/grat/internal/tailscale"
 )
 
-func runLifecycle(ctx context.Context, command string, names []string, cwd string, lock func(context.Context, func() error) error, output presentation.Renderer) error {
+func runLifecycle(ctx context.Context, command string, names []string, cwd string, lock func(context.Context, func() error) error, environment environment, output presentation.Renderer) error {
 	return lock(ctx, func() error {
-		return runLifecycleLocked(ctx, command, names, cwd, output)
+		return runLifecycleLocked(ctx, command, names, cwd, environment, output)
 	})
 }
 
-func runLifecycleLocked(ctx context.Context, command string, names []string, cwd string, output presentation.Renderer) error {
+func runLifecycleLocked(ctx context.Context, command string, names []string, cwd string, environment environment, output presentation.Renderer) error {
 	manager, err := loadManager(cwd)
 	if err != nil {
 		return err
@@ -47,7 +49,7 @@ func runLifecycleLocked(ctx context.Context, command string, names []string, cwd
 		if err != nil {
 			return err
 		}
-		reportOrphanedFunnels(ctx, command, manager.Config, services, output)
+		settleOrphanedFunnels(ctx, command, manager.Config, services, environment, output)
 		return nil
 	}
 	output.Heading(lifecycleTitle(command), manager.Config.Project.Name)
@@ -56,10 +58,10 @@ func runLifecycleLocked(ctx context.Context, command string, names []string, cwd
 	if err != nil {
 		return err
 	}
-	if err := renderStatus(ctx, manager, output); err != nil {
+	if err := renderStatus(ctx, manager, environment.tailscaleReady, output); err != nil {
 		return err
 	}
-	reportOrphanedFunnels(ctx, command, manager.Config, services, output)
+	settleOrphanedFunnels(ctx, command, manager.Config, services, environment, output)
 	return nil
 }
 
@@ -69,20 +71,91 @@ func runLifecycleLocked(ctx context.Context, command string, names []string, cwd
 //
 // It reports and does not act, because closing somebody's funnel unasked would be
 // the surprise this warning exists to prevent.
-func reportOrphanedFunnels(ctx context.Context, command string, value config.Config, stopped []config.Service, output presentation.Renderer) {
+func settleOrphanedFunnels(ctx context.Context, command string, value config.Config, stopped []config.Service, environment environment, output presentation.Renderer) {
 	if command != "stop" {
 		return
 	}
-	addresses := publicAddresses(ctx, value)
+	addresses := publicAddresses(ctx, value, environment.tailscaleReady)
 	if len(addresses) == 0 {
 		return
 	}
+
+	orphaned := make([]config.Service, 0, len(stopped))
 	for _, service := range stopped {
-		address, open := addresses[service.Name]
-		if !open {
+		if _, open := addresses[service.Name]; open {
+			orphaned = append(orphaned, service)
+		}
+	}
+	if len(orphaned) == 0 {
+		return
+	}
+
+	for _, service := range orphaned {
+		output.Step(presentation.StepWarning, service.Name,
+			"is stopped but "+addresses[service.Name]+" is still open")
+	}
+
+	if !environment.interactive {
+		// Nobody to ask, so it stays reported. Closing somebody's public address
+		// without being asked is not a thing to do quietly, and the address is
+		// often the reason the service existed.
+		for _, service := range orphaned {
+			output.Step(presentation.StepInfo, service.Name, "close it with: grat hide "+service.Name)
+		}
+		return
+	}
+
+	closeThem, err := askToClose(environment.input, output, orphaned)
+	if err != nil || !closeThem {
+		if err != nil {
+			output.Step(presentation.StepInfo, "Public access", err.Error())
+		}
+		for _, service := range orphaned {
+			output.Step(presentation.StepInfo, service.Name, "left open; close it with: grat hide "+service.Name)
+		}
+		return
+	}
+
+	// The provider rather than a fresh inspection, which is the same seam expose
+	// and hide use and therefore the one a test can stand in for. Reaching here
+	// means a funnel was found, so Tailscale is ready and the provider returns
+	// straight away rather than installing anything.
+	client, onTailnet := environment.tailscaleReady(ctx)
+	if !onTailnet {
+		output.Step(presentation.StepFailure, "Public access", "Tailscale did not answer, so nothing was closed")
+		return
+	}
+	for _, service := range orphaned {
+		// Exactly what was published for that service, so a funnel somebody set
+		// up themselves is left standing.
+		if err := client.Close(ctx, funnelFor(service, "")); err != nil {
+			output.Step(presentation.StepFailure, service.Name, "could not be closed: "+err.Error())
 			continue
 		}
-		output.Step(presentation.StepWarning, service.Name, "is stopped but "+address+" is still open; close it with grat hide "+service.Name)
+		output.Step(presentation.StepSuccess, service.Name, "no longer reachable from the internet")
+	}
+}
+
+// askToClose puts the one question, with closing as the expected answer: the
+// service behind the address has just been stopped, so the address points at
+// nothing until it is closed or the service is started again.
+func askToClose(input io.Reader, output presentation.Renderer, orphaned []config.Service) (bool, error) {
+	prompt := "Close it? [Y/n]: "
+	if len(orphaned) > 1 {
+		prompt = "Close them? [Y/n]: "
+	}
+	if _, err := io.WriteString(output.Writer(), prompt); err != nil {
+		return false, err
+	}
+	answer, err := readPromptLine(input)
+	if err != nil {
+		return false, err
+	}
+	switch strings.ToLower(strings.TrimSpace(answer)) {
+	case "", "y", "yes":
+		return true, nil
+	default:
+		return false, nil
 	}
 }
 

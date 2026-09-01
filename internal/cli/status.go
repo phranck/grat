@@ -7,16 +7,15 @@ import (
 	"github.com/phranck/grat/internal/config"
 	"github.com/phranck/grat/internal/presentation"
 	gratruntime "github.com/phranck/grat/internal/runtime"
-	"github.com/phranck/grat/internal/tailscale"
 )
 
-func runStatus(ctx context.Context, cwd string, output presentation.Renderer) error {
+func runStatus(ctx context.Context, cwd string, ready readyTailscaleProvider, output presentation.Renderer) error {
 	manager, err := loadManager(cwd)
 	if err != nil {
 		return err
 	}
 	reportPortsOutsideTheirRange(manager.Config, output)
-	return renderStatus(ctx, manager, output)
+	return renderStatus(ctx, manager, ready, output)
 }
 
 // reportPortsOutsideTheirRange says which services hold a port their role does
@@ -34,12 +33,12 @@ func reportPortsOutsideTheirRange(value config.Config, output presentation.Rende
 	}
 }
 
-func renderStatus(ctx context.Context, manager gratruntime.Manager, output presentation.Renderer) error {
+func renderStatus(ctx context.Context, manager gratruntime.Manager, ready readyTailscaleProvider, output presentation.Renderer) error {
 	statuses, err := manager.Status(ctx)
 	if err != nil {
 		return err
 	}
-	public := publicAddresses(ctx, manager.Config)
+	public := publicAddresses(ctx, manager.Config, ready)
 
 	output.Heading("Status", manager.Config.Project.Name)
 	unhealthy := false
@@ -78,7 +77,7 @@ func renderStatus(ctx context.Context, manager gratruntime.Manager, output prese
 // It never turns status into a command that can fail: a project with no HTTP
 // service asks Tailscale nothing, and a machine that cannot answer leaves the
 // column empty.
-func publicAddresses(ctx context.Context, value config.Config) map[string]string {
+func publicAddresses(ctx context.Context, value config.Config, ready readyTailscaleProvider) map[string]string {
 	addresses := make(map[string]string)
 	exposable := make([]config.Service, 0, len(value.Services))
 	for _, service := range value.Services {
@@ -90,8 +89,8 @@ func publicAddresses(ctx context.Context, value config.Config) map[string]string
 		return addresses
 	}
 
-	stage, client, err := tailscale.Inspect(ctx)
-	if err != nil || stage != tailscale.StageReady {
+	client, onTailnet := ready(ctx)
+	if !onTailnet {
 		return addresses
 	}
 	published, err := client.Funnels(ctx)
