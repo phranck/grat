@@ -50,6 +50,9 @@ func runExpose(ctx context.Context, args []string, cwd string, environment envir
 	if err != nil {
 		return err
 	}
+	if err := refuseCollidingFunnels(services, pathOverride); err != nil {
+		return err
+	}
 
 	output.Heading("Exposing services", value.Project.Name)
 	client, err := environment.tailscale(ctx, environment, output)
@@ -129,6 +132,38 @@ func selectExposable(value config.Config, names []string, pathOverride string) (
 		services = append(services, service)
 	}
 	return services, nil
+}
+
+// refuseCollidingFunnels reports two services that would take the same funnel.
+//
+// A funnel is its public port and its path, not the service behind it, so two
+// services that name no path both take the default and the second replaces the
+// first. Publishing them one after another leaves the project with one public
+// address and grat having said it opened two.
+//
+// It refuses before anything is published rather than after, because a partial
+// publication leaves a project half public with no single command to undo it.
+func refuseCollidingFunnels(services []config.Service, pathOverride string) error {
+	type slot struct {
+		path string
+		port int
+	}
+	taken := map[slot]string{}
+	for _, service := range services {
+		path, port := service.Exposure()
+		if pathOverride != "" {
+			path = pathOverride
+		}
+		key := slot{path: path, port: port}
+		if first, exists := taken[key]; exists {
+			return fmt.Errorf(
+				"%s and %s would both be published at %s on port %d, and a funnel is that path and that port rather than the service behind it; give one of them its own path in a [services.expose] table",
+				first, service.Name, path, port,
+			)
+		}
+		taken[key] = service.Name
+	}
+	return nil
 }
 
 // allServices is the word that stands where a service name stands and selects

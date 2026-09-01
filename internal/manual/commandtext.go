@@ -164,6 +164,12 @@ it for a service whose only business outside is a callback, because everything
 else it serves then stays on the machine. A path names one path, so it goes with
 one service and is refused beside several.
 
+A funnel is its public port and its path rather than the service behind it, so
+two services that name no path both take the default and cannot both be public.
+grat refuses that before publishing anything, rather than letting the second
+replace the first, and says which two collide. Giving one of them its own path in
+a [services.expose] table is what lets both go out.
+
 Each service says what became of it. One that cannot be published does not undo
 the ones already published.
 
