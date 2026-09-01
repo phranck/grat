@@ -79,7 +79,7 @@ func runWithEnvironment(ctx context.Context, args []string, cwd string, out io.W
 	case "manual":
 		// Deliberately absent from the command reference: this serves packagers,
 		// not people running grat.
-		err = runManual(out, time.Now())
+		err = runManual(out, time.Now(), args[1:])
 	case "directories", "dir":
 		err = runDirectories(args[1:], cwd, environment, output)
 	case "init":

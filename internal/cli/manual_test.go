@@ -34,7 +34,7 @@ func plainManual(t *testing.T, now time.Time) string {
 	t.Helper()
 
 	var out bytes.Buffer
-	if err := runManual(&out, now); err != nil {
+	if err := runManual(&out, now, nil); err != nil {
 		t.Fatalf("render the manual: %v", err)
 	}
 	page := strings.ReplaceAll(out.String(), `\-`, "-")
@@ -56,5 +56,30 @@ func TestTheManualSaysWhyAProjectCanBeRefused(t *testing.T) {
 		if !strings.Contains(page, want) {
 			t.Fatalf("the page does not explain the refusal: %q is missing", want)
 		}
+	}
+}
+
+// TestBothManualPagesAreReachable checks the two names a packager installs. A
+// page that stops rendering under its own name would otherwise be noticed only
+// when somebody typed man and got nothing.
+func TestBothManualPagesAreReachable(t *testing.T) {
+	t.Parallel()
+
+	for name, want := range map[string]string{
+		"grat":        ".TH GRAT 1 ",
+		"grat.config": ".TH GRAT.CONFIG 7 ",
+	} {
+		var out bytes.Buffer
+		if err := runManual(&out, time.Now(), []string{name}); err != nil {
+			t.Fatalf("render %s: %v", name, err)
+		}
+		if !strings.HasPrefix(out.String(), want) {
+			t.Fatalf("page %s does not open with %q", name, want)
+		}
+	}
+
+	var out bytes.Buffer
+	if err := runManual(&out, time.Now(), []string{"nope"}); err == nil {
+		t.Fatal("an unknown page name was accepted")
 	}
 }

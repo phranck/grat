@@ -537,6 +537,15 @@ func Roles() []Role {
 	}
 }
 
+// FunnelPublicPorts lists the ports a public funnel can listen on.
+//
+// It exists so that documentation naming them is built from the list the
+// validator checks against, rather than repeating it. A second list would go on
+// naming a port after one was added or removed here.
+func FunnelPublicPorts() []int {
+	return slices.Clone(funnelPublicPorts)
+}
+
 // InferRole maps conventional service names to the narrowest matching role.
 func InferRole(name string) Role {
 	switch strings.ToLower(strings.TrimSpace(name)) {

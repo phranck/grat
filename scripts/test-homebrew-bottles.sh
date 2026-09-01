@@ -17,9 +17,15 @@ for target in darwin_amd64 darwin_arm64 linux_amd64 linux_arm64; do
 	cat >"$asset" <<EOF
 #!/bin/sh
 if [ "\${1:-}" = manual ]; then
-	echo '.TH GRAT 1 "2026-01-01" "grat v9.9.9" "User Commands"'
-	echo '.SH NAME'
-	echo 'grat \\- mock manual for ${target}'
+	if [ "\${2:-grat}" = grat.config ]; then
+		echo '.TH GRAT.CONFIG 7 "2026-01-01" "grat v9.9.9" "File Formats"'
+		echo '.SH NAME'
+		echo 'grat.config \\- mock page for ${target}'
+	else
+		echo '.TH GRAT 1 "2026-01-01" "grat v9.9.9" "User Commands"'
+		echo '.SH NAME'
+		echo 'grat \\- mock manual for ${target}'
+	fi
 	exit 0
 fi
 echo 'mock binary for ${target}'
@@ -79,7 +85,15 @@ assert_manual() {
 	case "$first" in
 		".TH GRAT 1 "*) ;;
 		*)
-			echo "archive $archive carries no usable manual page: $first" >&2
+			echo "archive $archive carries no usable command page: $first" >&2
+			exit 1
+			;;
+	esac
+	first=$(tar -xOzf "$archive" "grat/9.9.9/share/man/man7/grat.config.7" | head -1)
+	case "$first" in
+		".TH GRAT.CONFIG 7 "*) ;;
+		*)
+			echo "archive $archive carries no usable config page: $first" >&2
 			exit 1
 			;;
 	esac
@@ -98,6 +112,7 @@ for spec in \
 	assert_archive_contains "$archive" "grat/9.9.9/.brew/grat.rb"
 	assert_archive_contains "$archive" "grat/9.9.9/bin/grat"
 	assert_archive_contains "$archive" "grat/9.9.9/share/man/man1/grat.1"
+	assert_archive_contains "$archive" "grat/9.9.9/share/man/man7/grat.config.7"
 	assert_binary "$archive" "$target"
 	assert_mode "$archive"
 	assert_manual "$archive"
@@ -118,12 +133,14 @@ case "$formula" in
 		;;
 esac
 
-case "$formula" in
-	*'man1.install "grat.1"'*) ;;
-	*)
-		echo "embedded formula does not install the manual page" >&2
-		exit 1
-		;;
-esac
+for needle in 'man1.install "grat.1"' 'man7.install "grat.config.7"'; do
+	case "$formula" in
+		*"$needle"*) ;;
+		*)
+			echo "embedded formula does not install: $needle" >&2
+			exit 1
+			;;
+	esac
+done
 
 echo "homebrew bottle packaging: PASS"
