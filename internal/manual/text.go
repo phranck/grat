@@ -282,7 +282,7 @@ seconds, which is the most a command can take longer to end because of it. Every
 failure is silent: a machine
 with no network, a rate-limited API and a GitHub that is down all mean the same
 thing, which is that grat has nothing to say about versions today. It asks at
-most once a day and keeps the answer in update-check beside the settings.
+most every six hours and keeps the answer in update-check beside the settings.
 GRAT_NO_UPDATE_CHECK set to anything turns it off. help, version, manual, update
 and uninstall never ask.
 

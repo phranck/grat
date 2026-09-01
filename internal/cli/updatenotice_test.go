@@ -76,7 +76,7 @@ func TestAFailureSaysNothing(t *testing.T) {
 
 // TestAnAnswerFromTodayIsNotAskedForAgain keeps a command from making a request
 // every time it runs.
-func TestAnAnswerFromTodayIsNotAskedForAgain(t *testing.T) {
+func TestAFreshAnswerIsNotAskedForAgain(t *testing.T) {
 	asked := 0
 	value, path := noticeEnvironment(t, func(context.Context) (string, error) {
 		asked++
@@ -92,8 +92,10 @@ func TestAnAnswerFromTodayIsNotAskedForAgain(t *testing.T) {
 		t.Fatalf("the remembered answer read differently:\n%q\n%q", first, second)
 	}
 
-	// An answer older than a day is asked for again.
-	stale := time.Now().UTC().Add(-25*time.Hour).Format(time.RFC3339) + "\nv99.0.0\n"
+	// An answer older than the interval is asked for again. The age comes from
+	// the interval rather than being written out, so moving one does not leave
+	// the other testing something else.
+	stale := time.Now().UTC().Add(-updateCheckInterval-time.Minute).Format(time.RFC3339) + "\nv99.0.0\n"
 	if err := os.WriteFile(path, []byte(stale), 0o600); err != nil {
 		t.Fatalf("write a stale answer: %v", err)
 	}
