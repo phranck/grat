@@ -12,8 +12,16 @@ set -eu
 # require. So the notes are built from those.
 #
 #   Feat  becomes New
+#   Docs  becomes Changed
 #   Fix   becomes Bugfixes
-#   the rest becomes Changed
+#
+# Chore, Test and Refactor appear nowhere. They are work on the repository, its
+# website and its tooling, and none of it changes anything for somebody using
+# grat: a badge row, a font weight or a repinned action is not a release note.
+# Docs stays, because the manual is something a user reads.
+#
+# A reader wants to know what they can now do, what reads differently and what
+# stopped being broken. The full changelog at the end carries the rest.
 #
 # Usage: scripts/release-notes.sh <tag> [previous-tag]
 
@@ -35,14 +43,20 @@ git log --no-merges --reverse --format='%s' "$range" | awk '
   # about what is in it.
   /^Chore: prepare v/ { next }
 
+  # Work on the repository, its website and its tooling, which a release is not
+  # the place to report.
+  /^Chore: /    { next }
+  /^Test: /     { next }
+  /^Refactor: / { next }
+
   {
     line = $0
     sub(/^[A-Za-z]+: /, "", line)
     # A subject continues its prefix and therefore starts lower case. On its own
     # in a list it is the beginning of a sentence.
     line = toupper(substr(line, 1, 1)) substr(line, 2)
-    if ($0 ~ /^Feat: /)     { added[++a] = line; next }
-    if ($0 ~ /^Fix: /)      { fixed[++f] = line; next }
+    if ($0 ~ /^Feat: /) { added[++a] = line; next }
+    if ($0 ~ /^Fix: /)  { fixed[++f] = line; next }
     changed[++c] = line
   }
 
