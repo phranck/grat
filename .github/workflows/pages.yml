@@ -1,0 +1,66 @@
+name: Pages
+
+# The site is published from here rather than straight from the branch, so the
+# version it shows can be put in at publish time.
+#
+# A badge edited by hand claims a release the moment the change reaches main,
+# which is before the tag exists and before anything is downloadable. Reading it
+# from the newest release when the site is built removes that window without
+# holding website changes back until the next version, and without a request to
+# GitHub from every visitor's browser.
+on:
+  push:
+    branches: [main]
+  # A release publishes the site again, so the new version appears without
+  # waiting for the next push.
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time, and a newer one waits rather than cancelling, since
+# cancelling would leave the site on whatever the abandoned run had uploaded.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Put the released version in the badge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -eu
+          version=$(gh release view --json tagName --jq .tagName)
+          if [ -z "$version" ]; then
+            echo "no published release to name on the site" >&2
+            exit 1
+          fi
+          # The badge is the one place the site states a version, and this is
+          # what makes it the released one rather than whatever was committed.
+          perl -0pi -e "s{(badge__dot\"></span> )v[0-9][0-9.]*}{\${1}$version}" docs/index.html
+          if ! grep -q "$version · macOS" docs/index.html; then
+            echo "the badge was not rewritten; its shape must have changed" >&2
+            grep -n 'badge__dot' docs/index.html >&2
+            exit 1
+          fi
+          echo "the site names $version"
+
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
+        with:
+          path: docs
+      - id: deploy
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
