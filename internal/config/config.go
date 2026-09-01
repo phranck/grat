@@ -135,6 +135,21 @@ func (service Service) URL() string {
 	return "http://" + net.JoinHostPort(service.Host, strconv.Itoa(service.Port)) + "/"
 }
 
+// Exposure returns the path a service publishes and the port it publishes on,
+// with the defaults already applied.
+//
+// It lives here rather than at each caller because the rule is one rule: a
+// service without an expose table publishes all of itself on the default port.
+// Two places working that out separately would eventually disagree about which
+// funnel belongs to which service, and closing a funnel needs exactly the one
+// that was opened.
+func (service Service) Exposure() (path string, publicPort int) {
+	if service.Expose != nil {
+		return service.Expose.Path, service.Expose.PublicPort
+	}
+	return DefaultExposePath, DefaultPublicPort
+}
+
 // Config is the complete, declarative contents of a grat.config file.
 type Config struct {
 	Version  int       `toml:"version"`
