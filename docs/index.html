@@ -95,7 +95,7 @@
         </div>
       </div>
       <ol class="steps">
-        <li><strong>grat init</strong><span>Reads your project and writes a declarative <code class="inline-code">grat.config</code> from what it finds.</span></li>
+        <li><strong>grat discover</strong><span>Reads your project and writes a declarative <code class="inline-code">grat.config</code> from what it finds. Give it a path and it searches below there, so a whole folder of projects is set up in one pass.</span></li>
         <li><strong>grat start</strong><span>Starts every service and waits until each one answers.</span></li>
         <li><strong>grat status</strong><span>Shows what runs, on which port, under which PID, and what is public.</span></li>
       </ol>
@@ -140,7 +140,7 @@
     </div>
 
     <div class="prose" style="margin-top: var(--space-6); max-width: 46em;">
-      <p><strong>Most of that config writes itself.</strong> <code>grat init</code> reads the project and proposes what it finds. Angular, Astro, Next.js, Nuxt, React Router, SvelteKit and Vite are recognised on the frontend, Django, Laravel, Rails and FastAPI on the backend, along with Go modules and Swift packages using Vapor. Every command it writes carries the port and the host, because a development server that binds every interface is on the network by accident.</p>
+      <p><strong>Most of that config writes itself.</strong> <code>grat discover</code> reads the project and proposes what it finds. Angular, Astro, Next.js, Nuxt, React Router, SvelteKit and Vite are recognised on the frontend, Django, Laravel, Rails and FastAPI on the backend, along with Go modules and Swift packages using Vapor. Every command it writes carries the port and the host, because a development server that binds every interface is on the network by accident.</p>
       <p><strong>Sometimes it asks you instead, and that is the point.</strong> Express, Fastify, NestJS and Go read no port of their own and have no flag for one, so the port sits in the line of your code that starts the server. grat looks there for <code class="inline-code">process.env.PORT</code> or <code class="inline-code">os.Getenv("PORT")</code>. If it finds it, you get a command. If it does not, grat names the file and the reason rather than guessing, because a guessed port produces a service that runs perfectly and never reports ready. You then either read the port from the environment, or name the command once with <code>--service name=command</code>.</p>
       <p><strong>The environment is small on purpose.</strong> A command inherits ten variables, namely <code>HOME</code>, <code>LANG</code>, <code>LC_ALL</code>, <code>LC_CTYPE</code>, <code>LOGNAME</code>, <code>PATH</code>, <code>SHELL</code>, <code>TERM</code>, <code>TMPDIR</code> and <code>USER</code>, plus whatever it lists in <code>inherit_env</code>. Everything else you happen to have exported stays out, so a service behaves the same however your shell is set up.</p>
     </div>

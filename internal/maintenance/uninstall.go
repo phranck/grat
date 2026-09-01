@@ -149,56 +149,37 @@ func discoverUninstallArtifactsWithLimits(roots []string, limits artifactScanLim
 		} else if err != nil {
 			return uninstallArtifacts{}, fmt.Errorf("inspect registered directory %s: %w", absRoot, err)
 		}
-		err = filepath.WalkDir(absRoot, func(path string, entry os.DirEntry, walkErr error) error {
-			if walkErr != nil {
-				return walkErr
-			}
-			// A project root sits a few levels below a registered directory, so
-			// anything deeper is the contents of a project rather than another
-			// one. Walking it is what makes the entry count depend on how large
-			// the projects are instead of on how many there are.
-			if entry.IsDir() && project.DeeperThanScan(absRoot, path) {
-				return filepath.SkipDir
-			}
-			entries++
-			if entries > limits.MaxEntries {
-				return fmt.Errorf("artifact scan exceeds maximum entry count of %d", limits.MaxEntries)
-			}
-			if entry.Type()&os.ModeSymlink != 0 {
-				if entry.IsDir() {
-					return filepath.SkipDir
-				}
-				return nil
-			}
+		walked, err := project.Walk(absRoot, limits.MaxEntries-entries, func(path string, entry os.DirEntry) error {
 			if entry.IsDir() {
-				if entry.Name() == ".grat" {
-					if _, exists := seenState[path]; !exists {
-						if artifactCount >= limits.MaxArtifacts {
-							return fmt.Errorf("artifact scan exceeds maximum artifact count of %d", limits.MaxArtifacts)
-						}
-						seenState[path] = struct{}{}
-						artifacts.stateDirectories = append(artifacts.stateDirectories, path)
-						artifactCount++
-					}
-					return filepath.SkipDir
+				if entry.Name() != ".grat" {
+					return nil
 				}
-				if project.SkipsScanning(entry.Name()) {
-					return filepath.SkipDir
-				}
-				return nil
-			}
-			if entry.Type().IsRegular() && entry.Name() == "grat.config" {
-				if _, exists := seenConfig[path]; !exists {
+				if _, exists := seenState[path]; !exists {
 					if artifactCount >= limits.MaxArtifacts {
 						return fmt.Errorf("artifact scan exceeds maximum artifact count of %d", limits.MaxArtifacts)
 					}
-					seenConfig[path] = struct{}{}
-					artifacts.configFiles = append(artifacts.configFiles, path)
+					seenState[path] = struct{}{}
+					artifacts.stateDirectories = append(artifacts.stateDirectories, path)
 					artifactCount++
 				}
+				// The walk skips this directory of its own accord, since it is on
+				// the ignore list. Collecting it is all there is to do here.
+				return nil
+			}
+			if entry.Name() != project.ConfigFileName {
+				return nil
+			}
+			if _, exists := seenConfig[path]; !exists {
+				if artifactCount >= limits.MaxArtifacts {
+					return fmt.Errorf("artifact scan exceeds maximum artifact count of %d", limits.MaxArtifacts)
+				}
+				seenConfig[path] = struct{}{}
+				artifacts.configFiles = append(artifacts.configFiles, path)
+				artifactCount++
 			}
 			return nil
 		})
+		entries += walked
 		if err != nil {
 			return uninstallArtifacts{}, fmt.Errorf("scan registered directory %s: %w", absRoot, err)
 		}
@@ -375,7 +356,7 @@ func (service Service) inspectProject(ctx context.Context, root string) (bool, e
 	if service.InspectProject != nil {
 		return service.InspectProject(ctx, root)
 	}
-	value, err := config.Load(filepath.Join(root, "grat.config"))
+	value, err := config.Load(filepath.Join(root, project.ConfigFileName))
 	if err != nil {
 		return false, err
 	}

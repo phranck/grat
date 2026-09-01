@@ -48,7 +48,7 @@ func TestExitCodeMapsInterruptedOperationsTo130(t *testing.T) {
 	}
 }
 
-func TestInitAllocatesPortsForExplicitServices(t *testing.T) {
+func TestDiscoverAllocatesPortsForExplicitServices(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	root := filepath.Join(home, "Developer", "fixture")
@@ -59,13 +59,13 @@ func TestInitAllocatesPortsForExplicitServices(t *testing.T) {
 
 	code := runWithConfiguredRoots(t, []string{home},
 		context.Background(),
-		[]string{"init", "--name", "fixture", "--service", "frontend=pnpm dev", "--service", "backend=pnpm dev:backend"},
+		[]string{"discover", "--name", "fixture", "--service", "frontend=pnpm dev", "--service", "backend=pnpm dev:backend"},
 		root,
 		io.Discard,
 		&stderr,
 	)
 	if code != 0 {
-		t.Fatalf("Run(init) exit = %d, stderr = %s", code, stderr.String())
+		t.Fatalf("Run(discover) exit = %d, stderr = %s", code, stderr.String())
 	}
 
 	value, err := config.Load(filepath.Join(root, "grat.config"))
@@ -96,12 +96,12 @@ func TestInitRejectsInvalidGlobalRegistry(t *testing.T) {
 
 	root := filepath.Join(home, "Developer", "target")
 	var stderr bytes.Buffer
-	code := runWithConfiguredRoots(t, []string{home}, context.Background(), []string{"init", "--name", "target", "--service", "frontend=npm run dev"}, root, io.Discard, &stderr)
+	code := runWithConfiguredRoots(t, []string{home}, context.Background(), []string{"discover", "--name", "target", "--service", "frontend=npm run dev"}, root, io.Discard, &stderr)
 	if code != 1 || !strings.Contains(stderr.String(), "invalid") {
-		t.Fatalf("Run(init) = (%d, %q), want invalid-registry rejection", code, stderr.String())
+		t.Fatalf("Run(discover) = (%d, %q), want invalid-registry rejection", code, stderr.String())
 	}
 	if _, err := os.Stat(filepath.Join(root, "grat.config")); !os.IsNotExist(err) {
-		t.Fatalf("init wrote config despite invalid registry: %v", err)
+		t.Fatalf("discover wrote config despite invalid registry: %v", err)
 	}
 }
 
@@ -112,13 +112,13 @@ func TestInitRejectsDeprecatedAppFlag(t *testing.T) {
 	var stderr bytes.Buffer
 	code := runWithConfiguredRoots(t, []string{root},
 		context.Background(),
-		[]string{"init", "--name", "fixture", "--app", "frontend=pnpm dev"},
+		[]string{"discover", "--name", "fixture", "--app", "frontend=pnpm dev"},
 		root,
 		io.Discard,
 		&stderr,
 	)
 	if code != 1 || !strings.Contains(stderr.String(), "flag provided but not defined: -app") {
-		t.Fatalf("Run(init --app) = (%d, %q), want deprecated-flag rejection", code, stderr.String())
+		t.Fatalf("Run(discover --app) = (%d, %q), want deprecated-flag rejection", code, stderr.String())
 	}
 }
 

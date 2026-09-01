@@ -13,10 +13,7 @@ import (
 	"github.com/phranck/grat/internal/project"
 )
 
-const (
-	configFileName  = "grat.config"
-	maxGitFileBytes = 4 << 10
-)
+const maxGitFileBytes = 4 << 10
 
 type scanLimits struct {
 	MaxRoots    int
@@ -174,35 +171,8 @@ func FirstFree(role config.Role, reservations map[int][]Reservation, lookup List
 }
 
 func scanRoot(root string, report *Report, limits scanLimits, counters *scanCounters) error {
-	info, err := os.Stat(root)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return fmt.Errorf("inspect scan root %s: %w", root, err)
-	}
-	if !info.IsDir() {
-		return fmt.Errorf("scan root %s is not a directory", root)
-	}
-
-	return filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
-		}
-		if entry.IsDir() && project.DeeperThanScan(root, path) {
-			return filepath.SkipDir
-		}
-		counters.entries++
-		if counters.entries > limits.MaxEntries {
-			return fmt.Errorf("registry scan exceeds maximum entry count of %d", limits.MaxEntries)
-		}
-		if entry.IsDir() {
-			if entry.Type()&os.ModeSymlink != 0 || project.SkipsScanning(entry.Name()) {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-		if entry.Type()&os.ModeSymlink != 0 || entry.Name() != configFileName {
+	walked, err := project.Walk(root, limits.MaxEntries-counters.entries, func(path string, entry os.DirEntry) error {
+		if entry.IsDir() || entry.Name() != project.ConfigFileName {
 			return nil
 		}
 		if skipLinkedGitWorktreeConfig(path) {
@@ -237,6 +207,8 @@ func scanRoot(root string, report *Report, limits scanLimits, counters *scanCoun
 		}
 		return nil
 	})
+	counters.entries += walked
+	return err
 }
 
 func skipLinkedGitWorktreeConfig(path string) bool {

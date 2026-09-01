@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func collectInitInterview(input io.Reader, output io.Writer, initialName string, suggestions []serviceDefinition) (string, []serviceDefinition, error) {
+func collectProjectInterview(input io.Reader, output io.Writer, initialName string, suggestions []serviceDefinition) (string, []serviceDefinition, error) {
 	reader := bufio.NewReader(input)
 	projectName, err := promptRequired(reader, output, "Project name", initialName)
 	if err != nil {

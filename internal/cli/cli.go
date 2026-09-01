@@ -21,8 +21,6 @@ import (
 	"github.com/phranck/grat/internal/version"
 )
 
-const configFileName = "grat.config"
-
 // Run executes one service command from cwd and returns a shell-compatible exit
 // code. It writes user-facing output only to out and errOut.
 func Run(ctx context.Context, args []string, cwd string, out io.Writer, errOut io.Writer) int {
@@ -82,12 +80,12 @@ func runWithEnvironment(ctx context.Context, args []string, cwd string, out io.W
 		err = runManual(out, time.Now(), args[1:])
 	case "directories", "dir":
 		err = runDirectories(args[1:], cwd, environment, output)
-	case "init":
+	case "discover":
 		roots, rootErr := configuredRoots(cwd, environment, output)
 		if rootErr != nil {
 			err = rootErr
 		} else {
-			err = runInit(ctx, args[1:], cwd, environment.input, environment.interactive, roots, output)
+			err = runDiscover(ctx, args[1:], cwd, environment.input, environment.interactive, roots, environment, output)
 		}
 	case "start", "stop", "restart":
 		if _, err = configuredRoots(cwd, environment, output); err == nil {
@@ -179,7 +177,7 @@ func loadConfig(cwd string) (string, config.Config, error) {
 	if err != nil {
 		return "", config.Config{}, err
 	}
-	value, err := config.Load(filepath.Join(root, configFileName))
+	value, err := config.Load(filepath.Join(root, project.ConfigFileName))
 	if err != nil {
 		return "", config.Config{}, fmt.Errorf("load grat config: %w", err)
 	}

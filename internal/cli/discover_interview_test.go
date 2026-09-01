@@ -10,8 +10,8 @@ import (
 	"github.com/phranck/grat/internal/presentation"
 )
 
-func TestCollectInitInterviewAcceptsEditsAndAdditionalServices(t *testing.T) {
-	name, services, err := collectInitInterview(
+func TestCollectProjectInterviewAcceptsEditsAndAdditionalServices(t *testing.T) {
+	name, services, err := collectProjectInterview(
 		strings.NewReader("musiccloud.io\n\n\n-\napi\npnpm dev:api\nworker=pnpm dev:worker\n\n"),
 		io.Discard,
 		"",
@@ -22,7 +22,7 @@ func TestCollectInitInterviewAcceptsEditsAndAdditionalServices(t *testing.T) {
 		},
 	)
 	if err != nil {
-		t.Fatalf("collectInitInterview() error = %v", err)
+		t.Fatalf("collectProjectInterview() error = %v", err)
 	}
 	if name != "musiccloud.io" {
 		t.Fatalf("project name = %q, want musiccloud.io", name)
@@ -42,48 +42,50 @@ func TestCollectInitInterviewAcceptsEditsAndAdditionalServices(t *testing.T) {
 	}
 }
 
-func TestCollectInitInterviewRequiresAtLeastOneService(t *testing.T) {
-	_, _, err := collectInitInterview(strings.NewReader("fixture\n\n"), io.Discard, "", nil)
+func TestCollectProjectInterviewRequiresAtLeastOneService(t *testing.T) {
+	_, _, err := collectProjectInterview(strings.NewReader("fixture\n\n"), io.Discard, "", nil)
 	if err == nil || !strings.Contains(err.Error(), "at least one") {
-		t.Fatalf("collectInitInterview() error = %v, want required service", err)
+		t.Fatalf("collectProjectInterview() error = %v, want required service", err)
 	}
 }
 
-func TestCollectInitInterviewRetriesEmptyProjectName(t *testing.T) {
+func TestCollectProjectInterviewRetriesEmptyProjectName(t *testing.T) {
 	var output bytes.Buffer
-	name, services, err := collectInitInterview(strings.NewReader("\nfixture\nfrontend=npm run dev\n\n"), &output, "", nil)
+	name, services, err := collectProjectInterview(strings.NewReader("\nfixture\nfrontend=npm run dev\n\n"), &output, "", nil)
 	if err != nil {
-		t.Fatalf("collectInitInterview() error = %v", err)
+		t.Fatalf("collectProjectInterview() error = %v", err)
 	}
 	if name != "fixture" || len(services) != 1 {
-		t.Fatalf("collectInitInterview() = (%q, %#v), want fixture with one service", name, services)
+		t.Fatalf("collectProjectInterview() = (%q, %#v), want fixture with one service", name, services)
 	}
 	if count := strings.Count(output.String(), "Project name:"); count != 2 {
 		t.Fatalf("project-name prompts = %d, want 2:\n%s", count, output.String())
 	}
 }
 
-func TestCollectInitInterviewAcceptsSuppliedProjectName(t *testing.T) {
-	name, services, err := collectInitInterview(strings.NewReader("\nfrontend=npm run dev\n\n"), io.Discard, "suggested-name", nil)
+func TestCollectProjectInterviewAcceptsSuppliedProjectName(t *testing.T) {
+	name, services, err := collectProjectInterview(strings.NewReader("\nfrontend=npm run dev\n\n"), io.Discard, "suggested-name", nil)
 	if err != nil {
-		t.Fatalf("collectInitInterview() error = %v", err)
+		t.Fatalf("collectProjectInterview() error = %v", err)
 	}
 	if name != "suggested-name" || len(services) != 1 {
-		t.Fatalf("collectInitInterview() = (%q, %#v), want suggested name with one service", name, services)
+		t.Fatalf("collectProjectInterview() = (%q, %#v), want suggested name with one service", name, services)
 	}
 }
 
-func TestRunInitWithInputRequiresExplicitNameWhenNotInteractive(t *testing.T) {
-	err := runInitWithInput(
+func TestDiscoverHereRequiresExplicitNameWhenNotInteractive(t *testing.T) {
+	err := discoverHere(
 		context.Background(),
-		[]string{"--service", "frontend=pnpm dev"},
 		t.TempDir(),
 		strings.NewReader(""),
 		false,
 		nil,
+		"",
+		false,
+		[]string{"frontend=pnpm dev"},
 		presentation.New(io.Discard, presentation.ColorNever),
 	)
 	if err == nil || !strings.Contains(err.Error(), "--name") {
-		t.Fatalf("runInitWithInput() error = %v, want --name requirement", err)
+		t.Fatalf("discoverHere() error = %v, want the --name requirement", err)
 	}
 }
