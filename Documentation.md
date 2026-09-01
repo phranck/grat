@@ -102,6 +102,15 @@ grat hanging rather than as a project that needs one line changed. The line is
 usually that one: read the port from the environment instead of fixing it in the
 source. Until then, pass the command explicitly with `--service`.
 
+A Laravel project also gets a queue worker where it needs one. Which queue
+connection is in use decides that, so grat reads `QUEUE_CONNECTION` from `.env`
+and falls back to the value written into `config/queue.php`, the same order
+Laravel itself resolves it in. The `sync` connection runs each job immediately
+in the process that dispatched it and gets no worker. Every other connection
+does, because jobs otherwise sit in the queue and nothing tells you. Where
+neither file states the connection, grat says it could not read it rather than
+deciding for you. Nothing else from `.env` is read.
+
 ## Directory discovery
 
 grat scans for project configurations only below registered directories. On the
