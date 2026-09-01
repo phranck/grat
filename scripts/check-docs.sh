@@ -133,8 +133,22 @@ require_in README.md 'Go 1.25.13 or newer'
 # in this file is a second copy of the same number: both have to be edited by
 # hand, and a bump that forgets one forgets the other just as easily.
 released_version="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+site_version="$(sed -n 's/.*badge__dot"><\/span> \(v[0-9.]*\) .*/\1/p' docs/index.html | head -1)"
+if [ -z "$site_version" ]; then
+	echo "docs/index.html carries no version in its badge" >&2
+	exit 1
+fi
 if [ -n "$released_version" ]; then
-	require_in docs/index.html "$released_version · macOS"
+	# The badge may name the release being prepared, since a version reaches the
+	# site in the commit the tag will point at and the tag does not exist whilst
+	# that commit is still in review. What it may not do is name an older one,
+	# which is the case this check exists for: the badge said v1.5.0 whilst
+	# v1.5.1 was out.
+	oldest="$(printf '%s\n%s\n' "$released_version" "$site_version" | sort -V | head -1)"
+	if [ "$oldest" != "$released_version" ]; then
+		echo "docs/index.html says $site_version, which is older than the release $released_version" >&2
+		exit 1
+	fi
 else
 	echo "no release tag found, so the site badge could not be checked" >&2
 fi
