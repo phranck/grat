@@ -265,10 +265,16 @@ require_in go.mod 'module github.com/phranck/grat'
 require_in go.mod 'tool golang.org/x/vuln/cmd/govulncheck'
 require_in README.md 'Go 1.25.13 or newer'
 
-# The site states the released version in its badge, and nothing derives it, so
-# a bump that forgets the badge leaves the front page advertising the previous
-# release. This is what makes that impossible to miss.
-require_in docs/index.html 'v1.5.0 · macOS'
+# The site states the released version in its badge. The version to compare it
+# against is read from the newest tag rather than written here, because a literal
+# in this file is a second copy of the same number: both have to be edited by
+# hand, and a bump that forgets one forgets the other just as easily.
+released_version="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+if [ -n "$released_version" ]; then
+	require_in docs/index.html "$released_version · macOS"
+else
+	echo "no release tag found, so the site badge could not be checked" >&2
+fi
 require_in CONTRIBUTING.md 'Go 1.25.13 or newer'
 require_in SECURITY.md '`BACKEND_URL`'
 require_in .github/workflows/ci.yml 'go build -trimpath -o dist/grat ./cmd/grat'

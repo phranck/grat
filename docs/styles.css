@@ -176,7 +176,7 @@
 
   --size-display: clamp(2.5rem, 6.5vw, 4.5rem);
   --size-section: clamp(1.6rem, 3.2vw, 2.25rem);
-  --size-lead: 1.4375rem;
+  --size-lead: 1.3rem;
 
   /* A heading below section level, such as the one on a card. It has to sit
      above the body it introduces, which the condensed cut narrows rather than
