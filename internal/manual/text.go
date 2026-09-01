@@ -276,6 +276,14 @@ grat.config from the current directory.
 
 // maintenance describes update and uninstall.
 const maintenance = `
+grat says when a newer version exists. The line comes after a command has done
+what it was asked, so nothing waits on it, and every failure is silent: a machine
+with no network, a rate-limited API and a GitHub that is down all mean the same
+thing, which is that grat has nothing to say about versions today. It asks at
+most once a day and keeps the answer in update-check beside the settings.
+GRAT_NO_UPDATE_CHECK set to anything turns it off. help, version, manual, update
+and uninstall never ask.
+
 grat update follows the route that installed the running binary. Homebrew is
 handed to Homebrew. A release binary is replaced by grat itself, which needs an
 authenticated GitHub CLI, restricts every address to the grat release
@@ -332,6 +340,7 @@ var files = []struct {
 	{path: "grat.config", meaning: "The declarative description of a project's services, read from the project root."},
 	{path: ".grat/pid", meaning: "The recorded state of each managed process, below the project root."},
 	{path: ".grat/log", meaning: "One log file per service, below the project root. This is what grat logs reads."},
+	{path: "grat/update-check", meaning: "When grat last asked whether a newer version exists, and what came back. It sits beside settings.toml."},
 	{path: "grat/settings.toml", meaning: "The directories grat scans for projects, and a note where grat installed Tailscale itself. It sits in the platform's user configuration directory, which is ~/Library/Application Support on macOS and $XDG_CONFIG_HOME or ~/.config on Linux."},
 }
 

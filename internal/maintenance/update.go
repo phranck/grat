@@ -589,3 +589,20 @@ func fileDigest(path string) (string, error) {
 	}
 	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
+
+// LatestVersion returns the tag of the newest published grat release.
+//
+// It exists for the notice a command prints when a newer version is out, which
+// wants the version and nothing else. Everything about how the address is built
+// and restricted is the same as for an update, so there is one path to the
+// release API rather than two.
+func (service Service) LatestVersion(ctx context.Context) (string, error) {
+	latest, err := service.release(ctx, "latest")
+	if err != nil {
+		return "", err
+	}
+	if latest.TagName == "" {
+		return "", errors.New("the latest grat release has no tag")
+	}
+	return latest.TagName, nil
+}
