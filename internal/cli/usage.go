@@ -56,7 +56,7 @@ func helpCommandGroups() []presentation.CommandGroup {
 			Title: "Maintenance",
 			Commands: []presentation.Command{
 				{Usage: "update", Description: "Update grat according to its installation method"},
-				{Usage: "uninstall", Description: "Remove grat and selected project-local artifacts"},
+				{Usage: "uninstall", Description: "Remove grat, and Tailscale where grat installed it; asks for your password"},
 			},
 		},
 		{
