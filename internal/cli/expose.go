@@ -198,12 +198,7 @@ func exposableService(value config.Config, name string) (config.Service, error) 
 //   - --path on the command line, for a single run
 //   - a [services.expose] section, for a path that always applies
 func funnelFor(service config.Service, pathOverride string) tailscale.Funnel {
-	path := config.DefaultExposePath
-	publicPort := config.DefaultPublicPort
-	if service.Expose != nil {
-		path = service.Expose.Path
-		publicPort = service.Expose.PublicPort
-	}
+	path, publicPort := service.Exposure()
 	if pathOverride != "" {
 		path = pathOverride
 	}

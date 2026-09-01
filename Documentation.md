@@ -664,6 +664,12 @@ The capital letter is what an empty answer means. The `.grat` directories are
 grat's own state and go by default. A `grat.config` is your work and survives a
 reinstall, so it is kept unless you ask for it to go.
 
+Before anything is removed, grat withdraws every funnel it published. Otherwise
+an address published with `grat expose` keeps answering from the internet and the
+tool that could close it is gone. Only what grat opened is withdrawn: each funnel
+is derived from a configuration grat found, and closed only where Tailscale
+reports it as published, so a funnel you set up yourself stays as it is.
+
 Where grat installed Tailscale itself, it offers to take that away too:
 
 ```text
@@ -677,6 +683,16 @@ because of the two possible mistakes only that one cannot be undone. Answering
 yes signs the machine out of the tailnet, stops the background service, removes
 the package, and clears the paths Homebrew takes root ownership of, which is why
 those steps ask for your password.
+
+Two things are left that grat cannot do, and it says so rather than letting you
+believe otherwise. Signing out expires the machine's login but does not remove
+its entry, so the machine stays listed in your tailnet until you remove it at
+`https://login.tailscale.com/admin/machines`. Deleting the tailnet itself is at
+`https://login.tailscale.com/admin/settings/general`. Tailscale offers no command
+for either; removing a machine needs an admin API key, which grat deliberately
+does not ask for, and deleting a tailnet is only possible in the admin console.
+Signing in again with the same account creates a new tailnet, so leave that step
+for last.
 
 grat removes only matching files below registered directories, then removes its
 settings, port lock, and the installation it can identify safely. It does not

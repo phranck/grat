@@ -92,6 +92,11 @@ func (service Service) uninstallLocked(ctx context.Context, store settings.Store
 	if err != nil {
 		return Result{}, err
 	}
+	// Before the configurations can go, because they are what says which funnels
+	// grat opened.
+	if err := service.withdrawFunnels(ctx, artifacts, output); err != nil {
+		return Result{}, err
+	}
 	if deleteState {
 		if err := removeArtifacts(roots, artifacts.stateDirectories); err != nil {
 			return Result{}, err
@@ -522,5 +527,88 @@ func (service Service) removeTailscale(ctx context.Context, store settings.Store
 			return tailscale.ErrRemovalStepFailed{Step: step, Err: runErr}
 		}
 	}
+	return writeTailscaleFootnote(output)
+}
+
+// withdrawFunnels closes every funnel grat published, before grat goes away.
+//
+// Otherwise an address published with grat expose keeps answering from the
+// internet and the tool that could close it has been removed. Only what grat
+// opened is closed, which is what internal/tailscale requires of every caller:
+// each funnel is derived from a discovered configuration and closed only where
+// Tailscale reports it as published.
+func (service Service) withdrawFunnels(ctx context.Context, artifacts uninstallArtifacts, output io.Writer) error {
+	stage, client, err := tailscale.Inspect(ctx)
+	if err != nil || stage != tailscale.StageReady {
+		return nil
+	}
+	published, err := client.Funnels(ctx)
+	if err != nil || len(published) == 0 {
+		return nil
+	}
+
+	for _, configPath := range artifacts.configFiles {
+		value, loadErr := config.Load(configPath)
+		if loadErr != nil {
+			// A configuration grat cannot read names no funnel it can identify.
+			continue
+		}
+		for _, configured := range value.Services {
+			if configured.Port == 0 {
+				continue
+			}
+			path, publicPort := configured.Exposure()
+			funnel := tailscale.Funnel{
+				Path:       path,
+				PublicPort: publicPort,
+				Target:     strings.TrimSuffix(configured.URL(), "/"),
+			}
+			if !funnelIsPublished(published, funnel) {
+				continue
+			}
+			if closeErr := client.Close(ctx, funnel); closeErr != nil {
+				return fmt.Errorf("close the funnel for %s in %s: %w", configured.Name, filepath.Dir(configPath), closeErr)
+			}
+			if _, writeErr := fmt.Fprintf(output, "  Tailscale: withdrew %s for %s\n", funnel.Path, configured.Name); writeErr != nil {
+				return writeErr
+			}
+		}
+	}
 	return nil
 }
+
+// funnelIsPublished reports whether Tailscale currently serves that funnel. The
+// path and the port identify one; the target is grat's own and does not decide
+// whether this is the same publication.
+func funnelIsPublished(published []tailscale.Funnel, funnel tailscale.Funnel) bool {
+	for _, candidate := range published {
+		if candidate.Path == funnel.Path && candidate.PublicPort == funnel.PublicPort {
+			return true
+		}
+	}
+	return false
+}
+
+// writeTailscaleFootnote says what a person still has to do themselves.
+//
+// grat can sign the machine out and take the package away, and it cannot remove
+// the machine from the tailnet or delete the tailnet: Tailscale offers no command
+// for either, only the admin console and an API key grat deliberately does not
+// ask for. Saying nothing would leave somebody believing the machine is gone
+// when it is still listed.
+func writeTailscaleFootnote(output io.Writer) error {
+	_, err := io.WriteString(output, tailscaleFootnote)
+	return err
+}
+
+const tailscaleFootnote = `
+Tailscale is off this machine, and two things are left that only you can do.
+
+This machine is still listed in your tailnet. Signing out expires its login but
+does not remove the entry, so remove it at:
+  https://login.tailscale.com/admin/machines
+
+To have no tailnet at all, delete it at:
+  https://login.tailscale.com/admin/settings/general
+Signing in again with the same account creates a new one, so do that last.
+`
