@@ -1,6 +1,7 @@
 package tailscale
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -61,15 +62,34 @@ func (client CommandClient) Executable() string {
 	return client.executable
 }
 
+// funnelEnableMarker is what Tailscale prints when the tailnet has not enabled
+// Funnel. It follows the line with an address and then waits, so the address has
+// to be read out of the running command rather than after it.
+const funnelEnableMarker = "https://login.tailscale.com/f/funnel"
+
 // Open publishes one path.
 //
 // The funnel runs in the background, because it has to outlive the grat command
 // that opened it: without --bg the tool holds the terminal and withdraws the
 // funnel when it is interrupted. Prompts are answered in advance with --yes,
 // since grat asks the one question that matters before it gets here.
-func (client CommandClient) Open(ctx context.Context, funnel Funnel) error {
-	_, err := client.run(ctx, funnelArguments(funnel, false)...)
-	return err
+//
+// One thing --yes cannot answer is a tailnet that has not enabled Funnel at all.
+// Tailscale then prints an address and waits for somebody to visit it, so the
+// command neither fails nor returns. needsEnabling is called with that address
+// when it appears, which is what lets the caller say so and open the page rather
+// than leaving a reader in front of a command that looks stuck.
+func (client CommandClient) Open(ctx context.Context, funnel Funnel, needsEnabling func(address string)) error {
+	announced := false
+	return client.stream(ctx, func(line string) {
+		if announced || !strings.Contains(line, funnelEnableMarker) {
+			return
+		}
+		announced = true
+		if needsEnabling != nil {
+			needsEnabling(strings.TrimSpace(line))
+		}
+	}, funnelArguments(funnel, false)...)
 }
 
 // Close withdraws one path. Tailscale requires the same flags the funnel was
@@ -226,6 +246,52 @@ func (client CommandClient) run(ctx context.Context, arguments ...string) ([]byt
 		return nil, ErrCommandFailed{Arguments: arguments, Output: strings.TrimSpace(failure.String()), Err: err}
 	}
 	return output.Bytes(), nil
+}
+
+// stream executes one Tailscale command and reports each line it prints whilst it
+// is still running.
+//
+// run buffers everything and hands it over at the end, which is right for a
+// command that answers a question. It is wrong for one that reports something
+// and then waits, because the report is the reason for the wait and a reader
+// sees nothing until the wait is over.
+func (client CommandClient) stream(ctx context.Context, onLine func(string), arguments ...string) error {
+	if client.executable == "" {
+		return ErrNotInstalled{}
+	}
+	// #nosec G204 -- the executable is a resolved absolute path and every argument
+	// is built in this package from validated configuration.
+	command := exec.CommandContext(ctx, client.executable, arguments...)
+	if client.bundled {
+		command.Env = append(os.Environ(), bundledCLIEnvironment)
+	}
+
+	reader, writer := io.Pipe()
+	command.Stdout = writer
+	command.Stderr = writer
+
+	var seen strings.Builder
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		scanner := bufio.NewScanner(reader)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if seen.Len() < maxCommandOutputBytes {
+				seen.WriteString(line)
+				seen.WriteString("\n")
+			}
+			onLine(line)
+		}
+	}()
+
+	err := command.Run()
+	_ = writer.Close()
+	<-done
+	if err != nil {
+		return ErrCommandFailed{Arguments: arguments, Output: strings.TrimSpace(seen.String()), Err: err}
+	}
+	return nil
 }
 
 // boundedWriter passes through at most remaining bytes and discards the rest, so a
