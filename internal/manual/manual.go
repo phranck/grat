@@ -1,12 +1,8 @@
-// Package manual renders grat's manual page.
+// Package manual builds grat's manual as a document and renders it.
 //
-// The page is generated rather than written by hand, and it is generated from
-// the same command reference that `grat help` prints. A handwritten page would
-// be a second description of the same commands, and the two would disagree the
-// first time a command changed, with nothing to say which one was right.
-//
-// Nothing is committed. A packager runs `grat manual` and installs what comes
-// out, so the page can only ever describe the binary it came from.
+// The manual is written once, as structure, and rendered twice: as a man page
+// and as the Markdown a repository reads. Two documents describing one tool drift
+// apart, which is what a generated one cannot do.
 package manual
 
 import (
@@ -15,194 +11,210 @@ import (
 
 	"github.com/phranck/grat/internal/config"
 	"github.com/phranck/grat/internal/presentation"
+	"github.com/phranck/grat/internal/runtime"
 )
 
-// Page renders the whole manual as roff, for section 1 of the manual.
-//
-// The date is passed in rather than read from the clock, so the output depends
-// only on its arguments and a test can state what it expects.
+// Page renders the command manual as a man page.
 func Page(version string, date string, groups []presentation.CommandGroup) string {
-	page := &builder{}
-
-	// The date is a controlled value and carries no roff specials, so it goes in
-	// as it stands. Escaping its hyphens would stop a reader parsing it as a date.
-	page.line(".TH GRAT 1 \"" + date + "\" " + quote("grat "+version) + " " + quote("User Commands"))
-
-	page.section("NAME")
-	page.line("grat \\- start, watch and stop the development services of a project")
-
-	page.section("SYNOPSIS")
-	page.line(".B grat")
-	page.line("[\\fIOPTION\\fR]... \\fICOMMAND\\fR [\\fIARGUMENT\\fR]...")
-
-	page.section("DESCRIPTION")
-	page.paragraphs(description)
-
-	writeCommands(page, groups)
-	writeDetection(page)
-	writeRoles(page)
-
-	page.section("READINESS")
-	page.paragraphs(readiness)
-
-	page.section("FILES")
-	writeFiles(page)
-
-	page.section("EXIT STATUS")
-	writeExitStatus(page)
-
-	page.section("SEE ALSO")
-	page.paragraphs(seeAlso)
-
-	return page.String()
+	return Roff(CommandDocument(version, date, groups))
 }
 
-// writeCommands turns the command reference into one subsection per group.
-func writeCommands(page *builder, groups []presentation.CommandGroup) {
-	page.section("COMMANDS")
+// CommandDocument builds grat(1).
+//
+// Every figure in it comes from the code that enforces it: the roles and their
+// ranges from config, the inherited environment from runtime, and the command
+// list from the same reference grat help prints. A number written out here would
+// be a second copy of one the code already holds.
+func CommandDocument(version string, date string, groups []presentation.CommandGroup) Document {
+	return Document{
+		Name:          "grat",
+		ManualSection: 1,
+		Category:      "User Commands",
+		Title:         "start, watch and stop the development services of a project",
+		Version:       version,
+		Date:          date,
+		Sections: []Section{
+			{Title: "Name", Blocks: []Block{
+				Prose("grat - start, watch and stop the development services of a project"),
+			}},
+			{Title: "Synopsis", Blocks: []Block{
+				Literal("grat [OPTION]... COMMAND [ARGUMENT]..."),
+			}},
+			{Title: "Description", Blocks: []Block{Prose(description)}},
+			{Title: "Installation", Blocks: []Block{
+				Prose(installBrew),
+				Literal("brew install phranck/grat/grat"),
+				Prose(installBinary),
+				Literal("gh attestation verify ./grat_VERSION_OS_ARCH \\\n  --repo phranck/grat \\\n  --signer-workflow phranck/grat/.github/workflows/release.yml \\\n  --source-ref refs/tags/VERSION \\\n  --deny-self-hosted-runners"),
+				Prose(installPages),
+				Literal("sudo install -m 0644 grat.1 /usr/local/share/man/man1/grat.1\nsudo install -m 0644 grat.config.7 /usr/local/share/man/man7/grat.config.7"),
+				Prose(installGenerated),
+				Prose(installRuntime),
+			}},
+			commandSection(groups),
+			{Title: "How grat decides what a project runs", Blocks: []Block{Prose(detection)}},
+			roleSection(),
+			environmentSection(),
+			{Title: "Readiness and status", Blocks: []Block{
+				Prose(readiness),
+				Rows([]string{"State", "Meaning"}, [][]string{
+					{"stopped", "No live managed process exists for the configured service."},
+					{"running", "The managed process passes every check its role calls for."},
+					{"unhealthy", "The process is alive whilst its identity, its listener ownership or its health check fails."},
+				}),
+				Prose(statusColumns),
+			}},
+			{Title: "Shutdown and restart", Blocks: []Block{Prose(shutdown)}},
+			{Title: "Public access", Blocks: []Block{Prose(publicAccess)}},
+			{Title: "Ports", Blocks: []Block{Prose(portAllocation)}},
+			{Title: "Scan directories", Blocks: []Block{Prose(scanDirectories)}},
+			{Title: "Maintenance", Blocks: []Block{Prose(maintenance)}},
+			{Title: "Safety", Blocks: []Block{Prose(safety)}},
+			{Title: "Files", Blocks: []Block{fileList()}},
+			{Title: "Exit status", Blocks: []Block{exitStatusList()}},
+			{Title: "See also", Blocks: []Block{Prose(seeAlso)}},
+		},
+	}
+}
+
+// commandSection turns the command reference into one entry per command, with
+// the detail behind it.
+//
+// The reference decides which commands exist and the details decide what is said
+// about each. A command in the reference without a detail entry is a command
+// that ships undocumented, which is what TestEveryCommandHasAnEntry prevents.
+func commandSection(groups []presentation.CommandGroup) Section {
+	// The groups open the section as one list, so a reader sees what kinds of
+	// command exist before meeting them one at a time. Repeating each group as a
+	// heading would put it on the same level as the commands under it, and a
+	// reader scanning for a command name would have to tell the two apart.
+	overview := make([]Item, 0, len(groups))
+	blocks := []Block{Prose(commandsIntro)}
 	for _, group := range groups {
-		page.line(".SS " + escape(group.Title))
+		names := make([]string, 0, len(group.Commands))
 		for _, command := range group.Commands {
-			page.line(".TP")
-			page.line(".B grat " + escape(command.Usage))
-			page.line(escape(command.Description))
+			names = append(names, firstWords(command.Usage))
 		}
+		overview = append(overview, Item{Term: group.Title, Detail: strings.Join(names, ", ") + "."})
 	}
-}
+	blocks = append(blocks, Definitions(overview...))
 
-// writeDetection explains why grat refuses to start some projects.
-//
-// This is the part of the page that cannot come from the command reference, and
-// it is the part a reader most needs. Without it, somebody whose hand-written
-// server is reported as unresolved sees a refusal and no reason for it.
-func writeDetection(page *builder) {
-	page.section("HOW GRAT DECIDES WHAT A PROJECT RUNS")
-	page.paragraphs(detection)
-}
-
-// writeRoles builds the role table from the roles themselves, so a role added
-// to the configuration appears here without anybody remembering to add it.
-func writeRoles(page *builder) {
-	page.section("ROLES AND PORTS")
-	page.paragraphs(roles)
-	for _, role := range config.Roles() {
-		portRange, known := role.PortRange()
-		page.line(".TP")
-		page.line(".B " + escape(string(role)))
-		switch {
-		case !known:
-			page.line("No range is allocated for this role.")
-		case portRange.First == 0:
-			page.line("No port. A service in this role is watched as a process and is never probed over HTTP.")
-		default:
-			page.line(strconv.Itoa(portRange.First) + " to " + strconv.Itoa(portRange.Last))
-		}
-	}
-}
-
-// writeFiles names what grat reads and writes.
-func writeFiles(page *builder) {
-	for _, entry := range files {
-		page.line(".TP")
-		page.line(".I " + escape(entry.path))
-		page.line(escape(entry.meaning))
-	}
-}
-
-// writeExitStatus names what a status code means to a script calling grat.
-func writeExitStatus(page *builder) {
-	for _, entry := range exitStatus {
-		page.line(".TP")
-		page.line(".B " + entry.code)
-		page.line(escape(entry.meaning))
-	}
-}
-
-// maxSourceColumn is how wide a generated source line may be. It keeps the
-// generated file readable and silences the style check of mandoc, and it has no
-// effect on the rendered page.
-const maxSourceColumn = 76
-
-// builder collects roff lines.
-type builder struct {
-	lines []string
-}
-
-// line appends roff, wrapping plain text so no source line runs long.
-//
-// A line break inside filled roff text is a space, so wrapping changes the
-// source and not the rendered page. Request lines are left alone, because a
-// break inside one would change what it means.
-func (page *builder) line(text string) {
-	if strings.HasPrefix(text, ".") {
-		page.lines = append(page.lines, text)
-		return
-	}
-	page.lines = append(page.lines, wrap(text)...)
-}
-
-// wrap breaks text into lines of at most maxSourceColumn bytes, at spaces. A
-// word longer than the limit keeps its own line rather than being split.
-func wrap(text string) []string {
-	lines := make([]string, 0, 4)
-	for _, paragraph := range strings.Split(text, "\n") {
-		current := ""
-		for _, word := range strings.Fields(paragraph) {
-			switch {
-			case current == "":
-				current = word
-			case len(current)+1+len(word) <= maxSourceColumn:
-				current += " " + word
-			default:
-				lines = append(lines, current)
-				current = word
+	for _, group := range groups {
+		for _, command := range group.Commands {
+			blocks = append(blocks, Subheading("grat "+command.Usage))
+			blocks = append(blocks, Prose(command.Description+"."))
+			detail, found := detailFor(command.Usage)
+			if !found {
+				continue
+			}
+			blocks = append(blocks, Prose(detail.detail))
+			if len(detail.options) > 0 {
+				items := make([]Item, 0, len(detail.options))
+				for _, option := range detail.options {
+					items = append(items, Item{Term: option.flag, Detail: option.meaning})
+				}
+				blocks = append(blocks, Definitions(items...))
 			}
 		}
-		lines = append(lines, current)
 	}
-	return lines
+	return Section{Title: "Commands", Blocks: blocks}
 }
 
-// section starts a top level section.
-func (page *builder) section(title string) {
-	page.line(".SH " + title)
-}
-
-// paragraphs writes prose, one roff paragraph per blank-line-separated block.
-func (page *builder) paragraphs(text string) {
-	for index, block := range strings.Split(strings.TrimSpace(text), "\n\n") {
-		if index > 0 {
-			page.line(".PP")
+// firstWords keeps the part of a usage string a reader would say aloud, so
+// "logs [--follow] NAME" reads as "logs" in an overview.
+func firstWords(usage string) string {
+	words := []string{}
+	for _, word := range strings.Fields(usage) {
+		if strings.HasPrefix(word, "[") || strings.HasPrefix(word, "-") || strings.ToUpper(word) == word {
+			break
 		}
-		page.line(escape(strings.TrimSpace(block)))
+		// A usage naming two spellings, such as "version, --version", separates
+		// them with a comma that is not part of either name.
+		words = append(words, strings.TrimSuffix(word, ","))
 	}
+	if len(words) == 0 {
+		return usage
+	}
+	return strings.Join(words, " ")
 }
 
-// String returns the finished page.
-func (page *builder) String() string {
-	return strings.Join(page.lines, "\n") + "\n"
-}
-
-// escape makes text safe to place in a roff document.
-//
-// A backslash introduces a roff escape, and a line starting with a full stop or
-// an apostrophe is read as a request rather than as text. The zero-width escape
-// in front of such a line makes it text again without printing anything.
-func escape(text string) string {
-	text = strings.ReplaceAll(text, `\`, `\e`)
-	text = strings.ReplaceAll(text, "-", `\-`)
-
-	lines := strings.Split(text, "\n")
-	for index, line := range lines {
-		if strings.HasPrefix(line, ".") || strings.HasPrefix(line, "'") {
-			lines[index] = `\&` + line
+// detailFor finds the entry written for one command of the reference.
+func detailFor(usage string) (commandDetail, bool) {
+	for _, detail := range commandDetails {
+		if detail.usage == usage {
+			return detail, true
 		}
 	}
-	return strings.Join(lines, "\n")
+	return commandDetail{}, false
 }
 
-// quote wraps a header field in double quotes, which is how .TH takes a field
-// containing a space.
-func quote(text string) string {
-	return `"` + strings.ReplaceAll(escape(text), `"`, `\(dq`) + `"`
+// roleSection builds the range table from the roles themselves, so a role added
+// to the configuration appears here without anybody remembering to add it.
+func roleSection() Section {
+	rows := [][]string{}
+	for _, role := range config.Roles() {
+		portRange, known := role.PortRange()
+		switch {
+		case !known:
+			rows = append(rows, []string{string(role), "no range", roleReadiness(role)})
+		case portRange.First == 0:
+			rows = append(rows, []string{string(role), "no port", roleReadiness(role)})
+		default:
+			rows = append(rows, []string{
+				string(role),
+				strconv.Itoa(portRange.First) + " to " + strconv.Itoa(portRange.Last),
+				roleReadiness(role),
+			})
+		}
+	}
+	return Section{Title: "Roles and ports", Blocks: []Block{
+		Prose(roles),
+		Rows([]string{"Role", "Port range", "Readiness"}, rows),
+		Prose(roleNaming),
+	}}
+}
+
+// roleReadiness says what a role has to satisfy to count as ready.
+func roleReadiness(role config.Role) string {
+	if portRange, known := role.PortRange(); known && portRange.First == 0 {
+		return "the managed process is alive"
+	}
+	return "managed process, owned listener, HTTP 2xx"
+}
+
+// environmentSection lists the baseline the runtime actually passes.
+func environmentSection() Section {
+	names := runtime.InheritedEnvironment()
+	items := make([]Item, 0, len(names))
+	for _, name := range names {
+		items = append(items, Item{Term: name, Detail: "Passed through where the parent has it."})
+	}
+	return Section{Title: "The environment a command receives", Blocks: []Block{
+		Prose(commandEnvironmentIntro),
+		Definitions(items...),
+		Prose(commandEnvironmentRest),
+		Definitions(
+			Item{Term: "PORT", Detail: "The port grat assigned, for a service that has one."},
+			Item{Term: "BACKEND_URL", Detail: backendURLMeaning},
+			Item{Term: runtime.TailnetHostVariable(), Detail: tailnetHostMeaning},
+		),
+	}}
+}
+
+// fileList names what grat reads and writes.
+func fileList() Block {
+	items := make([]Item, 0, len(files))
+	for _, entry := range files {
+		items = append(items, Item{Term: entry.path, Detail: entry.meaning, Emphasised: true})
+	}
+	return Definitions(items...)
+}
+
+// exitStatusList names what a status code means to a script calling grat.
+func exitStatusList() Block {
+	items := make([]Item, 0, len(exitStatus))
+	for _, entry := range exitStatus {
+		items = append(items, Item{Term: entry.code, Detail: entry.meaning})
+	}
+	return Definitions(items...)
 }

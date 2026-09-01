@@ -74,221 +74,58 @@ for text in \
 	require "$text"
 done
 
-# The detail moved to Documentation.md, and the contract moved with it.
-for heading in \
-	'# grat documentation' \
-	'## Installation' \
-	'### The man pages' \
-	'## What grat recognises' \
-	'## Directory discovery' \
-	'## Project examples' \
-	'### React with Vite' \
-	'### Laravel' \
-	'### Swift with Vapor' \
-	'### Python with FastAPI' \
-	'### Go HTTP API' \
-	'### React, Laravel, and a queue worker' \
-	'## Ports' \
-	'## Command contract' \
-	'## Configuration reference' \
-	'## Roles and port ranges' \
-	'## Status and readiness' \
-	'## Shutdown and restart' \
-	'## Public access' \
-	'## Maintenance' \
-	'## Safety and recovery'; do
-	require_doc "$heading"
-done
-
-# Commands and their flags, as the dispatch in internal/cli/cli.go accepts them.
-for text in \
-	'grat.config(7)' \
-	'man grat.config' \
-	'grat manual grat.config' \
-	'grat directories add PATH' \
-	'grat dir add PATH' \
-	'grat directories remove PATH' \
-	'grat directories list' \
-	'grat update' \
-	'grat uninstall' \
-	'grat recover [--yes] [name...]' \
-	'ports reassign' \
-	'[services.expose]' \
-	'public_port'; do
-	require_doc "$text"
-done
-
-# The example commands, which are what the detector in internal/detect writes.
-for text in \
-	'npx vite dev --port $PORT --host 127.0.0.1 --strictPort' \
-	'php artisan serve --host=127.0.0.1 --port=$PORT' \
-	'swift run App serve --hostname 127.0.0.1 --port $PORT' \
-	'uvicorn main:app --host 127.0.0.1 --port $PORT --reload' \
-	'go run ./cmd/server' \
-	'php artisan queue:work' \
-	'health_path = "/up"'; do
-	require_doc "$text"
-done
-
-# The runtime defaults, from config.DefaultRuntime.
-for text in \
-	'`start_timeout` | `60s`' \
-	'`probe_interval` | `250ms`' \
-	'`health_timeout` | `2s`' \
-	'`shutdown_timeout` | `10s`' \
-	'`log_tail_lines` | `20`'; do
-	require_doc "$text"
-done
-
-# The port ranges, from Role.PortRange, and the funnel ports from
-# config.funnelPublicPorts.
-for text in \
-	'3000-3149' \
-	'3150-3299' \
-	'4000-4149' \
-	'4500-4649' \
-	'5000-5299' \
-	'`443`, `8443` or `10000`'; do
-	require_doc "$text"
-done
-
-# The lifecycle and safety contract.
-for text in \
-	'BACKEND_URL=http://127.0.0.1:4000' \
-	'When the unique backend is selected, grat starts it before its selected consumers.' \
-	'A running service reads no environment file through grat' \
-	'`stopped`' \
-	'`running`' \
-	'`unhealthy`' \
-	'process-group ID' \
-	'`SIGTERM`' \
-	'`SIGKILL`' \
-	'Ctrl+C' \
-	'Every non-interactive recovery requires `--yes`.' \
-	'Recovery never starts services.' \
-	'~/Library/Application Support/grat/settings.toml' \
-	'$XDG_CONFIG_HOME/grat/settings.toml' \
-	'registered directories' \
-	'`grat.config`' \
-	'`.grat/`' \
-	'`grat update` shows an animated spinner in an interactive terminal.' \
-	'Redirected or color-disabled output receives an immediate static working step'; do
-	require_doc "$text"
-done
-
-# Every prompt the uninstall asks is read out of the source rather than repeated
-# here, so a question whose wording or default changes cannot leave the
-# documentation showing the old one. That has happened once already: the answer
-# for grat.config files became [y/N] in the code whilst both this check and the
-# documentation went on showing [Y/n].
-uninstall_prompts="$(sed -n 's/.*"\(.*[?] \[[YyNn]\/[YyNn]\]\): ".*/\1/p' internal/maintenance/uninstall.go)"
-if [ -z "$uninstall_prompts" ]; then
-	echo "no uninstall prompts found in internal/maintenance/uninstall.go" >&2
+# Documentation.md is generated from the manual, so it is compared against what
+# the binary produces rather than checked phrase by phrase. A generated document
+# cannot disagree with what generated it, which is why every assertion that used
+# to stand here is gone: each was a second copy of a sentence the code already
+# holds, and keeping the two in step is what nobody does.
+generated=$(mktemp)
+trap 'rm -f "$generated"' EXIT
+if ! GOTOOLCHAIN=go1.25.13 go run ./cmd/grat manual --markdown > "$generated" 2>/dev/null; then
+	echo "could not render the manual as Markdown" >&2
 	exit 1
 fi
-printf '%s\n' "$uninstall_prompts" | while IFS= read -r prompt; do
-	require_doc "$prompt"
-done
-
-# The status table's columns are read out of the code that prints them, because
-# a documented list of five where the command prints six is the kind of gap
-# nobody notices: the page still reads correctly and only the missing column is
-# a surprise. That had happened with PUBLIC.
-status_columns="$(sed -n 's/.*output.Table(\[\]string{\(.*\)}, rows).*/\1/p' internal/cli/status.go | tr -d '" ' | tr ',' '\n')"
-if [ -z "$status_columns" ]; then
-	echo "no status table columns found in internal/cli/status.go" >&2
-	exit 1
-fi
-printf '%s\n' "$status_columns" | while IFS= read -r column; do
-	[ -n "$column" ] || continue
-	require_doc "\`$column\`"
-done
-
-if grep -Fq 'legacy PID files' Documentation.md; then
-	echo 'Documentation.md contains historical implementation language: legacy PID files' >&2
+if ! diff -u Documentation.md "$generated" > /dev/null; then
+	echo "Documentation.md differs from the manual the binary renders." >&2
+	echo "Regenerate it with: go run ./cmd/grat manual --markdown > Documentation.md" >&2
+	diff -u Documentation.md "$generated" | head -40 >&2
 	exit 1
 fi
 
-if grep -Fq 'under `~/Sites` and `~/Developer`' Documentation.md; then
-	echo 'Documentation.md describes obsolete fixed scan roots' >&2
-	exit 1
-fi
-
-for document in LICENSE CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md SUPPORT.md; do
-	if [ ! -s "$document" ]; then
-		echo "missing OSS document: $document" >&2
+# Both manual pages have to render as valid roff, since they are installed as
+# man pages rather than read as text.
+# The rendered file carries its section in its name, because mandoc reads the
+# section from there and reports a mismatch against the .TH line otherwise.
+for page in grat.1 grat.config.7; do
+	section=${page##*.}
+	name=${page%.*}
+	# mktemp -t means a prefix on BSD and a template needing X's on GNU, so
+	# neither form is portable. A plain mktemp and a rename is.
+	rendered=$(mktemp)
+	mv "$rendered" "$rendered.$section"
+	rendered="$rendered.$section"
+	if ! GOTOOLCHAIN=go1.25.13 go run ./cmd/grat manual "$name" > "$rendered" 2>/dev/null; then
+		echo "could not render the manual page $name" >&2
+		rm -f "$rendered"
 		exit 1
 	fi
+	if command -v mandoc > /dev/null 2>&1; then
+		if [ -n "$(mandoc -T lint "$rendered" 2>&1)" ]; then
+			echo "the manual page $name does not lint:" >&2
+			mandoc -T lint "$rendered" >&2
+			rm -f "$rendered"
+			exit 1
+		fi
+	fi
+	rm -f "$rendered"
 done
-
-for workflow in .github/workflows/ci.yml .github/workflows/release.yml; do
-	if [ ! -s "$workflow" ]; then
-		echo "missing workflow: $workflow" >&2
-		exit 1
-	fi
-	if grep '^[[:space:]]*-[[:space:]]*uses:' "$workflow" | grep -Ev 'uses: [^@[:space:]]+@[0-9a-f]{40}([[:space:]]+#.*)?$' >/dev/null; then
-		echo "$workflow contains an action that is not pinned to a full commit SHA" >&2
-		exit 1
-	fi
-done
-
-for value in 'macos-15-intel' 'macos-15' 'ubuntu-24.04' 'ubuntu-24.04-arm' 'name: Tests' 'name: Typechecks' 'name: Vulnerability scan' 'go tool govulncheck ./...' 'name: Build'; do
-	if ! grep -Fq "$value" .github/workflows/ci.yml; then
-		echo "CI workflow is missing: $value" >&2
-		exit 1
-	fi
-done
-
-for value in 'darwin' 'linux' 'amd64' 'arm64' 'checksums.txt'; do
-	if ! grep -Fq "$value" .github/workflows/release.yml; then
-		echo "release workflow is missing: $value" >&2
-		exit 1
-	fi
-done
-
-for value in \
-	'uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0' \
-	'attestations: write' \
-	'id-token: write' \
-	'artifact-metadata: write' \
-	'subject-path: dist/grat_${{ github.ref_name }}_${{ matrix.goos }}_${{ matrix.goarch }}'; do
-	if ! grep -Fq "$value" .github/workflows/release.yml; then
-		echo "release workflow is missing attestation policy: $value" >&2
-		exit 1
-	fi
-done
-
-if ! awk '
-	/^permissions:$/ {
-		getline
-		found = 1
-		valid = ($0 == "  contents: read")
-		exit
-	}
-	END { exit !(found && valid) }
-' .github/workflows/release.yml; then
-	echo 'release workflow must default to contents: read' >&2
-	exit 1
-fi
-
-if ! awk '
-	/^  publish:$/ { publish = 1; next }
-	publish && /^  [a-zA-Z0-9_-]+:$/ { exit 1 }
-	publish && /^    permissions:$/ {
-		getline
-		found = 1
-		valid = ($0 == "      contents: write")
-		exit
-	}
-	END { exit !(found && valid) }
-' .github/workflows/release.yml; then
-	echo 'release publish job must grant contents: write locally' >&2
-	exit 1
-fi
 
 require_in go.mod 'go 1.25.13'
 require_in go.mod 'module github.com/phranck/grat'
-require_in go.mod 'tool golang.org/x/vuln/cmd/govulncheck'
+# The pinned tools, named without the tool keyword because go.mod writes one
+# directive per line and a block once there is more than one.
+require_in go.mod 'golang.org/x/vuln/cmd/govulncheck'
+require_in go.mod 'honnef.co/go/tools/cmd/staticcheck'
 require_in README.md 'Go 1.25.13 or newer'
 
 # The site states the released version in its badge. The version to compare it

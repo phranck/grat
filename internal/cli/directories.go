@@ -71,7 +71,7 @@ func configuredRoots(cwd string, environment environment, output presentation.Re
 		return settingsValue.Directories, nil
 	}
 	if !environment.interactive {
-		return nil, errors.New("No scan directory configured. Run: grat directories add PATH")
+		return nil, errors.New("no scan directory configured; run: grat directories add PATH")
 	}
 	defaultDirectory, err := environment.settings.DefaultDirectory(cwd)
 	if err != nil {

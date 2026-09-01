@@ -197,6 +197,11 @@
      prose around it, so at the transcript size it would look shrunken. */
   --size-code-inline: 1.125rem;
 
+  /* The number and name above a section, such as 01. Install. It is a signpost
+     rather than code, read at a glance from a distance, so it does not take the
+     transcript size the terminal windows are set at. */
+  --size-section-number: 0.9375rem;
+
   /* A command shown to be copied and typed. Above a transcript, because it is
      the one line on the page a reader is meant to act on. */
   --size-command: 0.9375rem;
@@ -598,7 +603,7 @@ body {
   display: block;
   margin-bottom: var(--space-3);
   font-family: var(--font-mono);
-  font-size: var(--size-code);
+  font-size: var(--size-section-number);
   font-weight: 600;
   letter-spacing: var(--tracking-label);
   color: var(--accent);

@@ -132,7 +132,7 @@ func (service Service) homebrewVersion(ctx context.Context) (string, error) {
 	}
 	prefix := strings.TrimSpace(string(prefixOutput))
 	if prefix == "" {
-		return "", fmt.Errorf("Homebrew reported no prefix for %s", HomebrewFormula)
+		return "", fmt.Errorf("no prefix reported by Homebrew for %s", HomebrewFormula)
 	}
 	resolved, err := service.evalSymlinks(prefix)
 	if err != nil {
