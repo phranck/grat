@@ -608,7 +608,7 @@ func InferRole(name string) Role {
 		return RoleDashboard
 	case "admin":
 		return RoleAdmin
-	case "shared", "worker", "watcher":
+	case "shared", "worker", "watcher", "queue":
 		return RoleWorker
 	default:
 		return RoleOther
