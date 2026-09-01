@@ -1,9 +1,9 @@
 <p align="center">
-  <a href="https://github.com/phranck/grat/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/phranck/grat/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="https://github.com/phranck/grat/releases"><img alt="Release" src="https://img.shields.io/github/v/release/phranck/grat?display_name=tag&label=release&color=e6194b"></a>
-  <a href="go.mod"><img alt="Go" src="https://img.shields.io/github/go-mod/go-version/phranck/grat?label=go&color=f58231"></a>
-  <a href="https://github.com/phranck/grat/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/phranck/grat/total?label=downloads&color=d4a017"></a>
-  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/phranck/grat?color=3cb44b"></a>
+  <a href="https://github.com/phranck/grat/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/phranck/grat/ci.yml?branch=main&label=CI&color=e6194b"></a>
+  <a href="https://github.com/phranck/grat/releases"><img alt="Release" src="https://img.shields.io/github/v/release/phranck/grat?display_name=tag&label=release&color=f58231"></a>
+  <a href="go.mod"><img alt="Go" src="https://img.shields.io/github/go-mod/go-version/phranck/grat?label=go&color=d4a017"></a>
+  <a href="https://github.com/phranck/grat/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/phranck/grat/total?label=downloads&color=3cb44b"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/phranck/grat?color=008080"></a>
   <a href="https://github.com/phranck/grat/commits/main"><img alt="Last commit" src="https://img.shields.io/github/last-commit/phranck/grat?color=4363d8"></a>
   <a href="https://github.com/phranck/grat"><img alt="Repository size" src="https://img.shields.io/github/repo-size/phranck/grat?color=911eb4"></a>
 </p>

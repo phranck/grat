@@ -36,6 +36,7 @@ if ! sed -n '1,12p' README.md | grep -q 'img.shields.io'; then
 	exit 1
 fi
 for badge in \
+	'github/actions/workflow/status/phranck/grat' \
 	'github/v/release/phranck/grat' \
 	'github/go-mod/go-version/phranck/grat' \
 	'github/downloads/phranck/grat/total' \
