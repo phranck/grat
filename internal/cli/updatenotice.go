@@ -14,10 +14,10 @@ import (
 )
 
 const (
-	// updateCheckInterval is how long an answer is kept before asking again. A
-	// day, because a release is not something that happens hourly and an answer
-	// that old is still true often enough to be worth not asking for.
-	updateCheckInterval = 24 * time.Hour
+	// updateCheckInterval is how long an answer is kept before asking again. Six
+	// hours, so a machine left running through a day still hears about a release
+	// on the day it happens, whilst a burst of commands costs one request.
+	updateCheckInterval = 6 * time.Hour
 
 	// updateCheckTimeout bounds the request. The notice is worth having and worth
 	// nothing at all if it makes a command wait, so a slow answer is no answer.
@@ -48,7 +48,7 @@ var commandsWithoutUpdateCheck = map[string]struct{}{
 // It runs after the command has done what it was asked, so the work never waits
 // on it and nothing fails because of it. The request is bounded, so the most this
 // costs is a command ending up to updateCheckTimeout later on a slow network,
-// once a day.
+// and only on the first command after updateCheckInterval has passed.
 //
 // Every failure is silent: a machine with no network, a rate-limited API and a
 // GitHub that is down all mean the same thing here, which is that grat has
