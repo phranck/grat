@@ -41,6 +41,10 @@ type environment struct {
 	// asks with, since grat status must not change the machine, and it is a seam
 	// so a test can answer it without a tailnet.
 	tailscaleReady readyTailscaleProvider
+	// latestRelease answers with the newest published version. It is a seam so a
+	// test can answer without a network, and so the notice can be given a source
+	// that never installs or changes anything.
+	latestRelease func(context.Context) (string, error)
 }
 
 // readyTailscaleProvider answers with a client where the machine is on a tailnet
@@ -65,6 +69,7 @@ func defaultEnvironment() environment {
 		uninstaller:    maintenance.DefaultService(),
 		tailscale:      prepareTailscale,
 		tailscaleReady: readyTailscale,
+		latestRelease:  maintenance.DefaultService().LatestVersion,
 	}
 }
 
@@ -162,6 +167,10 @@ func runWithEnvironment(ctx context.Context, args []string, cwd string, out io.W
 		return 2
 	}
 	if err == nil {
+		// Last, so the command has already done what it was asked and nothing
+		// waits on a network call. A failed command is not told about a newer
+		// version, since the failure is what the reader is there for.
+		reportNewerVersion(ctx, args[0], environment, output)
 		return 0
 	}
 	errors.Error(err)

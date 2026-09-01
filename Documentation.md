@@ -476,6 +476,8 @@ Lifecycle commands are not affected by any of this: they take the nearest grat.c
 
 ## Maintenance
 
+grat says when a newer version exists. The line comes after a command has done what it was asked, so the work never waits on it, and the request is given two seconds, which is the most a command can take longer to end because of it. Every failure is silent: a machine with no network, a rate-limited API and a GitHub that is down all mean the same thing, which is that grat has nothing to say about versions today. It asks at most once a day and keeps the answer in update-check beside the settings. GRAT_NO_UPDATE_CHECK set to anything turns it off. help, version, manual, update and uninstall never ask.
+
 grat update follows the route that installed the running binary. Homebrew is handed to Homebrew. A release binary is replaced by grat itself, which needs an authenticated GitHub CLI, restricts every address to the grat release infrastructure, and verifies both the running and the downloaded binary against the published checksums and GitHub's signed attestation before replacing anything. An installation made with go install is not replaced; grat prints the command that updates it.
 
 grat uninstall removes grat from this machine and asks for your password, since some of what it removes is owned by root. It lists any service still running and offers to stop them, withdraws every funnel grat published, and then asks about each kind of artefact. The .grat directories are grat's own state and go by default; a grat.config is your work and is kept unless you ask for it to go. Where grat installed Tailscale itself, it offers to remove that too.
@@ -503,6 +505,10 @@ The recorded state of each managed process, below the project root.
 **`.grat/log`**
 
 One log file per service, below the project root. This is what grat logs reads.
+
+**`grat/update-check`**
+
+When grat last asked whether a newer version exists, and what came back. It sits beside settings.toml.
 
 **`grat/settings.toml`**
 
