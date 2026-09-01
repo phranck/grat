@@ -41,17 +41,18 @@ That route installs the man pages as well, so `man grat` works straight away.
 On Linux without Homebrew, take the release binary. It is one file and depends on nothing:
 
 ```sh
-curl -fsSL -o grat https://github.com/phranck/grat/releases/download/v1.5.0/grat_v1.5.0_linux_amd64
+version=$(curl -fsSL https://api.github.com/repos/phranck/grat/releases/latest | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p')
+curl -fsSL -o grat "https://github.com/phranck/grat/releases/download/$version/grat_${version}_linux_amd64"
 chmod +x grat
 sudo install -m 0755 grat /usr/local/bin/grat
 ```
 
-Use `grat_v1.5.0_linux_arm64` on ARM. macOS binaries are published the same way, as `grat_v1.5.0_darwin_amd64` and `grat_v1.5.0_darwin_arm64`. A binary installed this way carries no man pages; `grat.1` and `grat.config.7` sit beside it in the same release, and [Documentation.md](Documentation.md#the-man-pages) says where to put them.
+The version is read from the newest release rather than written here, so this stays current. Use `linux_arm64` on ARM. macOS binaries are published the same way, as `darwin_amd64` and `darwin_arm64`. A binary installed this way carries no man pages; `grat.1` and `grat.config.7` sit beside it in the same release, and [Documentation.md](Documentation.md#the-man-pages) says where to put them.
 
 Or build it with Go 1.25.13 or newer:
 
 ```sh
-go install github.com/phranck/grat/cmd/grat@v1.5.0
+go install github.com/phranck/grat/cmd/grat@latest
 ```
 
 [Documentation.md](Documentation.md#installation) covers verifying a release binary against its checksums and its signed attestation.

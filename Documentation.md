@@ -175,7 +175,13 @@ version = 1
 directories = [
   "/absolute/path/on/this/machine",
 ]
+installed_tailscale = true
 ```
+
+`installed_tailscale` appears only where grat installed Tailscale itself, and it
+is what lets `grat uninstall` take it away again. Whether grat installed it
+cannot be worked out afterwards, because a Tailscale grat installed and one you
+installed look identical on disk.
 
 Manage those directories explicitly:
 
@@ -405,8 +411,11 @@ To override the derived value deliberately, list `BACKEND_URL` in the consuming
 service's `inherit_env` and set it in the parent environment before invoking
 grat. An absent approved override falls back to the derived value. An unlisted
 parent value is ignored like every other unapproved variable.
-grat does not read or write `.env.local` and does not generate an environment
-file.
+A running service reads no environment file through grat. grat does not read or
+write `.env.local` and generates no environment file. The one place grat opens a
+`.env` at all is detection, where it reads `QUEUE_CONNECTION` to decide whether a
+Laravel project needs a queue worker, and nothing from that file reaches a
+command.
 
 A started service also receives `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS`, set to
 this machine's name inside the tailnet, where the machine belongs to one. A Vite
@@ -546,10 +555,12 @@ on the configured port belongs to that process tree, and an HTTP `GET` to
 `host`, `port`, and `health_path` returns status 200 through 299. A worker is
 `running` when its validated managed process is alive.
 
-The status table contains `SERVICE`, `STATE`, `PORT`, `PID`, and `ENDPOINT`.
-An unhealthy service also prints the concrete reason. `grat status` exits with
-status 1 when any configured service is unhealthy and status 0 when every
-service is either running or stopped.
+The status table contains `SERVICE`, `STATE`, `PORT`, `PID`, `ENDPOINT`, and
+`PUBLIC`. The last one carries the public address of anything currently
+published, and stays empty for a service that is not. An unhealthy service also
+prints the concrete reason. `grat status` exits with status 1 when any configured
+service is unhealthy and status 0 when every service is either running or
+stopped.
 
 ## Shutdown and restart
 
