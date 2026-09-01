@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/phranck/grat/internal/config"
+	"github.com/phranck/grat/internal/project"
 )
 
 const (
@@ -188,12 +189,15 @@ func scanRoot(root string, report *Report, limits scanLimits, counters *scanCoun
 		if walkErr != nil {
 			return walkErr
 		}
+		if entry.IsDir() && project.DeeperThanScan(root, path) {
+			return filepath.SkipDir
+		}
 		counters.entries++
 		if counters.entries > limits.MaxEntries {
 			return fmt.Errorf("registry scan exceeds maximum entry count of %d", limits.MaxEntries)
 		}
 		if entry.IsDir() {
-			if entry.Type()&os.ModeSymlink != 0 || ignoredDirectory(entry.Name()) {
+			if entry.Type()&os.ModeSymlink != 0 || project.SkipsScanning(entry.Name()) {
 				return filepath.SkipDir
 			}
 			return nil
@@ -260,13 +264,4 @@ func linkedGitWorktree(root string) bool {
 		}
 	}
 	return false
-}
-
-func ignoredDirectory(name string) bool {
-	switch name {
-	case ".grat", ".git", ".worktrees", "node_modules":
-		return true
-	default:
-		return false
-	}
 }
