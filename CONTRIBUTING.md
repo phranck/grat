@@ -9,7 +9,7 @@ Use Go 1.25.13 or newer. Run the full local gate before proposing a change:
 ```sh
 go vet ./...
 go test -race ./...
-./scripts/check-readme.sh
+./scripts/check-docs.sh
 ```
 
 grat supports macOS and Linux on `amd64` and `arm64`. Changes to process

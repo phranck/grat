@@ -50,9 +50,14 @@ func runInitWithInput(ctx context.Context, args []string, cwd string, input io.R
 
 	output.Heading("Initializing project", root)
 	output.Step(presentation.StepWorking, "Services", "resolving configured commands")
-	definitions, err := initServiceSuggestions(root, serviceSpecs)
+	definitions, unresolved, err := initServiceSuggestions(root, serviceSpecs)
 	if err != nil {
 		return err
+	}
+	// What was recognised but could not be resolved is reported rather than
+	// swallowed. Without the reason, a refusal looks like grat finding nothing.
+	for _, item := range unresolved {
+		output.Step(presentation.StepInfo, item.Marker, item.Reason)
 	}
 	projectName := strings.TrimSpace(*name)
 	if interactive {
@@ -61,7 +66,7 @@ func runInitWithInput(ctx context.Context, args []string, cwd string, input io.R
 			return err
 		}
 	} else if err := validateServiceDefinitions(definitions); err != nil {
-		return fmt.Errorf("no known development scripts found; use --service name=command")
+		return fmt.Errorf("no service could be derived from this directory; name one with --service name=command")
 	}
 	output.Step(presentation.StepSuccess, "Services", fmt.Sprintf("found %d configured service(s)", len(definitions)))
 	output.Step(presentation.StepWorking, "Ports", "scanning configured directories and live listeners")
@@ -133,7 +138,7 @@ func (values *repeatedValue) Set(value string) error {
 	return nil
 }
 
-func initServiceSuggestions(root string, explicit []string) ([]serviceDefinition, error) {
+func initServiceSuggestions(root string, explicit []string) ([]serviceDefinition, []detect.Unresolved, error) {
 	if len(explicit) == 0 {
 		return detectServices(root)
 	}
@@ -141,25 +146,27 @@ func initServiceSuggestions(root string, explicit []string) ([]serviceDefinition
 	for _, value := range explicit {
 		definition, err := parseServiceDefinition(value)
 		if err != nil {
-			return nil, fmt.Errorf("--service must use name=command, got %q", value)
+			return nil, nil, fmt.Errorf("--service must use name=command, got %q", value)
 		}
 		definitions = append(definitions, definition)
 	}
 	if err := validateServiceDefinitions(definitions); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return definitions, nil
+	return definitions, nil, nil
 }
 
-// detectServices asks the detector what this directory holds and returns the
-// services it could derive completely. What it recognised without understanding
-// is not returned, because the caller offers these as suggestions to accept and
-// a suggestion has to be runnable.
-func detectServices(root string) ([]serviceDefinition, error) {
+// detectServices asks the detector what this directory holds.
+//
+// It returns the services it could derive completely, and separately what it
+// recognised but could not resolve. A suggestion has to be runnable, so the
+// second group is never offered as one; it is reported, because the reason is
+// what tells somebody which single line of their own code to change.
+func detectServices(root string) ([]serviceDefinition, []detect.Unresolved, error) {
 	finding := detect.Directory(root)
 	definitions := make([]serviceDefinition, 0, len(finding.Services))
 	for _, service := range finding.Services {
 		definitions = append(definitions, serviceDefinition{Name: service.Name, Command: service.Command})
 	}
-	return definitions, nil
+	return definitions, finding.Unresolved, nil
 }

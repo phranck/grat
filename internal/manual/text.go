@@ -69,9 +69,9 @@ stays in the foreground.
 
 // seeAlso points at the rest of the documentation.
 const seeAlso = `
-The full documentation, including the configuration reference, is at
-https://grat.layered.work and in the README of the project repository at
-https://github.com/phranck/grat.
+The configuration reference, the roles and their port ranges, and the detail
+behind every command are in Documentation.md in the project repository at
+https://github.com/phranck/grat. The overview is at https://grat.layered.work.
 
 grat help prints the same command reference this page carries.
 `

@@ -39,7 +39,7 @@
   <section class="hero measure">
     <div class="hero__grid">
       <div>
-        <p class="badge"><span class="badge__dot"></span> v1.3.2 · macOS &amp; Linux</p>
+        <p class="badge"><span class="badge__dot"></span> v1.4.0 · macOS &amp; Linux</p>
         <h1 class="hero__title">Your dev services, <em>under control</em>.</h1>
         <p class="hero__lead">grat starts the long-running commands a project needs, waits until each one is genuinely ready, keeps their ports out of each other's way, and can put a single path on the public internet when a webhook has to reach you.</p>
         <div class="hero__actions">
@@ -78,9 +78,14 @@
           <span class="command__text">brew install phranck/grat/grat</span>
           <button class="copy" type="button" data-copy="brew install phranck/grat/grat" aria-label="Copy command"><i class="ph-duotone ph-copy" aria-hidden="true"></i></button>
         </div>
+        <div class="command">
+          <span class="command__prompt">$</span>
+          <span class="command__text">man grat</span>
+          <button class="copy" type="button" data-copy="man grat" aria-label="Copy command"><i class="ph-duotone ph-copy" aria-hidden="true"></i></button>
+        </div>
         <div class="prose">
           <p>Release binaries are published for macOS and Linux on Intel and ARM, verified against their checksums and GitHub's signed attestation.</p>
-          <p>The manual comes with it, so <code class="inline-code">man grat</code> works straight away.</p>
+          <p>The manual is installed with grat, and grat generates it itself, so it describes the version on your machine rather than the one the documentation was written against.</p>
         </div>
       </div>
       <ol class="steps">
@@ -167,23 +172,23 @@
     <div class="scale">
       <div class="scale__row">
         <span class="scale__role">frontend</span>
-        <div class="scale__lane"><span class="scale__span" style="left:0.00%;width:6.52%"></span><span class="scale__value" style="left:6.52%">3000-3149</span></div>
+        <div class="scale__lane"><div class="scale__track"><span class="scale__span" style="left:0.00%;width:6.52%"></span><span class="scale__value" style="left:6.52%">3000-3149</span></div></div>
       </div>
       <div class="scale__row">
         <span class="scale__role">developer</span>
-        <div class="scale__lane"><span class="scale__span" style="left:6.52%;width:6.52%"></span><span class="scale__value" style="left:13.04%">3150-3299</span></div>
+        <div class="scale__lane"><div class="scale__track"><span class="scale__span" style="left:6.52%;width:6.52%"></span><span class="scale__value" style="left:13.04%">3150-3299</span></div></div>
       </div>
       <div class="scale__row">
         <span class="scale__role">backend</span>
-        <div class="scale__lane"><span class="scale__span" style="left:43.48%;width:6.52%"></span><span class="scale__value" style="left:50.00%">4000-4149</span></div>
+        <div class="scale__lane"><div class="scale__track"><span class="scale__span" style="left:43.48%;width:6.52%"></span><span class="scale__value" style="left:50.00%">4000-4149</span></div></div>
       </div>
       <div class="scale__row">
         <span class="scale__role">dashboard</span>
-        <div class="scale__lane"><span class="scale__span" style="left:65.22%;width:6.52%"></span><span class="scale__value" style="left:71.74%">4500-4649</span></div>
+        <div class="scale__lane"><div class="scale__track"><span class="scale__span" style="left:65.22%;width:6.52%"></span><span class="scale__value" style="left:71.74%">4500-4649</span></div></div>
       </div>
       <div class="scale__row">
         <span class="scale__role">other</span>
-        <div class="scale__lane"><span class="scale__span" style="left:86.96%;width:13.04%"></span><span class="scale__value scale__value--before" style="left:86.96%">5000-5299</span></div>
+        <div class="scale__lane"><div class="scale__track"><span class="scale__span" style="left:86.96%;width:13.04%"></span><span class="scale__value scale__value--before" style="left:86.96%">5000-5299</span></div></div>
       </div>
       <div class="scale__axis"><span class="scale__tick scale__tick--first" style="left:0.00%">3000</span><span class="scale__tick" style="left:21.74%">3500</span><span class="scale__tick" style="left:43.48%">4000</span><span class="scale__tick" style="left:65.22%">4500</span><span class="scale__tick" style="left:86.96%">5000</span><span class="scale__tick scale__tick--last" style="left:99.96%">5299</span></div>
     </div>
@@ -193,7 +198,7 @@
     <div class="section__head">
       <span class="section__number">05. Public access</span>
       <h2 class="section__title">A webhook can reach your laptop</h2>
-      <p class="section__lead">Whether you want to show somebody on the other side of the world how your site or web app currently looks, or you need a webhook URL that reaches your local development environment, grat gives you a way to do it. Underneath, the exposing runs on <a href="https://tailscale.com" target="_blank" rel="noopener noreferrer">Tailscale</a>. You configure nothing and set nothing up. Run the command, and grat does the rest.</p>
+      <p class="section__lead">Whether you want to show somebody on the other side of the world how your site or web app currently looks, or you need a webhook URL that reaches your local development environment, grat gives you a way to do it. Underneath, the exposing runs on <a href="https://tailscale.com" target="_blank" rel="noopener noreferrer">Tailscale</a>. You prepare nothing: where Tailscale is missing, grat installs it and says so as it goes. Two steps stay with you, because they cannot be taken on your behalf. The background service starts with administrator rights, so the system asks for your password, and the sign-in runs through your browser because that is where your account is.</p>
     </div>
     <div class="split">
       <div class="stack">
@@ -245,6 +250,34 @@
 </footer>
 
 <script>
+  // An in-page link scrolls rather than jumps, but in a time the page decides
+  // rather than the distance. Anything that asks for less motion gets none.
+  const scrollDuration = 320;
+  const calmly = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  for (const link of document.querySelectorAll('a[href^="#"]')) {
+    link.addEventListener("click", (event) => {
+      const target = document.querySelector(link.getAttribute("href"));
+      if (!target) return;
+      event.preventDefault();
+      history.replaceState(null, "", link.getAttribute("href"));
+
+      const from = window.scrollY;
+      const to = target.getBoundingClientRect().top + from;
+      if (calmly.matches) { window.scrollTo(0, to); return; }
+
+      const started = performance.now();
+      const step = (now) => {
+        const share = Math.min((now - started) / scrollDuration, 1);
+        // The same curve the rest of the page eases with.
+        const eased = 1 - Math.pow(1 - share, 3);
+        window.scrollTo(0, from + (to - from) * eased);
+        if (share < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    });
+  }
+
   for (const button of document.querySelectorAll(".copy")) {
     button.addEventListener("click", async () => {
       await navigator.clipboard.writeText(button.dataset.copy);

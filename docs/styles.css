@@ -40,20 +40,37 @@
   --term-body: #9aa6b5;
   --term-detail: #8793a2;
 
+  /* The three window buttons of a focused macOS window. Apple publishes no
+     values for these, so every figure in circulation is an approximation from
+     reverse engineering; these come from lwouis/macos-traffic-light-buttons-as-SVG
+     and match a recent macOS rather than the flatter Yosemite-era set. Grey
+     buttons are not wrong either, they are what an unfocused window shows. */
+  --mac-close: #ed6a5f;
+  --mac-minimise: #f6be50;
+  --mac-zoom: #61c555;
+
   /* --- Derived colours ---------------------------------------------------
      A tint is the accent at a tenth of its strength, so an active element is
      never distinguished by colour alone. */
   --accent-tint: color-mix(in srgb, var(--accent) 10%, transparent);
   --accent-edge: color-mix(in srgb, var(--accent) 35%, transparent);
   --track-line: color-mix(in srgb, var(--rule) 60%, transparent);
-  --shadow-card: 0 1px 2px color-mix(in srgb, var(--ink) 6%, transparent);
+  /* Two layers, because one is either invisible or hard. The close layer draws
+     the edge off the page, the far one gives it somewhere to sit. */
+  --shadow-card:
+    0 1px 2px color-mix(in srgb, var(--ink) 5%, transparent),
+    0 6px 16px -6px color-mix(in srgb, var(--ink) 14%, transparent);
   --shadow-window: 0 32px 60px -40px color-mix(in srgb, var(--ink) 60%, transparent);
 
   /* --- Card geometry -----------------------------------------------------
      Both derivations live here, on the element that declares what they read.
      A property containing var() resolves where it is declared, so a derivation
      placed further down would come back empty. */
-  --card-radius: 24px;
+  --card-radius: 18px;
+
+  /* The corner of a small interactive element that is not a capsule. Well under
+     half the height it sits on, because at half the height it would become one. */
+  --control-radius: 8px;
   --card-padding: 22px;
   --card-inner-radius: max(calc(var(--card-radius) - var(--card-padding)), 0px);
   --card-text-inset: calc(var(--card-radius) / 2);
@@ -62,6 +79,12 @@
   --measure: 76rem;
   --gutter: 1.5rem;
   --track: 92px;
+
+  /* How far the range pill sits inside its lane. The pill and the lane are both
+     capsules, so each takes half its own height as its radius and the two stay
+     concentric on their own. The axis below carries the same inset, so a tick
+     and the port it marks still line up. */
+  --lane-inset: 4px;
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -107,7 +130,11 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  /* The page scrolls itself, in a fixed time. The browser's own smooth
+     behaviour scales its duration with the distance, and on a page this long a
+     jump to the last section took over a second, which reads as lag rather than
+     as motion. Measured: 0.7s to 1.3s per link. */
+  scroll-behavior: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -164,9 +191,28 @@ body {
   position: sticky;
   top: 0;
   z-index: 20;
-  background-color: color-mix(in srgb, var(--paper) 82%, transparent);
-  backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--rule);
+  /* Keeps the layer below out of the page's stacking context, so it stays a
+     layer of its own rather than being merged back in. */
+  isolation: isolate;
+}
+
+/* The surface and the blur sit behind the content rather than on the same
+   element as it.
+   
+   Declared together with the links, every hover marks the blurred element as
+   changed, and Safari then re-runs the filter across the whole band. On its own
+   layer the filter has nothing above it that changes, so a hover repaints a
+   link and nothing else. The prefixed property is what Safari before 18
+   understands. */
+.band::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-color: color-mix(in srgb, var(--paper) 82%, transparent);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
 }
 
 .band__row {
@@ -200,14 +246,20 @@ body {
 }
 
 .nav__link {
-  padding: var(--space-2) var(--space-3);
-  border-radius: 999px;
+  /* Flatter than the horizontal padding, because the item sits in a bar whose
+     height is already set by the wordmark beside it. */
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--control-radius);
   color: var(--ink-muted);
   font-size: var(--size-small);
+  /* One line that never wraps, so it takes none of the leading the body needs. */
+  line-height: 1.3;
   text-decoration: none;
   white-space: nowrap;
-  transition: color var(--duration-quick) var(--ease),
-    background-color var(--duration-quick) var(--ease);
+  /* The fill arrives at once. A pointer is already on the item by the time a
+     fade would finish, so the delay reads as lag rather than as motion. The
+     colour still eases, because the text does not move under the pointer. */
+  transition: color var(--duration-quick) var(--ease);
 }
 
 .nav__link:hover {
@@ -323,16 +375,17 @@ body {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-5);
+  padding: var(--space-2) var(--space-5);
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   font: inherit;
   font-size: var(--size-small);
   font-weight: 560;
+  /* One line that never wraps, so it takes none of the leading the body needs. */
+  line-height: 1.3;
   text-decoration: none;
   cursor: pointer;
   transition: transform var(--duration-quick) var(--ease),
-    background-color var(--duration-quick) var(--ease),
     border-color var(--duration-quick) var(--ease),
     color var(--duration-quick) var(--ease);
 }
@@ -424,12 +477,20 @@ body {
 
 /* --- Cards ----------------------------------------------------------------- */
 
-.card {
-  padding: var(--card-padding);
+/* Every surface that stands off the page carries the same edge, the same fill
+   and the same shadow. Only the radius differs, because a pill and a card are
+   different shapes, and only the padding, because they hold different things. */
+.card,
+.table-wrap,
+.command {
   border: 1px solid var(--rule);
-  border-radius: var(--card-radius);
   background-color: var(--paper-raised);
   box-shadow: var(--shadow-card);
+}
+
+.card {
+  padding: var(--card-padding);
+  border-radius: var(--card-radius);
 }
 
 /* Text inside a card meets the card's own corner, so it takes the inset on top
@@ -480,6 +541,7 @@ body {
 }
 
 .window__chrome {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -489,19 +551,28 @@ body {
 }
 
 .window__dot {
-  width: 0.5625rem;
-  height: 0.5625rem;
+  width: 0.75rem;
+  height: 0.75rem;
   border-radius: 999px;
-  background-color: color-mix(in srgb, var(--term-detail) 40%, transparent);
 }
 
+.window__dot:nth-child(1) { background-color: var(--mac-close); }
+.window__dot:nth-child(2) { background-color: var(--mac-minimise); }
+.window__dot:nth-child(3) { background-color: var(--mac-zoom); }
+
+/* The title is centred on the window rather than placed after the buttons,
+   which is where macOS puts it. Taken out of the flow so the buttons on the
+   left cannot push it off centre. */
 .window__title {
-  margin-left: var(--space-2);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   color: var(--term-detail);
   font-family: var(--font-mono);
   font-size: var(--size-label);
   letter-spacing: 0.05em;
 }
+
 
 /* The block scrolls inside itself. A pre otherwise reports its longest line as
    a minimum width, and that figure travels up and widens the page. */
@@ -533,9 +604,7 @@ body {
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4) var(--space-3) var(--space-5);
-  border: 1px solid var(--rule);
   border-radius: 999px;
-  background-color: var(--paper-raised);
   font-family: var(--font-mono);
   font-size: var(--size-code);
 }
@@ -607,9 +676,17 @@ body {
   border: 1px solid var(--rule);
 }
 
+/* The area the pills are measured against. It is the lane less its inset, so a
+   pill never reaches the lane's edge, and both ends of the scale keep the same
+   breathing room as the top and the bottom. */
+.scale__track {
+  position: absolute;
+  inset: var(--lane-inset);
+}
+
 .scale__span {
   position: absolute;
-  inset-block: -1px;
+  inset-block: 0;
   border: 1px solid var(--accent-edge);
   border-radius: 999px;
   background-color: var(--accent-tint);
@@ -642,7 +719,10 @@ body {
   position: relative;
   height: 2.25rem;
   margin-top: var(--space-2);
-  margin-left: calc(8.5rem + var(--space-4));
+  /* The lane's own border plus its inset, so the axis spans exactly what the
+     pills are measured against. */
+  margin-left: calc(8.5rem + var(--space-4) + 1px + var(--lane-inset));
+  margin-right: calc(1px + var(--lane-inset));
   border-top: 1px solid var(--rule);
 }
 
@@ -694,7 +774,7 @@ body {
     text-align: left;
   }
   .scale__axis {
-    margin-left: 0;
+    margin-left: calc(1px + var(--lane-inset));
   }
 }
 
@@ -704,9 +784,7 @@ body {
 
 .table-wrap {
   overflow-x: auto;
-  border: 1px solid var(--rule);
   border-radius: var(--card-radius);
-  background-color: var(--paper-raised);
 }
 
 table {
