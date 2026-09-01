@@ -200,7 +200,7 @@ Keep printing as the service writes, rather than stopping at the end of the file
 
 Publish services to the internet; all takes every one, --path narrows a single one.
 
-Publishes one service to the internet through Tailscale Funnel, at a name that stays the same between runs. This is what a webhook from another server needs, since a service on your machine cannot otherwise be reached from outside.
+Publishes services to the internet through Tailscale Funnel, at a name that stays the same between runs. This is what a webhook from another server needs, since a service on your machine cannot otherwise be reached from outside.
 
 Several services can be named at once, and the word all takes every service that has an address to publish. A process-only service has none, so all passes over it rather than refusing; named on its own it is still an error, because the name says what you meant.
 
@@ -446,9 +446,9 @@ Ctrl+C cancels a lifecycle command. Cancelling during a stop keeps the managed s
 
 ## Public access
 
-A service reachable only on your machine cannot receive a webhook. grat expose makes one service reachable from the internet through Tailscale Funnel, at a name that stays the same between runs.
+A service reachable only on your machine cannot receive a webhook. grat expose makes a service reachable from the internet through Tailscale Funnel, at a name that stays the same between runs. Several can be named at once, and the word all takes every service that has an address to publish. grat hide withdraws them again, and takes all as well, which there means every funnel this project has open.
 
-The whole service is published unless a path narrows it, with --path for one run or a [services.expose] table for good. The path on the command line wins. Naming one is worth it for a service whose only business outside is a callback, because everything else it serves then stays on the machine.
+The whole service is published unless a path narrows it, with --path for one run or a [services.expose] table for good. The path on the command line wins. Naming one is worth it for a service whose only business outside is a callback, because everything else it serves then stays on the machine. A path names one path, so it goes with one service.
 
 Where Tailscale is missing, grat installs it, starts its background service and signs the machine in, reporting each step. It does not ask, because that is what the typed command needs in order to work. On a Mac it installs through Homebrew; on Linux it runs the vendor's install script. An existing Tailscale is never upgraded, reconfigured or removed. Two steps cannot be taken for you: the background service starts with administrator rights, so the system asks for your password, and the sign-in happens in the browser, which grat opens.
 
