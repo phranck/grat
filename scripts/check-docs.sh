@@ -57,7 +57,7 @@ done
 
 for text in \
 	'brew install phranck/grat/grat' \
-	'go install github.com/phranck/grat/cmd/grat@v1.5.0' \
+	'go install github.com/phranck/grat/cmd/grat@latest' \
 	'Go 1.25.13 or newer' \
 	'man grat' \
 	'Documentation.md' \
@@ -156,7 +156,7 @@ done
 for text in \
 	'BACKEND_URL=http://127.0.0.1:4000' \
 	'When the unique backend is selected, grat starts it before its selected consumers.' \
-	'grat does not read or write `.env.local`' \
+	'A running service reads no environment file through grat' \
 	'`stopped`' \
 	'`running`' \
 	'`unhealthy`' \
@@ -188,6 +188,20 @@ if [ -z "$uninstall_prompts" ]; then
 fi
 printf '%s\n' "$uninstall_prompts" | while IFS= read -r prompt; do
 	require_doc "$prompt"
+done
+
+# The status table's columns are read out of the code that prints them, because
+# a documented list of five where the command prints six is the kind of gap
+# nobody notices: the page still reads correctly and only the missing column is
+# a surprise. That had happened with PUBLIC.
+status_columns="$(sed -n 's/.*output.Table(\[\]string{\(.*\)}, rows).*/\1/p' internal/cli/status.go | tr -d '" ' | tr ',' '\n')"
+if [ -z "$status_columns" ]; then
+	echo "no status table columns found in internal/cli/status.go" >&2
+	exit 1
+fi
+printf '%s\n' "$status_columns" | while IFS= read -r column; do
+	[ -n "$column" ] || continue
+	require_doc "\`$column\`"
 done
 
 if grep -Fq 'legacy PID files' Documentation.md; then
