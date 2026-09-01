@@ -408,6 +408,18 @@ parent value is ignored like every other unapproved variable.
 grat does not read or write `.env.local` and does not generate an environment
 file.
 
+A started service also receives `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS`, set to
+this machine's name inside the tailnet, where the machine belongs to one. A Vite
+development server answers only to localhost and to IP addresses unless it is
+told otherwise, which stops a malicious page reaching it through DNS rebinding,
+and a request arriving through a funnel carries the tailnet name instead. Without
+it, a service published with `grat expose` answers every public request with
+Vite's blocked-host page. grat names that one host rather than allowing every
+host, because Vite's own documentation warns that allowing every host lets any
+website read your source. To name further hosts, list the variable in the
+service's `inherit_env` and set it yourself; an approved value is kept as it is.
+Other frameworks have their own rule for this and grat sets nothing for them yet.
+
 For a worker, grat checks the managed process identity and whether the process
 is alive. Workers use `port = 0` and have no `host` or `health_path` requirement.
 

@@ -1,6 +1,7 @@
 package manual
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -137,6 +138,10 @@ func writeEnvironment(page *builder) {
 	page.line(".PP")
 	page.line(escape(strings.Join(runtime.InheritedEnvironment(), ", ") + "."))
 	page.paragraphs(environmentRest)
+	// The variable is named from the constant the runtime sets it under, so the
+	// page cannot describe a name the code no longer uses.
+	page.line(".PP")
+	page.paragraphs(fmt.Sprintf(environmentTailnetHost, runtime.TailnetHostVariable()))
 }
 
 // writeExample prints a complete file, indented as a literal block.
