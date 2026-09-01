@@ -15,7 +15,23 @@ func runStatus(ctx context.Context, cwd string, output presentation.Renderer) er
 	if err != nil {
 		return err
 	}
+	reportPortsOutsideTheirRange(manager.Config, output)
 	return renderStatus(ctx, manager, output)
+}
+
+// reportPortsOutsideTheirRange says which services hold a port their role does
+// not allocate from, and what repairs it.
+//
+// A range that moves leaves existing configurations behind, and the reader needs
+// to be told which service and what to run rather than being refused the command
+// they asked for.
+func reportPortsOutsideTheirRange(value config.Config, output presentation.Renderer) {
+	for _, outside := range value.PortsOutsideTheirRange() {
+		output.Step(presentation.StepWarning, outside.Service, fmt.Sprintf(
+			"port %d is outside the %s range %d-%d; grat ports reassign moves it",
+			outside.Port, outside.Role, outside.Allowed.First, outside.Allowed.Last,
+		))
+	}
 }
 
 func renderStatus(ctx context.Context, manager gratruntime.Manager, output presentation.Renderer) error {

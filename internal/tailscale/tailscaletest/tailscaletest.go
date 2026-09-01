@@ -21,14 +21,22 @@ type Client struct {
 
 	// The Err fields make the matching call fail, so a test can drive the failure
 	// path without constructing a broken machine.
-	OpenErr     error
-	CloseErr    error
-	FunnelsErr  error
-	HostnameErr error
+	OpenErr error
+	// NeedsEnabling makes Open report this address before it returns, the way the
+	// real client does when the tailnet has not enabled Funnel.
+	NeedsEnabling string
+	CloseErr      error
+	FunnelsErr    error
+	HostnameErr   error
 }
 
-// Open records the funnel unless OpenErr is set.
-func (client *Client) Open(_ context.Context, funnel tailscale.Funnel) error {
+// Open records the funnel unless OpenErr is set. NeedsEnabling, when set, is
+// the address the real client would report whilst waiting for the tailnet to
+// enable Funnel, so a caller's handling of that can be exercised.
+func (client *Client) Open(_ context.Context, funnel tailscale.Funnel, needsEnabling func(address string)) error {
+	if client.NeedsEnabling != "" && needsEnabling != nil {
+		needsEnabling(client.NeedsEnabling)
+	}
 	if client.OpenErr != nil {
 		return client.OpenErr
 	}

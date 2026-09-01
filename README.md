@@ -30,19 +30,31 @@ Each command runs from the project root through non-login `/bin/sh`, and receive
 
 ## Installation
 
+On macOS, and on Linux where Homebrew is installed:
+
 ```sh
 brew install phranck/grat/grat
 ```
 
-That installs the man pages as well, so `man grat` works straight away.
+That route installs the man pages as well, so `man grat` works straight away.
 
-Release binaries cover macOS and Linux on `amd64` and `arm64`. Download the matching asset from [Releases](https://github.com/phranck/grat/releases), or build it with Go 1.25.13 or newer:
+On Linux without Homebrew, take the release binary. It is one file and depends on nothing:
+
+```sh
+curl -fsSL -o grat https://github.com/phranck/grat/releases/download/v1.5.0/grat_v1.5.0_linux_amd64
+chmod +x grat
+sudo install -m 0755 grat /usr/local/bin/grat
+```
+
+Use `grat_v1.5.0_linux_arm64` on ARM. macOS binaries are published the same way, as `grat_v1.5.0_darwin_amd64` and `grat_v1.5.0_darwin_arm64`. A binary installed this way carries no man pages; `grat.1` and `grat.config.7` sit beside it in the same release, and [Documentation.md](Documentation.md#the-man-pages) says where to put them.
+
+Or build it with Go 1.25.13 or newer:
 
 ```sh
 go install github.com/phranck/grat/cmd/grat@v1.5.0
 ```
 
-[Documentation.md](Documentation.md#installation) covers verifying a release binary against its checksums and its signed attestation, and says which install route carries the man pages.
+[Documentation.md](Documentation.md#installation) covers verifying a release binary against its checksums and its signed attestation.
 
 ## Quick start
 

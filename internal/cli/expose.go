@@ -59,7 +59,15 @@ func runExpose(ctx context.Context, args []string, cwd string, environment envir
 
 	funnel := funnelFor(service, pathOverride)
 	output.Step(presentation.StepWorking, service.Name, "publishing "+funnel.Path)
-	if err := client.Open(ctx, funnel); err != nil {
+	// Enabling Funnel is a permission on the tailnet, so it cannot be granted from
+	// here. grat opens the page the moment Tailscale asks for it and keeps
+	// waiting, which is the least this can cost: one click, no second command.
+	announceEnabling := func(address string) {
+		output.Step(presentation.StepInfo, "Funnel", "your tailnet has not enabled it yet")
+		output.Step(presentation.StepWorking, "Funnel", "opening the page that enables it")
+		_ = tailscale.OpenInBrowser(ctx, address)
+	}
+	if err := client.Open(ctx, funnel, announceEnabling); err != nil {
 		return err
 	}
 	hostname, err := client.Hostname(ctx)
@@ -272,10 +280,32 @@ func installTailscale(ctx context.Context, environment environment, output prese
 	output.Step(presentation.StepInfo, "Tailscale", "is not installed on this machine")
 	announceMachineChange(output, command.Display, "")
 	output.Step(presentation.StepWorking, "Tailscale", "installing")
-	if err := tailscale.Run(ctx, command.Name, command.Arguments, environment.input, output.Writer()); err != nil {
+	// Quietly: what a package manager prints is about itself, and the steps around
+	// this are what the reader is meant to follow.
+	if err := tailscale.RunQuietly(ctx, command.Name, command.Arguments); err != nil {
 		return err
 	}
 	output.Step(presentation.StepSuccess, "Tailscale", "installed")
+	return recordTailscaleInstall(environment)
+}
+
+// recordTailscaleInstall notes that grat put Tailscale on this machine.
+//
+// It has to be written down, because afterwards a Tailscale grat installed and
+// one somebody installed themselves are indistinguishable. Without the note,
+// uninstall would either leave it standing or take away something grat never
+// put there, and only the second cannot be undone. A failure here is not fatal:
+// the worst it costs is that uninstall leaves Tailscale alone.
+func recordTailscaleInstall(environment environment) error {
+	value, _, err := environment.settings.Load()
+	if err != nil {
+		return nil
+	}
+	if value.InstalledTailscale {
+		return nil
+	}
+	value.InstalledTailscale = true
+	_ = environment.settings.Save(value)
 	return nil
 }
 
@@ -317,7 +347,7 @@ func signIn(ctx context.Context, client tailscale.CommandClient, environment env
 		_ = tailscale.OpenInBrowser(signInContext, address)
 	}()
 
-	if err := client.SignIn(signInContext, environment.input, output.Writer()); err != nil {
+	if err := client.SignIn(signInContext); err != nil {
 		return err
 	}
 	if err := client.WaitUntilReady(signInContext, readinessInterval); err != nil {

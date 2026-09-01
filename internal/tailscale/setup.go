@@ -1,6 +1,7 @@
 package tailscale
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -189,20 +190,63 @@ func StartServicePath() (ServiceCommand, error) {
 	}
 }
 
-// Run executes a prepared command, passing its output through to the caller's
-// streams. That matters for the two commands a person has to take part in: the
-// password prompt of the service, and the sign-in address Tailscale prints.
+// capturedTailLines is how much of a failed command's output an error carries.
+// Enough to say what went wrong, short enough to stay readable.
+const capturedTailLines = 20
+
+// Run executes a prepared command, letting only its error stream reach the
+// terminal.
+//
+// This is for the one command a person has to take part in: starting the
+// background service asks for an administrator password, and sudo writes that
+// prompt to the error stream and expects the terminal to show it. Capturing that
+// would leave grat waiting with nothing on screen. What the command writes to
+// standard output is the package manager talking about itself, so it is kept for
+// a failure and shown at no other time.
 func Run(ctx context.Context, name string, arguments []string, input io.Reader, output io.Writer) error {
 	// #nosec G204 -- name and arguments come from InstallPath or StartServicePath,
 	// both of which build them from constants in this file.
 	command := exec.CommandContext(ctx, name, arguments...)
 	command.Stdin = input
-	command.Stdout = output
+	var captured bytes.Buffer
+	command.Stdout = &captured
 	command.Stderr = output
 	if err := command.Run(); err != nil {
-		return fmt.Errorf("%s: %w", strings.Join(append([]string{name}, arguments...), " "), err)
+		line := strings.Join(append([]string{name}, arguments...), " ")
+		return fmt.Errorf("%s: %w\n%s", line, err, tailLines(captured.String(), capturedTailLines))
 	}
 	return nil
+}
+
+// RunQuietly executes a prepared command without letting its output reach the
+// terminal.
+//
+// A package manager prints a great deal that is about itself rather than about
+// grat, and the step lines around this call exist so that a reader follows what
+// grat is doing. The output is kept rather than discarded, because a failure is
+// only explainable with it.
+func RunQuietly(ctx context.Context, name string, arguments []string) error {
+	// #nosec G204 -- name and arguments come from InstallPath, which builds them
+	// from constants in this file.
+	command := exec.CommandContext(ctx, name, arguments...)
+	var captured bytes.Buffer
+	command.Stdout = &captured
+	command.Stderr = &captured
+	if err := command.Run(); err != nil {
+		line := strings.Join(append([]string{name}, arguments...), " ")
+		return fmt.Errorf("%s: %w\n%s", line, err, tailLines(captured.String(), capturedTailLines))
+	}
+	return nil
+}
+
+// tailLines returns the last count lines of text, so an error carries the end of
+// a long log rather than its beginning, which is where the reason usually is.
+func tailLines(text string, count int) string {
+	lines := strings.Split(strings.TrimRight(text, "\n"), "\n")
+	if len(lines) > count {
+		lines = lines[len(lines)-count:]
+	}
+	return strings.Join(lines, "\n")
 }
 
 // SignInURL returns the address a person has to open to sign this machine in.
@@ -223,15 +267,18 @@ func (client CommandClient) SignInURL(ctx context.Context) (string, error) {
 	return value.AuthURL, nil
 }
 
-// SignIn starts the sign-in. Tailscale prints its address, and grat passes the
-// output straight through so it is visible even when opening a browser fails. It
+// SignIn starts the sign-in.
+//
+// Its output stays off the terminal. The address a person has to visit is read
+// from the status by SignInURL and opened by grat itself, so printing it here as
+// well would say the same thing twice in a shape grat does not control. It
 // returns as soon as the command does, which is before the machine is connected;
 // WaitUntilReady covers the rest.
-func (client CommandClient) SignIn(ctx context.Context, input io.Reader, output io.Writer) error {
+func (client CommandClient) SignIn(ctx context.Context) error {
 	if client.executable == "" {
 		return ErrNotInstalled{}
 	}
-	return Run(ctx, client.executable, []string{"up"}, input, output)
+	return RunQuietly(ctx, client.executable, []string{"up"})
 }
 
 // OpenInBrowser asks the system to open address. A failure is not fatal, because

@@ -13,7 +13,11 @@ import (
 	"github.com/phranck/grat/internal/settings"
 )
 
-func TestUninstallDefaultYesRemovesOnlyRegisteredProjectArtifacts(t *testing.T) {
+// TestUninstallOnEnterKeepsTheConfigurations covers what a bare Enter means at
+// each question. grat's own state under .grat goes, because the next start
+// writes it again. A grat.config is the user's own work and survives, because
+// somebody uninstalling grat may be about to install it again.
+func TestUninstallOnEnterKeepsTheConfigurations(t *testing.T) {
 	t.Parallel()
 
 	store, root := newUninstallStore(t)
@@ -40,15 +44,18 @@ func TestUninstallDefaultYesRemovesOnlyRegisteredProjectArtifacts(t *testing.T) 
 	if !strings.Contains(result.Message, "uninstalled") {
 		t.Fatalf("Uninstall() message = %q", result.Message)
 	}
-	for _, path := range []string{state, config, executable} {
+	for _, path := range []string{state, executable} {
 		if _, err := os.Lstat(path); !os.IsNotExist(err) {
 			t.Fatalf("%s remains after uninstall: %v", path, err)
 		}
 	}
+	if _, err := os.Lstat(config); err != nil {
+		t.Fatalf("%s was removed although Enter means keeping it: %v", config, err)
+	}
 	if got, err := os.ReadFile(outside); err != nil || string(got) != "keep" {
 		t.Fatalf("outside file changed: got %q, err %v", got, err)
 	}
-	for _, prompt := range []string{"Delete all .grat directories? [Y/n]:", "Delete all grat.config files? [Y/n]:"} {
+	for _, prompt := range []string{"Delete all .grat directories? [Y/n]:", "Delete all grat.config files? [y/N]:"} {
 		if !strings.Contains(output.String(), prompt) {
 			t.Fatalf("uninstall output is missing %q:\n%s", prompt, output.String())
 		}
@@ -292,5 +299,31 @@ func fakeUninstallService(executable string) Service {
 		},
 		InspectProject: func(context.Context, string) (bool, error) { return false, nil },
 		Remove:         os.Remove,
+	}
+}
+
+// TestUninstallRemovesTheConfigurationsWhenAsked is the other direction. Keeping
+// them by default must not make removing them impossible.
+func TestUninstallRemovesTheConfigurationsWhenAsked(t *testing.T) {
+	t.Parallel()
+
+	store, root := newUninstallStore(t)
+	project := filepath.Join(root, "project")
+	state := filepath.Join(project, ".grat")
+	config := filepath.Join(project, "grat.config")
+	writeUninstallFixture(t, state, config)
+	executable := filepath.Join(t.TempDir(), "grat")
+	if err := os.WriteFile(executable, []byte("binary"), 0o755); err != nil {
+		t.Fatalf("write executable: %v", err)
+	}
+	writeGlobalMaintenanceFiles(t, store)
+	service := fakeUninstallService(executable)
+	var output bytes.Buffer
+
+	if _, err := service.Uninstall(context.Background(), store, []string{root}, strings.NewReader("y\ny\n"), &output, true); err != nil {
+		t.Fatalf("Uninstall() error = %v", err)
+	}
+	if _, err := os.Lstat(config); !os.IsNotExist(err) {
+		t.Fatalf("%s remains although it was asked for: %v", config, err)
 	}
 }

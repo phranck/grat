@@ -50,7 +50,11 @@ const defaultPublicPort = 443
 // currently published.
 type Client interface {
 	// Open publishes funnel.Path at funnel.PublicPort, forwarding to funnel.Target.
-	Open(ctx context.Context, funnel Funnel) error
+	//
+	// needsEnabling is called with an address when the tailnet has not enabled
+	// Funnel, which is a permission only its owner can grant. The call happens
+	// whilst Open is still waiting, because that address is what ends the wait.
+	Open(ctx context.Context, funnel Funnel, needsEnabling func(address string)) error
 	// Close withdraws exactly the given funnel and leaves every other one standing.
 	Close(ctx context.Context, funnel Funnel) error
 	// Funnels reports what is published right now.

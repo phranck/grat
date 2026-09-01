@@ -24,6 +24,15 @@ const (
 type Settings struct {
 	Version     int      `toml:"version"`
 	Directories []string `toml:"directories"`
+
+	// InstalledTailscale records that grat put Tailscale on this machine, so
+	// that uninstall knows it may take it away again.
+	//
+	// It cannot be worked out afterwards: a Tailscale that grat installed and one
+	// somebody installed themselves look identical on disk. Without this, an
+	// uninstall would either leave it behind or remove something it never put
+	// there, and the second is the one that cannot be undone.
+	InstalledTailscale bool `toml:"installed_tailscale,omitempty"`
 }
 
 // Store provides filesystem seams for settings operations. Zero-valued hooks
@@ -298,7 +307,12 @@ func (store Store) canonicalize(settings Settings) (Settings, error) {
 		directories = append(directories, canonical)
 	}
 	sort.Strings(directories)
-	return Settings{Version: settings.Version, Directories: directories}, nil
+	// The value that came in is returned with the directories replaced, rather
+	// than a new one built from the fields this function happens to know. A fresh
+	// struct silently drops every other field, which is how the note that grat
+	// installed Tailscale was lost on each save.
+	settings.Directories = directories
+	return settings, nil
 }
 
 func canonicalExistingPath(path string) (string, error) {

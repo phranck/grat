@@ -408,13 +408,14 @@ func (value Config) Validate() error {
 			continue
 		}
 
-		portRange, _ := service.Role.PortRange()
 		if service.Port == 0 {
 			return fmt.Errorf("%s.port is required for role %q", prefix, service.Role)
 		}
-		if service.Port < portRange.First || service.Port > portRange.Last {
-			return fmt.Errorf("%s.port %d is outside the %s range %d-%d", prefix, service.Port, service.Role, portRange.First, portRange.Last)
-		}
+		// A port outside its role's range is deliberately not an error here. The
+		// ranges govern what grat allocates, not what may exist, and a range that
+		// moves would otherwise make a file that was valid when written refuse to
+		// load, with the command that repairs it unable to read it either.
+		// PortsOutsideTheirRange reports them instead.
 		if !strings.HasPrefix(service.HealthPath, "/") {
 			return fmt.Errorf("%s.health_path must be an absolute path", prefix)
 		}
@@ -544,6 +545,50 @@ func Roles() []Role {
 // naming a port after one was added or removed here.
 func FunnelPublicPorts() []int {
 	return slices.Clone(funnelPublicPorts)
+}
+
+// PortOutsideRange is one service whose port does not sit in the range its role
+// allocates from.
+type PortOutsideRange struct {
+	// Service is the name as the configuration gives it.
+	Service string
+	// Role is the role that decides the range.
+	Role Role
+	// Port is what the configuration holds.
+	Port int
+	// Allowed is the range the role allocates from.
+	Allowed PortRange
+}
+
+// PortsOutsideTheirRange lists the services whose port lies outside the range of
+// their role.
+//
+// This is a report rather than a validation failure. The ranges keep grat's own
+// allocations from colliding, so a port outside one is worth saying and worth
+// repairing with ports reassign, but it does not stop the configuration being
+// read. A file that was valid when written would otherwise become unreadable
+// whenever a range moves, and the command that repairs it reads the same file.
+func (value Config) PortsOutsideTheirRange() []PortOutsideRange {
+	outside := make([]PortOutsideRange, 0)
+	for _, service := range value.Services {
+		if service.Port == 0 {
+			continue
+		}
+		allowed, known := service.Role.PortRange()
+		if !known || allowed.First == 0 {
+			continue
+		}
+		if service.Port >= allowed.First && service.Port <= allowed.Last {
+			continue
+		}
+		outside = append(outside, PortOutsideRange{
+			Service: service.Name,
+			Role:    service.Role,
+			Port:    service.Port,
+			Allowed: allowed,
+		})
+	}
+	return outside
 }
 
 // InferRole maps conventional service names to the narrowest matching role.

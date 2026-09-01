@@ -12,8 +12,10 @@ import (
 
 	"github.com/phranck/grat/internal/config"
 	"github.com/phranck/grat/internal/operations"
+	"github.com/phranck/grat/internal/project"
 	gratruntime "github.com/phranck/grat/internal/runtime"
 	"github.com/phranck/grat/internal/settings"
+	"github.com/phranck/grat/internal/tailscale"
 )
 
 type installationKind int
@@ -73,11 +75,15 @@ func (service Service) uninstallLocked(ctx context.Context, store settings.Store
 	if err := service.ensureNoActiveServices(ctx, artifacts); err != nil {
 		return Result{}, err
 	}
-	deleteState, err := confirm(output, input, "Delete all .grat directories? [Y/n]: ")
+	// The state below .grat is grat's own and is regenerated on the next start,
+	// so removing it is the expected answer.
+	deleteState, err := confirm(output, input, "Delete all .grat directories? [Y/n]: ", true)
 	if err != nil {
 		return Result{}, err
 	}
-	deleteConfigs, err := confirm(output, input, "Delete all grat.config files? [Y/n]: ")
+	// A grat.config is the user's own work and survives a reinstall, so it is
+	// kept unless it is asked for explicitly.
+	deleteConfigs, err := confirm(output, input, "Delete all grat.config files? [y/N]: ", false)
 	if err != nil {
 		return Result{}, err
 	}
@@ -90,6 +96,11 @@ func (service Service) uninstallLocked(ctx context.Context, store settings.Store
 		if err := removeArtifacts(roots, artifacts.configFiles); err != nil {
 			return Result{}, err
 		}
+	}
+	// Before the settings go, because the note that grat installed Tailscale is
+	// in them and removing them first would lose the only record of it.
+	if err := service.removeTailscale(ctx, store, input, output); err != nil {
+		return Result{}, err
 	}
 	if err := service.removeGlobalSettings(store); err != nil {
 		return Result{}, err
@@ -142,6 +153,13 @@ func discoverUninstallArtifactsWithLimits(roots []string, limits artifactScanLim
 			if walkErr != nil {
 				return walkErr
 			}
+			// A project root sits a few levels below a registered directory, so
+			// anything deeper is the contents of a project rather than another
+			// one. Walking it is what makes the entry count depend on how large
+			// the projects are instead of on how many there are.
+			if entry.IsDir() && project.DeeperThanScan(absRoot, path) {
+				return filepath.SkipDir
+			}
 			entries++
 			if entries > limits.MaxEntries {
 				return fmt.Errorf("artifact scan exceeds maximum entry count of %d", limits.MaxEntries)
@@ -164,7 +182,7 @@ func discoverUninstallArtifactsWithLimits(roots []string, limits artifactScanLim
 					}
 					return filepath.SkipDir
 				}
-				if ignoredUninstallDirectory(entry.Name()) {
+				if project.SkipsScanning(entry.Name()) {
 					return filepath.SkipDir
 				}
 				return nil
@@ -186,15 +204,6 @@ func discoverUninstallArtifactsWithLimits(roots []string, limits artifactScanLim
 		}
 	}
 	return artifacts, nil
-}
-
-func ignoredUninstallDirectory(name string) bool {
-	switch name {
-	case ".git", ".worktrees", "node_modules":
-		return true
-	default:
-		return false
-	}
 }
 
 func (service Service) ensureNoActiveServices(ctx context.Context, artifacts uninstallArtifacts) error {
@@ -249,7 +258,10 @@ func removeArtifacts(roots []string, paths []string) error {
 	return nil
 }
 
-func confirm(output io.Writer, input io.Reader, prompt string) (bool, error) {
+// confirm asks one question. defaultAnswer is what a bare Enter means, and it
+// differs by question: state grat wrote goes without being asked twice, whilst
+// a configuration somebody wrote themselves is kept unless they say otherwise.
+func confirm(output io.Writer, input io.Reader, prompt string, defaultAnswer bool) (bool, error) {
 	if _, err := io.WriteString(output, prompt); err != nil {
 		return false, err
 	}
@@ -258,7 +270,9 @@ func confirm(output io.Writer, input io.Reader, prompt string) (bool, error) {
 		return false, err
 	}
 	switch strings.ToLower(strings.TrimSpace(answer)) {
-	case "", "y", "yes":
+	case "":
+		return defaultAnswer, nil
+	case "y", "yes":
 		return true, nil
 	case "n", "no":
 		return false, nil
@@ -382,4 +396,56 @@ func (service Service) remove(path string) error {
 		return service.Remove(path)
 	}
 	return os.Remove(path)
+}
+
+// removeTailscale takes Tailscale off the machine, but only where grat is the
+// one that put it there.
+//
+// Two things have to agree before anything happens: the note grat wrote when it
+// installed, and the executable still sitting where that installation puts it.
+// A person who replaced it with one of their own keeps it, because taking away
+// something grat did not install is the one mistake here that cannot be undone.
+//
+// A refused answer, a missing note or an unknown location all mean the same
+// thing, which is that nothing is touched.
+func (service Service) removeTailscale(ctx context.Context, store settings.Store, input io.Reader, output io.Writer) error {
+	value, exists, err := store.Load()
+	if err != nil || !exists || !value.InstalledTailscale {
+		return nil
+	}
+
+	_, client, err := tailscale.Inspect(ctx)
+	if err != nil {
+		return nil
+	}
+	executable := client.Executable()
+	if !tailscale.IsInstalledByPackageManager(executable) {
+		return nil
+	}
+
+	remove, err := confirm(output, input,
+		"Remove Tailscale, which grat installed? [Y/n]: ", true)
+	if err != nil {
+		return err
+	}
+	if !remove {
+		return nil
+	}
+
+	steps, err := tailscale.RemovalPath(executable)
+	if err != nil {
+		return nil
+	}
+	for _, step := range steps {
+		if _, writeErr := fmt.Fprintf(output, "  %s: %s\n", step.Subject, step.Display); writeErr != nil {
+			return writeErr
+		}
+		if runErr := tailscale.RunRemovalStep(ctx, step, output); runErr != nil {
+			if step.Optional {
+				continue
+			}
+			return tailscale.ErrRemovalStepFailed{Step: step, Err: runErr}
+		}
+	}
+	return nil
 }
