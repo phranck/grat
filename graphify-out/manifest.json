@@ -1130,9 +1130,9 @@
     "semantic_hash": "5b861ea183a3b6a26ff0010c699c7d6e"
   },
   "/Users/phranck/Developer/Projects/cli/grat/.claude/skills/release/SKILL.md": {
-    "mtime": 1788305785.1330025,
-    "ast_hash": "a386f480453dc188ddfb7bfed2ef4361",
-    "semantic_hash": "a386f480453dc188ddfb7bfed2ef4361"
+    "mtime": 1788384301.7955225,
+    "ast_hash": "080616c6ee8cbd1416d6664d9d12cc6c",
+    "semantic_hash": "080616c6ee8cbd1416d6664d9d12cc6c"
   },
   "/Users/phranck/Developer/Projects/cli/grat/.github/dependabot.yml": {
     "mtime": 1788359106.8998582,
@@ -1145,14 +1145,14 @@
     "semantic_hash": "0e40713edda7b548eb98986638ff90aa"
   },
   "/Users/phranck/Developer/Projects/cli/grat/.github/workflows/pages.yml": {
-    "mtime": 1788296968.0171733,
-    "ast_hash": "60329c2ec21a33b25aac0e403c927e89",
-    "semantic_hash": "60329c2ec21a33b25aac0e403c927e89"
+    "mtime": 1788384301.7956705,
+    "ast_hash": "172bf645cda81456e79e4a86c23356b1",
+    "semantic_hash": "172bf645cda81456e79e4a86c23356b1"
   },
   "/Users/phranck/Developer/Projects/cli/grat/.github/workflows/release.yml": {
-    "mtime": 1788359106.9004169,
-    "ast_hash": "804d9386ea0bf185ea3c6c5ae3dcc89c",
-    "semantic_hash": "804d9386ea0bf185ea3c6c5ae3dcc89c"
+    "mtime": 1788384301.7957788,
+    "ast_hash": "4a4a7b5fa7fa0cb2cbadd8b857484f47",
+    "semantic_hash": "4a4a7b5fa7fa0cb2cbadd8b857484f47"
   },
   "/Users/phranck/Developer/Projects/cli/grat/.github/workflows/security.yml": {
     "mtime": 1788359106.900745,
@@ -1195,9 +1195,9 @@
     "semantic_hash": "8ca80c8662c6f988dfe7107e6f8d0ee0"
   },
   "/Users/phranck/Developer/Projects/cli/grat/docs/index.html": {
-    "mtime": 1788375864.2985837,
-    "ast_hash": "56f2e4b775eff5c672a527d7cf8d769c",
-    "semantic_hash": "56f2e4b775eff5c672a527d7cf8d769c"
+    "mtime": 1788384336.7999256,
+    "ast_hash": "0ca9924afc9d6a8e0b0843d44c8dacc7",
+    "semantic_hash": "0ca9924afc9d6a8e0b0843d44c8dacc7"
   },
   "/Users/phranck/Developer/Projects/cli/grat/docs/og/card.html": {
     "mtime": 1788287836.0793712,
