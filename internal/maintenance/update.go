@@ -501,11 +501,24 @@ func (service Service) command(ctx context.Context, name string, arguments ...st
 	return service.Command(ctx, name, arguments...)
 }
 
+// buildInfo answers how the running grat was built, reading the executable that
+// is actually running rather than the name it was invoked by.
+//
+// It goes through the same two seams the update path uses, so a test can point
+// it at a file it wrote itself.
 func (service Service) buildInfo() (string, string, bool) {
-	if service.BuildInfo == nil {
-		return runningBuildInfo()
+	if service.BuildInfo != nil {
+		return service.BuildInfo()
 	}
-	return service.BuildInfo()
+	path, err := service.executable()
+	if err != nil {
+		return "", "", false
+	}
+	resolved, err := service.evalSymlinks(path)
+	if err != nil {
+		return "", "", false
+	}
+	return runningBuildInfo(resolved)
 }
 
 func (service Service) currentVersion() string {

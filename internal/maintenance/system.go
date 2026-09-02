@@ -27,9 +27,12 @@ const (
 // Service owns side-effecting maintenance operations. Hooks make all external
 // dependencies replaceable by isolated test doubles.
 type Service struct {
-	Executable              func() (string, error)
-	EvalSymlinks            func(string) (string, error)
-	Command                 func(context.Context, string, ...string) ([]byte, error)
+	Executable   func() (string, error)
+	EvalSymlinks func(string) (string, error)
+	Command      func(context.Context, string, ...string) ([]byte, error)
+	// BuildInfo answers how the running grat was built. It is left unset in
+	// production, where the answer is read from the running executable through
+	// Executable and EvalSymlinks; a test sets it to answer without a binary.
 	BuildInfo               func() (string, string, bool)
 	CurrentVersion          func() string
 	ReleaseAPI              string
@@ -58,7 +61,6 @@ func DefaultService() Service {
 		Executable:              os.Executable,
 		EvalSymlinks:            filepath.EvalSymlinks,
 		Command:                 runCommand,
-		BuildInfo:               runningBuildInfo,
 		CurrentVersion:          version.Current,
 		ReleaseAPI:              defaultReleaseAPI,
 		HTTPClient:              &http.Client{Timeout: 30 * time.Second},
@@ -81,8 +83,16 @@ func runCommand(ctx context.Context, name string, arguments ...string) ([]byte, 
 	return output, nil
 }
 
-func runningBuildInfo() (string, string, bool) {
-	info, err := buildinfo.ReadFile(os.Args[0])
+// runningBuildInfo reads the Go build information out of the binary at path.
+//
+// The path has to be the running executable, resolved through its symlinks, and
+// never os.Args[0]. That first argument is whatever the shell was given, so a
+// grat invoked by name is looked for in the working directory, and any project
+// directory may hold a file called grat. The answer steers grat update and
+// grat uninstall between the Homebrew, the go install and the direct route, so
+// reading the wrong file sends both to the wrong one.
+func runningBuildInfo(path string) (string, string, bool) {
+	info, err := buildinfo.ReadFile(path)
 	if err != nil || info == nil {
 		return "", "", false
 	}
