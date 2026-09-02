@@ -1,0 +1,22 @@
+version: 2
+
+# Two ecosystems, because grat has two kinds of dependency and only one of them
+# is visible in go.mod. The actions are pinned by commit hash, which is what
+# makes a workflow reproducible and what stops anybody moving a tag underneath
+# it, and the price of that is that somebody has to move the pins.
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "Chore:"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "Chore:"

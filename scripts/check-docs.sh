@@ -167,3 +167,6 @@ require_in CONTRIBUTING.md 'Go 1.25.13 or newer'
 require_in SECURITY.md '`BACKEND_URL`'
 require_in .github/workflows/ci.yml 'go build -trimpath -o dist/grat ./cmd/grat'
 require_in .github/workflows/release.yml 'dist/grat_${VERSION}_${GOOS}_${GOARCH}'
+# Without this the two Linux binaries are linked against the runner's C library
+# and the two macOS ones are not, so the four differ in what they depend on.
+require_in .github/workflows/release.yml 'CGO_ENABLED: 0'
