@@ -55,9 +55,18 @@ jobs:
       # The nosec annotations in the code name this tool, so a reader takes them
       # as a record that it ran. Nineteen of them had been written whilst nothing
       # ran it, and five findings nobody had answered were waiting underneath.
+      #
+      # One runner, both platforms. A file guarded by a build tag is not compiled
+      # for the other one and is therefore not analysed there either, which is
+      # the same reason the vet and lint steps of scripts/gates.sh cover both.
       - name: Security scan
         if: matrix.name == 'Linux Intel'
-        run: go tool gosec -quiet -exclude-generated ./...
+        run: |
+          scanner=$(mktemp -d)/gosec
+          go build -o "$scanner" github.com/securego/gosec/v2/cmd/gosec
+          for platform in darwin linux; do
+            GOOS=$platform "$scanner" -quiet -exclude-generated ./...
+          done
       # Documentation.md is generated from the manual, so this is what stops a
       # change to the manual reaching main without the document following it.
       # The gate existed before and nothing ran it, which is how four wrong
