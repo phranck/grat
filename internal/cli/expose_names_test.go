@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/phranck/grat/internal/tailscale"
 	"github.com/phranck/grat/internal/tailscale/tailscaletest"
 )
 
@@ -19,10 +20,10 @@ func TestNamesSeparatedHoweverTheyWereTyped(t *testing.T) {
 	t.Parallel()
 
 	for name, arguments := range map[string][]string{
-		"spaces":            {"backend", "frontend"},
-		"commas and spaces": {"backend,", "frontend"},
-		"commas alone":      {"backend,frontend"},
-		"a trailing comma":  {"backend,", "frontend,"},
+		"spaces":            {"backend", "dashboard"},
+		"commas and spaces": {"backend,", "dashboard"},
+		"commas alone":      {"backend,dashboard"},
+		"a trailing comma":  {"backend,", "dashboard,"},
 	} {
 		store, cwd := newCLITestStore(t)
 		root := exposeProject(t, cwd)
@@ -69,10 +70,16 @@ func TestHideTakesThemTheSameWay(t *testing.T) {
 
 	store, cwd := newCLITestStore(t)
 	root := exposeProject(t, cwd)
-	client := &tailscaletest.Client{Name: "fixture.tail1234.ts.net"}
+	client := &tailscaletest.Client{
+		Name: "fixture.tail1234.ts.net",
+		Published: []tailscale.Funnel{
+			{Path: "/api/webhooks/creem", PublicPort: 443, Target: "http://localhost:4001"},
+			{Path: "/admin", PublicPort: 443, Target: "http://localhost:4500"},
+		},
+	}
 
 	var stdout, stderr bytes.Buffer
-	code := runWithEnvironment(context.Background(), []string{"hide", "backend,", "frontend"}, root,
+	code := runWithEnvironment(context.Background(), []string{"hide", "backend,", "dashboard"}, root,
 		&stdout, &stderr, exposeEnvironment(t, store, root, client))
 	if code != 0 {
 		t.Fatalf("hide exit = %d, stderr = %q", code, stderr.String())

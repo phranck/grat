@@ -154,21 +154,25 @@ Publishes services to the internet through Tailscale Funnel, at a name that
 stays the same between runs. This is what a webhook from another server needs,
 since a service on your machine cannot otherwise be reached from outside.
 
-Several services can be named at once, and the word all takes every service that
-has an address to publish. A process-only service has none, so all passes over it
-rather than refusing; named on its own it is still an error, because the name
-says what you meant.
+A service is published only where a path says so. Use --path for one run, or a
+[services.expose] table for a path that always applies, and the one on the
+command line wins. A service that names neither is refused, because publishing
+all of a development server is a decision worth making on purpose: a request
+through a funnel reaches the service from the machine itself, so a debug toolbar
+or an interactive traceback treats the internet as local. Writing --path / or
+path = "/" publishes all of it, and grat says so in the line it reports.
 
-The whole service is published unless a path narrows it. Naming a path is worth
-it for a service whose only business outside is a callback, because everything
-else it serves then stays on the machine. A path names one path, so it goes with
-one service and is refused beside several.
+Several services can be named at once, and the word all takes every service that
+names a path. It names the ones it passed over, so a success never reads as more
+than it was. A process-only service has no address at all; all passes over it
+too, and naming it on its own is still an error, because the name says what you
+meant. A path names one path, so it goes with one service and is refused beside
+several.
 
 A funnel is its public port and its path rather than the service behind it, so
-two services that name no path both take the default and cannot both be public.
-grat refuses that before publishing anything, rather than letting the second
-replace the first, and says which two collide. Giving one of them its own path in
-a [services.expose] table is what lets both go out.
+two services asking for the same path cannot both be public. grat refuses that
+before publishing anything, rather than letting the second replace the first, and
+says which two collide. Giving one of them its own path is what lets both go out.
 
 Each service says what became of it. One that cannot be published does not undo
 the ones already published.
@@ -184,30 +188,33 @@ Where the tailnet has not enabled Funnel, grat says so and opens the page that
 grants it, which only the owner of that tailnet can do.
 `,
 		options: []commandOption{
-			{flag: "--path PATH", meaning: "Publish only this path for this run. It wins over a path in the configuration. Without either, the whole service is published."},
+			{flag: "--path PATH", meaning: "Publish this path for this run. It wins over a path in the configuration. Without either, nothing is published. A path of / is all of the service."},
 		},
 	},
 	{
 		usage: "expose status [name...]",
 		detail: `
 Reports what is currently published and at which address, for the named services
-or for all of them.
+or for all of them. A funnel is recognised by the local address it forwards to,
+so one opened with --path is listed as well, even though no path in the
+configuration matches it.
 `,
 	},
 	{
 		usage: "hide [--path P] NAME...",
 		detail: `
-Withdraws published services, so their addresses stop answering. It closes
-exactly what was published and leaves every other funnel standing, including one
-you set up yourself.
+Withdraws published services, so their addresses stop answering. It closes what
+Tailscale reports for those services and leaves every other funnel standing,
+including one you set up yourself.
 
-Several services can be named at once, and the word all takes every funnel this
-project currently has open, which grat reads from Tailscale rather than assuming.
-A service named explicitly is closed either way, so somebody who knows better
-than grat can still say so.
+Several services can be named at once, and the word all takes every service of
+this project that has an address. Which funnels belong to them is read from
+Tailscale rather than assumed, so an address opened with --path is closed as well.
+Naming a path closes exactly that one, which is the way to withdraw an address
+grat cannot see in the configuration.
 `,
 		options: []commandOption{
-			{flag: "--path PATH", meaning: "Withdraw only this path, where the service was published on more than one."},
+			{flag: "--path PATH", meaning: "Withdraw exactly this path, rather than everything Tailscale reports for the service."},
 		},
 	},
 	{

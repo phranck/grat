@@ -12,6 +12,40 @@ import (
 	"github.com/phranck/grat/internal/tailscale/tailscaletest"
 )
 
+// projectWithTheSamePath is two HTTP services that each ask for the same path,
+// which is the one way two services still collide once a path is required.
+func projectWithTheSamePath(t *testing.T, cwd string) string {
+	t.Helper()
+	content := `version = 1
+
+[project]
+name = "fixture"
+
+[[services]]
+name = "frontend"
+command = "npm run dev"
+role = "frontend"
+port = 3000
+host = "localhost"
+health_path = "/"
+
+  [services.expose]
+  path = "/"
+
+[[services]]
+name = "developer"
+command = "npm run dev:developer"
+role = "developer"
+port = 3150
+host = "localhost"
+health_path = "/"
+
+  [services.expose]
+  path = "/"
+`
+	return writeProjectConfig(t, cwd, content)
+}
+
 // projectWithoutPaths is two HTTP services, neither naming a path, which is what
 // a project looks like before anybody has thought about public access.
 func projectWithoutPaths(t *testing.T, cwd string) string {
@@ -37,6 +71,11 @@ port = 3150
 host = "localhost"
 health_path = "/"
 `
+	return writeProjectConfig(t, cwd, content)
+}
+
+func writeProjectConfig(t *testing.T, cwd string, content string) string {
+	t.Helper()
 	path := filepath.Join(cwd, project.ConfigFileName)
 	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 		t.Fatalf("write %s: %v", path, err)
@@ -52,7 +91,7 @@ func TestTwoServicesCannotShareOneFunnel(t *testing.T) {
 	t.Parallel()
 
 	store, cwd := newCLITestStore(t)
-	root := projectWithoutPaths(t, cwd)
+	root := projectWithTheSamePath(t, cwd)
 	client := &tailscaletest.Client{Name: "fixture.tail1234.ts.net"}
 
 	var stdout, stderr bytes.Buffer
@@ -74,8 +113,29 @@ func TestTwoServicesCannotShareOneFunnel(t *testing.T) {
 	}
 }
 
-// TestAllRefusesWhereNoServiceNamesAPath is the same collision arrived at
-// differently, and the way somebody is most likely to meet it.
+// TestAllRefusesWhereEveryServiceAsksForTheSamePath is the same collision
+// arrived at differently, and the way somebody is most likely to meet it.
+func TestAllRefusesWhereEveryServiceAsksForTheSamePath(t *testing.T) {
+	t.Parallel()
+
+	store, cwd := newCLITestStore(t)
+	root := projectWithTheSamePath(t, cwd)
+	client := &tailscaletest.Client{Name: "fixture.tail1234.ts.net"}
+
+	var stdout, stderr bytes.Buffer
+	code := runWithEnvironment(context.Background(), []string{"expose", "all"}, root,
+		&stdout, &stderr, exposeEnvironment(t, store, root, client))
+	if code == 0 {
+		t.Fatalf("expose all was accepted where every service takes the same path")
+	}
+	if len(client.Opened) != 0 {
+		t.Fatalf("something was published before the refusal: %+v", client.Opened)
+	}
+}
+
+// TestAllRefusesWhereNoServiceNamesAPath is what a project looks like before
+// anybody has thought about public access. Nothing there says it should be
+// public, so all publishes nothing and says why.
 func TestAllRefusesWhereNoServiceNamesAPath(t *testing.T) {
 	t.Parallel()
 
@@ -87,10 +147,13 @@ func TestAllRefusesWhereNoServiceNamesAPath(t *testing.T) {
 	code := runWithEnvironment(context.Background(), []string{"expose", "all"}, root,
 		&stdout, &stderr, exposeEnvironment(t, store, root, client))
 	if code == 0 {
-		t.Fatalf("expose all was accepted where every service takes the same path")
+		t.Fatalf("expose all was accepted where no service names a path")
 	}
 	if len(client.Opened) != 0 {
 		t.Fatalf("something was published before the refusal: %+v", client.Opened)
+	}
+	if !strings.Contains(stderr.String(), "names a path") {
+		t.Fatalf("the refusal does not say why: %q", stderr.String())
 	}
 }
 

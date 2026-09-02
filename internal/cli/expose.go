@@ -12,6 +12,7 @@ import (
 
 	"github.com/phranck/grat/internal/config"
 	"github.com/phranck/grat/internal/presentation"
+	"github.com/phranck/grat/internal/publish"
 	"github.com/phranck/grat/internal/tailscale"
 )
 
@@ -46,15 +47,16 @@ func runExpose(ctx context.Context, args []string, cwd string, environment envir
 	if err != nil {
 		return err
 	}
-	services, err := selectExposable(value, names, pathOverride)
+	selection, err := publish.Select(value, names, pathOverride)
 	if err != nil {
-		return err
-	}
-	if err := refuseCollidingFunnels(services, pathOverride); err != nil {
 		return err
 	}
 
 	output.Heading("Exposing services", value.Project.Name)
+	for _, name := range selection.PassedOver {
+		output.Step(presentation.StepInfo, name,
+			"names no path, so it stays private; add a [services.expose] table with a path to publish it")
+	}
 	client, err := environment.tailscale(ctx, environment, output)
 	if err != nil {
 		return err
@@ -73,9 +75,9 @@ func runExpose(ctx context.Context, args []string, cwd string, environment envir
 		_ = tailscale.OpenInBrowser(ctx, address)
 	}
 
-	published := make([]string, 0, len(services))
-	for _, service := range services {
-		funnel := funnelFor(service, pathOverride)
+	published := make([]string, 0, len(selection.Publications))
+	for _, publication := range selection.Publications {
+		service, funnel := publication.Service, publication.Funnel
 		output.Step(presentation.StepWorking, service.Name, "publishing "+funnel.Path)
 		// One service failing does not undo the ones already published, so each
 		// says what became of it rather than the command reporting a single
@@ -84,7 +86,7 @@ func runExpose(ctx context.Context, args []string, cwd string, environment envir
 			output.Step(presentation.StepFailure, service.Name, err.Error())
 			continue
 		}
-		output.Step(presentation.StepSuccess, service.Name, "reachable at "+funnel.PublicURL(hostname))
+		output.Step(presentation.StepSuccess, service.Name, reachableAt(publication, hostname))
 		published = append(published, service.Name)
 	}
 	if len(published) == 0 {
@@ -95,83 +97,26 @@ func runExpose(ctx context.Context, args []string, cwd string, environment envir
 	return nil
 }
 
-// selectExposable resolves the names a command was given into services.
+// reachableAt says where a service can now be read, and says in one sentence
+// when that is the whole of it rather than one path below it.
 //
-// The word all means every service that has an address to publish, so a
-// process-only service is passed over rather than refused: all is everything
-// that can be published rather than everything there is. Named explicitly, that
-// same service is still an error, because the name says what somebody meant.
-func selectExposable(value config.Config, names []string, pathOverride string) ([]config.Service, error) {
-	if len(names) == 1 && names[0] == allServices {
-		services := make([]config.Service, 0, len(value.Services))
-		for _, service := range value.Services {
-			if service.Port != 0 {
-				services = append(services, service)
-			}
-		}
-		if len(services) == 0 {
-			return nil, errors.New("this project has no service with an address to publish")
-		}
-		return services, nil
+// Publishing everything is what a path of "/" asks for, and somebody who has
+// just asked for it should see that they got it, because a development server
+// answering the internet is the one outcome worth naming out loud.
+func reachableAt(publication publish.Publication, hostname string) string {
+	address := publication.Funnel.PublicURL(hostname)
+	if publication.Whole() {
+		return "all of it is reachable at " + address
 	}
-
-	// A path narrows one publication to one path, which cannot mean anything
-	// across several services, so it is refused rather than applied to each.
-	if pathOverride != "" && len(names) > 1 {
-		return nil, errors.New("--path names one path, so it takes one service")
-	}
-	services := make([]config.Service, 0, len(names))
-	for _, name := range names {
-		if name == allServices {
-			return nil, errors.New("all selects every service, so it takes no other name beside it")
-		}
-		service, err := exposableService(value, name)
-		if err != nil {
-			return nil, err
-		}
-		services = append(services, service)
-	}
-	return services, nil
+	return "reachable at " + address
 }
 
-// refuseCollidingFunnels reports two services that would take the same funnel.
+// runHide withdraws whatever is published for the named services.
 //
-// A funnel is its public port and its path, not the service behind it, so two
-// services that name no path both take the default and the second replaces the
-// first. Publishing them one after another leaves the project with one public
-// address and grat having said it opened two.
-//
-// It refuses before anything is published rather than after, because a partial
-// publication leaves a project half public with no single command to undo it.
-func refuseCollidingFunnels(services []config.Service, pathOverride string) error {
-	type slot struct {
-		path string
-		port int
-	}
-	taken := map[slot]string{}
-	for _, service := range services {
-		path, port := service.Exposure()
-		if pathOverride != "" {
-			path = pathOverride
-		}
-		key := slot{path: path, port: port}
-		if first, exists := taken[key]; exists {
-			return fmt.Errorf(
-				"%s and %s would both be published at %s on port %d, and a funnel is that path and that port rather than the service behind it; give one of them its own path in a [services.expose] table",
-				first, service.Name, path, port,
-			)
-		}
-		taken[key] = service.Name
-	}
-	return nil
-}
-
-// allServices is the word that stands where a service name stands and selects
-// every one of them. A word rather than a flag, because it reads as what it
-// selects and sits where the thing it replaces sits.
-const allServices = "all"
-
-// runHide withdraws the funnel of one configured service.
+// What Tailscale reports decides what gets closed, and each funnel is recognised
+// by the service it forwards to. A funnel opened with --path is nowhere in the
+// configuration, so deriving one from the configuration would leave exactly that
+// address standing.
 func runHide(ctx context.Context, args []string, cwd string, environment environment, output presentation.Renderer) error {
 	names, pathOverride, err := parseExposeArguments("hide", args)
 	if err != nil {
@@ -185,9 +130,12 @@ func runHide(ctx context.Context, args []string, cwd string, environment environ
 	if err != nil {
 		return err
 	}
-	services, err := selectExposable(value, names, pathOverride)
+	services, err := publish.Named(value, names)
 	if err != nil {
 		return err
+	}
+	if pathOverride != "" && len(services) > 1 {
+		return errors.New("--path names one path, so it takes one service")
 	}
 
 	output.Heading("Hiding services", value.Project.Name)
@@ -195,37 +143,43 @@ func runHide(ctx context.Context, args []string, cwd string, environment environ
 	if err != nil {
 		return err
 	}
-
-	// What is actually published decides what all covers, since closing a funnel
-	// that was never open says something happened that did not. A named service
-	// is closed either way, so somebody who knows better than grat can still say
-	// so.
-	open, listed := []tailscale.Funnel{}, false
-	if len(names) == 1 && names[0] == allServices {
-		open, err = client.Funnels(ctx)
-		if err != nil {
-			return err
-		}
-		listed = true
+	open, err := client.Funnels(ctx)
+	if err != nil {
+		return err
 	}
 
 	closed := 0
 	for _, service := range services {
-		funnel := funnelFor(service, pathOverride)
-		if listed && !funnel.IsAmong(open) {
-			continue
+		for _, funnel := range funnelsToClose(service, pathOverride, open) {
+			if err := client.Close(ctx, funnel); err != nil {
+				output.Step(presentation.StepFailure, service.Name, err.Error())
+				continue
+			}
+			output.Step(presentation.StepSuccess, service.Name, funnel.Path+" is no longer reachable from the internet")
+			closed++
 		}
-		if err := client.Close(ctx, funnel); err != nil {
-			output.Step(presentation.StepFailure, service.Name, err.Error())
-			continue
-		}
-		output.Step(presentation.StepSuccess, service.Name, "no longer reachable from the internet")
-		closed++
 	}
 	if closed == 0 {
 		output.Step(presentation.StepInfo, "Public access", "nothing of this project was published")
 	}
 	return nil
+}
+
+// funnelsToClose returns what hide should withdraw for one service.
+//
+// Without --path that is everything Tailscale reports for the service. With it,
+// it is exactly the named path, which is the way to close an address grat does
+// not know about, such as one opened from another machine or before the
+// configuration changed.
+func funnelsToClose(service config.Service, pathOverride string, open []tailscale.Funnel) []tailscale.Funnel {
+	if pathOverride == "" {
+		return publish.FunnelsFor(service, open)
+	}
+	funnel, err := publish.FunnelFor(service, pathOverride)
+	if err != nil {
+		return nil
+	}
+	return []tailscale.Funnel{funnel}
 }
 
 // readyTailscale returns a client where the machine is already on a tailnet.
@@ -275,12 +229,14 @@ func runExposeStatus(ctx context.Context, args []string, cwd string, environment
 		if len(names) > 0 && !containsName(names, service.Name) {
 			continue
 		}
-		funnel := funnelFor(service, "")
-		if !funnel.IsAmong(published) {
-			rows = append(rows, []string{service.Name, funnel.Path, "closed", ""})
+		funnels := publish.FunnelsFor(service, published)
+		if len(funnels) == 0 {
+			rows = append(rows, []string{service.Name, configuredPath(service), "closed", ""})
 			continue
 		}
-		rows = append(rows, []string{service.Name, funnel.Path, "open", funnel.PublicURL(hostname)})
+		for _, funnel := range funnels {
+			rows = append(rows, []string{service.Name, funnel.Path, "open", funnel.PublicURL(hostname)})
+		}
 	}
 	if len(rows) == 0 {
 		output.Step(presentation.StepInfo, "Services", "this project has no service with an address to publish")
@@ -295,12 +251,14 @@ func runExposeStatus(ctx context.Context, args []string, cwd string, environment
 func parseExposeArguments(name string, args []string) ([]string, string, error) {
 	flags := flag.NewFlagSet(name, flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
-	path := flags.String("path", "", "publish only this path instead of the whole service")
+	path := flags.String("path", "", "publish this path of the service, where / is all of it")
 	if err := flags.Parse(args); err != nil {
 		return nil, "", err
 	}
-	if *path != "" && !strings.HasPrefix(*path, "/") {
-		return nil, "", fmt.Errorf("--path must begin with a slash, got %q", *path)
+	if *path != "" {
+		if err := publish.ValidatePath(*path); err != nil {
+			return nil, "", fmt.Errorf("--path: %w", err)
+		}
 	}
 	names, err := serviceNames(flags.Args())
 	if err != nil {
@@ -334,39 +292,14 @@ func serviceNames(arguments []string) ([]string, error) {
 	return names, nil
 }
 
-// exposableService returns the named service. Every HTTP service can be
-// published; a process-only worker cannot, because it has no address at all.
-func exposableService(value config.Config, name string) (config.Service, error) {
-	for _, service := range value.Services {
-		if service.Name != name {
-			continue
-		}
-		if service.Port == 0 {
-			return config.Service{}, fmt.Errorf("%s is a process-only service and has no address to publish", name)
-		}
-		return service, nil
+// configuredPath is the path a service would be published at, or a dash where it
+// names none and therefore stays private until a command gives it one.
+func configuredPath(service config.Service) string {
+	path, _ := service.Exposure()
+	if path == "" {
+		return "-"
 	}
-	return config.Service{}, fmt.Errorf("unknown service %q", name)
-}
-
-// funnelFor turns a service into the funnel that publishes it.
-//
-// Running the command is the decision, so a service that says nothing publishes
-// its whole address. Narrowing that to one path is possible in two ways, and the
-// one given on the command line wins over the one in the configuration:
-//
-//   - --path on the command line, for a single run
-//   - a [services.expose] section, for a path that always applies
-func funnelFor(service config.Service, pathOverride string) tailscale.Funnel {
-	path, publicPort := service.Exposure()
-	if pathOverride != "" {
-		path = pathOverride
-	}
-	return tailscale.Funnel{
-		Path:       path,
-		PublicPort: publicPort,
-		Target:     strings.TrimSuffix(service.URL(), "/"),
-	}
+	return path
 }
 
 func containsName(names []string, name string) bool {

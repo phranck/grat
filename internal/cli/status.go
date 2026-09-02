@@ -6,6 +6,7 @@ import (
 
 	"github.com/phranck/grat/internal/config"
 	"github.com/phranck/grat/internal/presentation"
+	"github.com/phranck/grat/internal/publish"
 	gratruntime "github.com/phranck/grat/internal/runtime"
 )
 
@@ -101,9 +102,11 @@ func publicAddresses(ctx context.Context, value config.Config, ready readyTailsc
 	if err != nil {
 		return addresses
 	}
+	// By target rather than by the path the configuration would derive, so an
+	// address opened with --path shows up here too. That is the one grat would
+	// otherwise never mention, and it is as public as any other.
 	for _, service := range exposable {
-		funnel := funnelFor(service, "")
-		if funnel.IsAmong(published) {
+		for _, funnel := range publish.FunnelsFor(service, published) {
 			addresses[service.Name] = funnel.PublicURL(hostname)
 		}
 	}

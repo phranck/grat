@@ -34,7 +34,7 @@ grat manages long-running development commands on macOS and Linux. A configured 
 - An HTTP service that takes a configurable local port and answers its health path with a status from 200 through 299.
 - A worker that has no HTTP port and only has to stay alive, such as a queue consumer or a file watcher.
 
-An HTTP service can also publish one path to the internet at an address that stays the same, which is what a webhook from a payment provider or any other server-to-server callback needs.
+An HTTP service can also publish one path to the internet at an address that stays the same, which is what a webhook from a payment provider or any other server-to-server callback needs. Which path that is has to be said, either in the configuration or on the command line, so a development server never goes public because nobody said otherwise.
 
 Each command runs from the project root through non-login `/bin/sh`, and receives its port in `PORT`. A command that puts itself in the background leaves nothing for grat to watch, and a service whose port is held by a separate daemon never becomes ready.
 

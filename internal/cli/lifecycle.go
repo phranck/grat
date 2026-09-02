@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/x/term"
 	"github.com/phranck/grat/internal/config"
 	"github.com/phranck/grat/internal/presentation"
+	"github.com/phranck/grat/internal/publish"
 	gratruntime "github.com/phranck/grat/internal/runtime"
 	"github.com/phranck/grat/internal/tailscale"
 )
@@ -125,14 +126,21 @@ func settleOrphanedFunnels(ctx context.Context, command string, value config.Con
 		output.Step(presentation.StepFailure, "Public access", "Tailscale did not answer, so nothing was closed")
 		return
 	}
+	open, err := client.Funnels(ctx)
+	if err != nil {
+		output.Step(presentation.StepFailure, "Public access", "Tailscale did not say what is published, so nothing was closed")
+		return
+	}
 	for _, service := range orphaned {
-		// Exactly what was published for that service, so a funnel somebody set
-		// up themselves is left standing.
-		if err := client.Close(ctx, funnelFor(service, "")); err != nil {
-			output.Step(presentation.StepFailure, service.Name, "could not be closed: "+err.Error())
-			continue
+		// Exactly what Tailscale reports for that service, so a funnel pointing
+		// somewhere else is left standing.
+		for _, funnel := range publish.FunnelsFor(service, open) {
+			if err := client.Close(ctx, funnel); err != nil {
+				output.Step(presentation.StepFailure, service.Name, "could not be closed: "+err.Error())
+				continue
+			}
+			output.Step(presentation.StepSuccess, service.Name, "no longer reachable from the internet")
 		}
-		output.Step(presentation.StepSuccess, service.Name, "no longer reachable from the internet")
 	}
 }
 

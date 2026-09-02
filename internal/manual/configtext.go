@@ -93,15 +93,17 @@ var serviceFields = []field{
 	{name: "host", required: "Optional.", meaning: "The host the health check addresses. The default is localhost. It is ignored for a worker."},
 	{name: "health_path", required: "Required for an HTTP service.", meaning: "An absolute path beginning with a slash. A worker leaves it out."},
 	{name: "inherit_env", required: "Optional.", meaning: "Names of further parent variables this service may receive, beyond the baseline below. PORT cannot be listed, because grat owns it."},
-	{name: "expose", required: "Optional.", meaning: "A table narrowing what grat expose publishes to a single path. Without it, the whole service is published."},
+	{name: "expose", required: "Optional.", meaning: "A table naming the single path grat expose publishes. Without it, the service is published only where a command gives it a path."},
 }
 
 // exposeIntro introduces the expose table.
 const exposeIntro = `
-This narrows what reaches the internet. It is worth writing for a service whose
-only business out there is a callback, because everything else it serves then
-stays on the machine, including whatever a development setup leaves more open
-than production would.
+This says what of a service reaches the internet, and a service without it
+reaches the internet only where a command names a path for one run. Naming one
+here is worth it for a service whose only business out there is a callback,
+because everything else it serves then stays on the machine, including whatever a
+development setup leaves more open than production would. A path of "/" publishes
+all of it, which is a decision written down rather than one grat makes for you.
 `
 
 // rolesIntro introduces the range table.
