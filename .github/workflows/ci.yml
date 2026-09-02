@@ -52,6 +52,12 @@ jobs:
         run: go build -trimpath -o dist/grat ./cmd/grat
       - name: Vulnerability scan
         run: go tool govulncheck ./...
+      # The nosec annotations in the code name this tool, so a reader takes them
+      # as a record that it ran. Nineteen of them had been written whilst nothing
+      # ran it, and five findings nobody had answered were waiting underneath.
+      - name: Security scan
+        if: matrix.name == 'Linux Intel'
+        run: go tool gosec -quiet -exclude-generated ./...
       # Documentation.md is generated from the manual, so this is what stops a
       # change to the manual reaching main without the document following it.
       # The gate existed before and nothing ran it, which is how four wrong

@@ -74,7 +74,14 @@ func DefaultService() Service {
 	}
 }
 
+// runCommand runs one of the helpers grat asks things of.
+//
+// The name and every argument are grat's own literals: brew with a fixed
+// formula, and gh with a fixed repository and workflow. Nothing from a
+// configuration, a project directory or a release document reaches either, and
+// no shell is involved, so an argument is one argument however it is spelt.
 func runCommand(ctx context.Context, name string, arguments ...string) ([]byte, error) {
+	// #nosec G204 -- name and arguments are literals in this package; see above.
 	command := exec.CommandContext(ctx, name, arguments...)
 	output, err := command.CombinedOutput()
 	if err != nil {

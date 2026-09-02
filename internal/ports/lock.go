@@ -28,6 +28,8 @@ func withRegistryLockIn(ctx context.Context, lockDirectory string, callback func
 	if err := os.MkdirAll(lockDirectory, 0o700); err != nil {
 		return fmt.Errorf("create port lock directory: %w", err)
 	}
+	// #nosec G302 -- a directory, not a file: 0700 is the owner-only mode for
+	// one, because a directory needs its execute bit to be entered at all.
 	if err := os.Chmod(lockDirectory, 0o700); err != nil {
 		return fmt.Errorf("set port lock directory permissions: %w", err)
 	}

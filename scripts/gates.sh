@@ -61,6 +61,11 @@ go build -trimpath -o /dev/null ./cmd/grat
 step "Vulnerability scan"
 go tool govulncheck ./...
 
+# The nosec annotations in the code name this tool, so a reader takes them as a
+# record that it ran. It has to run for that to be true.
+step "Security scan"
+go tool gosec -quiet -exclude-generated ./...
+
 step "Documentation"
 sh scripts/check-docs.sh
 

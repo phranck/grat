@@ -601,7 +601,15 @@ func checksumForAsset(document string, assetName string) (string, error) {
 	return "", fmt.Errorf("checksums.txt has no checksum for %s", assetName)
 }
 
+// fileDigest hashes a file grat is about to trust or replace.
+//
+// Both paths it is given come from grat: the running executable, resolved
+// through os.Executable and its symlinks, and a temporary file this package
+// wrote itself. Neither is read from a configuration or from a release
+// document, so there is no name here for anybody else to steer.
 func fileDigest(path string) (string, error) {
+	// #nosec G304 -- path is the running executable or grat's own temporary
+	// file; see above.
 	file, err := os.Open(path)
 	if err != nil {
 		return "", err
