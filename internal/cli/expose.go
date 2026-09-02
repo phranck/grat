@@ -139,9 +139,13 @@ func runHide(ctx context.Context, args []string, cwd string, environment environ
 	}
 
 	output.Heading("Hiding services", value.Project.Name)
-	client, err := environment.tailscale(ctx, environment, output)
-	if err != nil {
-		return err
+	// The reporting provider, because a command that takes something away must
+	// not put Tailscale on the machine to do it. Where nothing is set up,
+	// nothing of this project is published either.
+	client, onTailnet := environment.tailscaleReady(ctx)
+	if !onTailnet {
+		output.Step(presentation.StepInfo, "Public access", tailscaleNotSetUp)
+		return nil
 	}
 	open, err := client.Funnels(ctx)
 	if err != nil {
@@ -182,6 +186,13 @@ func funnelsToClose(service config.Service, pathOverride string, open []tailscal
 	return []tailscale.Funnel{funnel}
 }
 
+// tailscaleNotSetUp is what a reporting command says where no tailnet answers.
+//
+// Missing, stopped and signed out all mean the same thing to somebody asking
+// what is published, which is that nothing of this project is, so one sentence
+// covers all three rather than three that would each need a different reply.
+const tailscaleNotSetUp = "Tailscale is not set up on this machine, so nothing of this project is published"
+
 // readyTailscale returns a client where the machine is already on a tailnet.
 //
 // Every failure means the same thing here, which is that nothing is published
@@ -207,9 +218,14 @@ func runExposeStatus(ctx context.Context, args []string, cwd string, environment
 	if err != nil {
 		return err
 	}
-	client, err := environment.tailscale(ctx, environment, output)
-	if err != nil {
-		return err
+	// The reporting provider, because asking what is published must not change
+	// the machine to answer. Where Tailscale is missing, stopped or signed out,
+	// the answer is the same: nothing of this project is public.
+	client, onTailnet := environment.tailscaleReady(ctx)
+	if !onTailnet {
+		output.Heading("Exposed services", value.Project.Name)
+		output.Step(presentation.StepInfo, "Public access", tailscaleNotSetUp)
+		return nil
 	}
 	published, err := client.Funnels(ctx)
 	if err != nil {

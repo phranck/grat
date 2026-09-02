@@ -224,6 +224,8 @@ Show what is published, with the public address.
 
 Reports what is currently published and at which address, for the named services or for all of them. A funnel is recognised by the local address it forwards to, so one opened with --path is listed as well, even though no path in the configuration matches it.
 
+It changes nothing on the machine. Where Tailscale is missing, stopped or signed out, it says so in one line and reports nothing published, because a question about what is public must not install anything to answer itself.
+
 ### grat hide [--path P] NAME...
 
 Withdraw published services; all takes every one this project has open.
@@ -231,6 +233,8 @@ Withdraw published services; all takes every one this project has open.
 Withdraws published services, so their addresses stop answering. It closes what Tailscale reports for those services and leaves every other funnel standing, including one you set up yourself.
 
 Several services can be named at once, and the word all takes every service of this project that has an address. Which funnels belong to them is read from Tailscale rather than assumed, so an address opened with --path is closed as well. Naming a path closes exactly that one, which is the way to withdraw an address grat cannot see in the configuration.
+
+It changes nothing on the machine either. Where Tailscale is missing, stopped or signed out, nothing of this project is published, so hide says that and stops.
 
 **`--path PATH`**
 
