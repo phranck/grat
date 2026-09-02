@@ -11,8 +11,13 @@ name: Pages
 on:
   push:
     branches: [main]
-  # A release publishes the site again, so the new version appears without
-  # waiting for the next push.
+  # Called by the release workflow once the release exists, which is what makes
+  # the new version appear on the site. It cannot be an event: the release is
+  # created with GITHUB_TOKEN, and GitHub raises no workflow run from an event
+  # a workflow's own token caused.
+  workflow_call:
+  # This one covers a release somebody publishes by hand in the web interface,
+  # which is the only case where the event does arrive.
   release:
     types: [published]
   workflow_dispatch:
