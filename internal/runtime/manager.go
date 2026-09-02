@@ -483,7 +483,36 @@ func (manager Manager) normalized() (Manager, error) {
 	if manager.HTTPClient == nil {
 		manager.HTTPClient = &http.Client{}
 	}
+	if manager.HTTPClient.CheckRedirect == nil {
+		// A copy, so a client a caller handed in keeps its own settings and its
+		// transport is still shared.
+		client := *manager.HTTPClient
+		client.CheckRedirect = refuseRedirectOffTheService
+		manager.HTTPClient = &client
+	}
 	return manager, nil
+}
+
+// refuseRedirectOffTheService stops a health probe following a redirect that
+// leaves the address it was sent to.
+//
+// The default client follows up to ten redirects wherever they point, so a
+// development server answering its health path with a redirect to another host
+// has grat fetch that host, from inside the developer's network and with
+// whatever the machine can reach. A probe asks one service whether it is ready,
+// and an answer from somewhere else is not an answer to that.
+func refuseRedirectOffTheService(request *http.Request, via []*http.Request) error {
+	if len(via) == 0 {
+		return nil
+	}
+	origin := via[0].URL
+	if request.URL.Scheme == origin.Scheme && request.URL.Host == origin.Host {
+		return nil
+	}
+	return fmt.Errorf(
+		"health probe was redirected to %s, which is not the service at %s",
+		request.URL.Redacted(), origin.Host,
+	)
 }
 
 func (manager Manager) selectServices(names []string) ([]config.Service, error) {

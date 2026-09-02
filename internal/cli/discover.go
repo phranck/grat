@@ -19,11 +19,6 @@ import (
 	"github.com/phranck/grat/internal/project"
 )
 
-// maxDiscoveryEntries bounds a search below a given path, the same way the port
-// registry bounds its own. A development folder holds far more files than
-// projects, and the walk is what keeps the difference from mattering.
-const maxDiscoveryEntries = 250_000
-
 // candidate is one directory a configuration could be written into.
 type candidate struct {
 	// Root is the directory itself.
@@ -131,7 +126,7 @@ func discoverBelow(ctx context.Context, path string, cwd string, input io.Reader
 // already carries a configuration or holds services grat could manage.
 func discoverCandidates(root string) ([]candidate, error) {
 	candidates := []candidate{}
-	_, err := project.Walk(root, maxDiscoveryEntries, func(path string, entry fs.DirEntry) error {
+	_, err := project.Walk(root, project.MaxScanEntries, func(path string, entry fs.DirEntry) error {
 		if !entry.IsDir() {
 			return nil
 		}

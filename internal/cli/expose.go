@@ -8,20 +8,12 @@ import (
 	"io"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/phranck/grat/internal/config"
 	"github.com/phranck/grat/internal/presentation"
+	"github.com/phranck/grat/internal/publish"
 	"github.com/phranck/grat/internal/tailscale"
 )
-
-// readinessInterval is how often grat asks whether the machine has finished
-// connecting to its tailnet.
-const readinessInterval = time.Second
-
-// signInTimeout bounds the wait for a person to complete the sign-in in their
-// browser. It is generous, because the wait is a human one.
-const signInTimeout = 5 * time.Minute
 
 // tailscaleProvider hands back a client that is ready to publish, setting the
 // machine up first where that is needed and permitted. Tests replace it with one
@@ -46,15 +38,16 @@ func runExpose(ctx context.Context, args []string, cwd string, environment envir
 	if err != nil {
 		return err
 	}
-	services, err := selectExposable(value, names, pathOverride)
+	selection, err := publish.Select(value, names, pathOverride)
 	if err != nil {
-		return err
-	}
-	if err := refuseCollidingFunnels(services, pathOverride); err != nil {
 		return err
 	}
 
 	output.Heading("Exposing services", value.Project.Name)
+	for _, name := range selection.PassedOver {
+		output.Step(presentation.StepInfo, name,
+			"names no path, so it stays private; add a [services.expose] table with a path to publish it")
+	}
 	client, err := environment.tailscale(ctx, environment, output)
 	if err != nil {
 		return err
@@ -73,9 +66,9 @@ func runExpose(ctx context.Context, args []string, cwd string, environment envir
 		_ = tailscale.OpenInBrowser(ctx, address)
 	}
 
-	published := make([]string, 0, len(services))
-	for _, service := range services {
-		funnel := funnelFor(service, pathOverride)
+	published := make([]string, 0, len(selection.Publications))
+	for _, publication := range selection.Publications {
+		service, funnel := publication.Service, publication.Funnel
 		output.Step(presentation.StepWorking, service.Name, "publishing "+funnel.Path)
 		// One service failing does not undo the ones already published, so each
 		// says what became of it rather than the command reporting a single
@@ -84,7 +77,7 @@ func runExpose(ctx context.Context, args []string, cwd string, environment envir
 			output.Step(presentation.StepFailure, service.Name, err.Error())
 			continue
 		}
-		output.Step(presentation.StepSuccess, service.Name, "reachable at "+funnel.PublicURL(hostname))
+		output.Step(presentation.StepSuccess, service.Name, reachableAt(publication, hostname))
 		published = append(published, service.Name)
 	}
 	if len(published) == 0 {
@@ -95,83 +88,26 @@ func runExpose(ctx context.Context, args []string, cwd string, environment envir
 	return nil
 }
 
-// selectExposable resolves the names a command was given into services.
+// reachableAt says where a service can now be read, and says in one sentence
+// when that is the whole of it rather than one path below it.
 //
-// The word all means every service that has an address to publish, so a
-// process-only service is passed over rather than refused: all is everything
-// that can be published rather than everything there is. Named explicitly, that
-// same service is still an error, because the name says what somebody meant.
-func selectExposable(value config.Config, names []string, pathOverride string) ([]config.Service, error) {
-	if len(names) == 1 && names[0] == allServices {
-		services := make([]config.Service, 0, len(value.Services))
-		for _, service := range value.Services {
-			if service.Port != 0 {
-				services = append(services, service)
-			}
-		}
-		if len(services) == 0 {
-			return nil, errors.New("this project has no service with an address to publish")
-		}
-		return services, nil
+// Publishing everything is what a path of "/" asks for, and somebody who has
+// just asked for it should see that they got it, because a development server
+// answering the internet is the one outcome worth naming out loud.
+func reachableAt(publication publish.Publication, hostname string) string {
+	address := publication.Funnel.PublicURL(hostname)
+	if publication.Whole() {
+		return "all of it is reachable at " + address
 	}
-
-	// A path narrows one publication to one path, which cannot mean anything
-	// across several services, so it is refused rather than applied to each.
-	if pathOverride != "" && len(names) > 1 {
-		return nil, errors.New("--path names one path, so it takes one service")
-	}
-	services := make([]config.Service, 0, len(names))
-	for _, name := range names {
-		if name == allServices {
-			return nil, errors.New("all selects every service, so it takes no other name beside it")
-		}
-		service, err := exposableService(value, name)
-		if err != nil {
-			return nil, err
-		}
-		services = append(services, service)
-	}
-	return services, nil
+	return "reachable at " + address
 }
 
-// refuseCollidingFunnels reports two services that would take the same funnel.
+// runHide withdraws whatever is published for the named services.
 //
-// A funnel is its public port and its path, not the service behind it, so two
-// services that name no path both take the default and the second replaces the
-// first. Publishing them one after another leaves the project with one public
-// address and grat having said it opened two.
-//
-// It refuses before anything is published rather than after, because a partial
-// publication leaves a project half public with no single command to undo it.
-func refuseCollidingFunnels(services []config.Service, pathOverride string) error {
-	type slot struct {
-		path string
-		port int
-	}
-	taken := map[slot]string{}
-	for _, service := range services {
-		path, port := service.Exposure()
-		if pathOverride != "" {
-			path = pathOverride
-		}
-		key := slot{path: path, port: port}
-		if first, exists := taken[key]; exists {
-			return fmt.Errorf(
-				"%s and %s would both be published at %s on port %d, and a funnel is that path and that port rather than the service behind it; give one of them its own path in a [services.expose] table",
-				first, service.Name, path, port,
-			)
-		}
-		taken[key] = service.Name
-	}
-	return nil
-}
-
-// allServices is the word that stands where a service name stands and selects
-// every one of them. A word rather than a flag, because it reads as what it
-// selects and sits where the thing it replaces sits.
-const allServices = "all"
-
-// runHide withdraws the funnel of one configured service.
+// What Tailscale reports decides what gets closed, and each funnel is recognised
+// by the service it forwards to. A funnel opened with --path is nowhere in the
+// configuration, so deriving one from the configuration would leave exactly that
+// address standing.
 func runHide(ctx context.Context, args []string, cwd string, environment environment, output presentation.Renderer) error {
 	names, pathOverride, err := parseExposeArguments("hide", args)
 	if err != nil {
@@ -185,48 +121,68 @@ func runHide(ctx context.Context, args []string, cwd string, environment environ
 	if err != nil {
 		return err
 	}
-	services, err := selectExposable(value, names, pathOverride)
+	services, err := publish.Named(value, names)
 	if err != nil {
 		return err
+	}
+	if pathOverride != "" && len(services) > 1 {
+		return errors.New("--path names one path, so it takes one service")
 	}
 
 	output.Heading("Hiding services", value.Project.Name)
-	client, err := environment.tailscale(ctx, environment, output)
+	// The reporting provider, because a command that takes something away must
+	// not put Tailscale on the machine to do it. Where nothing is set up,
+	// nothing of this project is published either.
+	client, onTailnet := environment.tailscaleReady(ctx)
+	if !onTailnet {
+		output.Step(presentation.StepInfo, "Public access", tailscaleNotSetUp)
+		return nil
+	}
+	open, err := client.Funnels(ctx)
 	if err != nil {
 		return err
-	}
-
-	// What is actually published decides what all covers, since closing a funnel
-	// that was never open says something happened that did not. A named service
-	// is closed either way, so somebody who knows better than grat can still say
-	// so.
-	open, listed := []tailscale.Funnel{}, false
-	if len(names) == 1 && names[0] == allServices {
-		open, err = client.Funnels(ctx)
-		if err != nil {
-			return err
-		}
-		listed = true
 	}
 
 	closed := 0
 	for _, service := range services {
-		funnel := funnelFor(service, pathOverride)
-		if listed && !funnel.IsAmong(open) {
-			continue
+		for _, funnel := range funnelsToClose(service, pathOverride, open) {
+			if err := client.Close(ctx, funnel); err != nil {
+				output.Step(presentation.StepFailure, service.Name, err.Error())
+				continue
+			}
+			output.Step(presentation.StepSuccess, service.Name, funnel.Path+" is no longer reachable from the internet")
+			closed++
 		}
-		if err := client.Close(ctx, funnel); err != nil {
-			output.Step(presentation.StepFailure, service.Name, err.Error())
-			continue
-		}
-		output.Step(presentation.StepSuccess, service.Name, "no longer reachable from the internet")
-		closed++
 	}
 	if closed == 0 {
 		output.Step(presentation.StepInfo, "Public access", "nothing of this project was published")
 	}
 	return nil
 }
+
+// funnelsToClose returns what hide should withdraw for one service.
+//
+// Without --path that is everything Tailscale reports for the service. With it,
+// it is exactly the named path, which is the way to close an address grat does
+// not know about, such as one opened from another machine or before the
+// configuration changed.
+func funnelsToClose(service config.Service, pathOverride string, open []tailscale.Funnel) []tailscale.Funnel {
+	if pathOverride == "" {
+		return publish.FunnelsFor(service, open)
+	}
+	funnel, err := publish.FunnelFor(service, pathOverride)
+	if err != nil {
+		return nil
+	}
+	return []tailscale.Funnel{funnel}
+}
+
+// tailscaleNotSetUp is what a reporting command says where no tailnet answers.
+//
+// Missing, stopped and signed out all mean the same thing to somebody asking
+// what is published, which is that nothing of this project is, so one sentence
+// covers all three rather than three that would each need a different reply.
+const tailscaleNotSetUp = "Tailscale is not set up on this machine, so nothing of this project is published"
 
 // readyTailscale returns a client where the machine is already on a tailnet.
 //
@@ -253,9 +209,14 @@ func runExposeStatus(ctx context.Context, args []string, cwd string, environment
 	if err != nil {
 		return err
 	}
-	client, err := environment.tailscale(ctx, environment, output)
-	if err != nil {
-		return err
+	// The reporting provider, because asking what is published must not change
+	// the machine to answer. Where Tailscale is missing, stopped or signed out,
+	// the answer is the same: nothing of this project is public.
+	client, onTailnet := environment.tailscaleReady(ctx)
+	if !onTailnet {
+		output.Heading("Exposed services", value.Project.Name)
+		output.Step(presentation.StepInfo, "Public access", tailscaleNotSetUp)
+		return nil
 	}
 	published, err := client.Funnels(ctx)
 	if err != nil {
@@ -275,12 +236,14 @@ func runExposeStatus(ctx context.Context, args []string, cwd string, environment
 		if len(names) > 0 && !containsName(names, service.Name) {
 			continue
 		}
-		funnel := funnelFor(service, "")
-		if !funnel.IsAmong(published) {
-			rows = append(rows, []string{service.Name, funnel.Path, "closed", ""})
+		funnels := publish.FunnelsFor(service, published)
+		if len(funnels) == 0 {
+			rows = append(rows, []string{service.Name, configuredPath(service), "closed", ""})
 			continue
 		}
-		rows = append(rows, []string{service.Name, funnel.Path, "open", funnel.PublicURL(hostname)})
+		for _, funnel := range funnels {
+			rows = append(rows, []string{service.Name, funnel.Path, "open", funnel.PublicURL(hostname)})
+		}
 	}
 	if len(rows) == 0 {
 		output.Step(presentation.StepInfo, "Services", "this project has no service with an address to publish")
@@ -295,12 +258,14 @@ func runExposeStatus(ctx context.Context, args []string, cwd string, environment
 func parseExposeArguments(name string, args []string) ([]string, string, error) {
 	flags := flag.NewFlagSet(name, flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
-	path := flags.String("path", "", "publish only this path instead of the whole service")
+	path := flags.String("path", "", "publish this path of the service, where / is all of it")
 	if err := flags.Parse(args); err != nil {
 		return nil, "", err
 	}
-	if *path != "" && !strings.HasPrefix(*path, "/") {
-		return nil, "", fmt.Errorf("--path must begin with a slash, got %q", *path)
+	if *path != "" {
+		if err := publish.ValidatePath(*path); err != nil {
+			return nil, "", fmt.Errorf("--path: %w", err)
+		}
 	}
 	names, err := serviceNames(flags.Args())
 	if err != nil {
@@ -334,39 +299,14 @@ func serviceNames(arguments []string) ([]string, error) {
 	return names, nil
 }
 
-// exposableService returns the named service. Every HTTP service can be
-// published; a process-only worker cannot, because it has no address at all.
-func exposableService(value config.Config, name string) (config.Service, error) {
-	for _, service := range value.Services {
-		if service.Name != name {
-			continue
-		}
-		if service.Port == 0 {
-			return config.Service{}, fmt.Errorf("%s is a process-only service and has no address to publish", name)
-		}
-		return service, nil
+// configuredPath is the path a service would be published at, or a dash where it
+// names none and therefore stays private until a command gives it one.
+func configuredPath(service config.Service) string {
+	path, _ := service.Exposure()
+	if path == "" {
+		return "-"
 	}
-	return config.Service{}, fmt.Errorf("unknown service %q", name)
-}
-
-// funnelFor turns a service into the funnel that publishes it.
-//
-// Running the command is the decision, so a service that says nothing publishes
-// its whole address. Narrowing that to one path is possible in two ways, and the
-// one given on the command line wins over the one in the configuration:
-//
-//   - --path on the command line, for a single run
-//   - a [services.expose] section, for a path that always applies
-func funnelFor(service config.Service, pathOverride string) tailscale.Funnel {
-	path, publicPort := service.Exposure()
-	if pathOverride != "" {
-		path = pathOverride
-	}
-	return tailscale.Funnel{
-		Path:       path,
-		PublicPort: publicPort,
-		Target:     strings.TrimSuffix(service.URL(), "/"),
-	}
+	return path
 }
 
 func containsName(names []string, name string) bool {
@@ -376,60 +316,6 @@ func containsName(names []string, name string) bool {
 		}
 	}
 	return false
-}
-
-// prepareTailscale walks the ladder and fixes what it can, so that a machine
-// without Tailscale reaches a public address from the one command that was typed.
-//
-// Installing Tailscale and starting its service happen without asking. They are
-// announced with the exact line that runs, because a person should know what
-// changed on their machine, but a question here would only stand between somebody
-// and the address they asked for.
-func prepareTailscale(ctx context.Context, environment environment, output presentation.Renderer) (tailscale.Client, error) {
-	for {
-		stage, client, err := tailscale.Inspect(ctx)
-		if err != nil {
-			return nil, err
-		}
-		switch stage {
-		case tailscale.StageReady:
-			return client, nil
-		case tailscale.StageMissing:
-			if err := installTailscale(ctx, environment, output); err != nil {
-				return nil, err
-			}
-		case tailscale.StageStopped:
-			if err := startTailscaleService(ctx, environment, output); err != nil {
-				return nil, err
-			}
-		case tailscale.StageSignedOut:
-			if err := signIn(ctx, client, environment, output); err != nil {
-				return nil, err
-			}
-		case tailscale.StageStarting:
-			if err := client.WaitUntilReady(ctx, readinessInterval); err != nil {
-				return nil, err
-			}
-		}
-	}
-}
-
-// installTailscale runs the vendor-documented installation for this system.
-func installTailscale(ctx context.Context, environment environment, output presentation.Renderer) error {
-	command, err := tailscale.InstallPath()
-	if err != nil {
-		return err
-	}
-	output.Step(presentation.StepInfo, "Tailscale", "is not installed on this machine")
-	announceMachineChange(output, command.Display, "")
-	output.Step(presentation.StepWorking, "Tailscale", "installing")
-	// Quietly: what a package manager prints is about itself, and the steps around
-	// this are what the reader is meant to follow.
-	if err := tailscale.RunQuietly(ctx, command.Name, command.Arguments); err != nil {
-		return err
-	}
-	output.Step(presentation.StepSuccess, "Tailscale", "installed")
-	return recordTailscaleInstall(environment)
 }
 
 // recordTailscaleInstall notes that grat put Tailscale on this machine.
@@ -450,79 +336,4 @@ func recordTailscaleInstall(environment environment) error {
 	value.InstalledTailscale = true
 	_ = environment.settings.Save(value)
 	return nil
-}
-
-// startTailscaleService starts the background service, saying beforehand that the
-// system will ask for a password.
-func startTailscaleService(ctx context.Context, environment environment, output presentation.Renderer) error {
-	command, err := tailscale.StartServicePath()
-	if err != nil {
-		return err
-	}
-	output.Step(presentation.StepInfo, "Tailscale", "its background service is not running")
-	if command.NeedsAdministrator {
-		output.Step(presentation.StepInfo, "Password", "the system will ask for yours, because the service touches the network")
-	}
-	announceMachineChange(output, command.Display, command.Note)
-	output.Step(presentation.StepWorking, "Tailscale", "starting the background service")
-	if err := tailscale.Run(ctx, command.Name, command.Arguments, environment.input, output.Writer()); err != nil {
-		return err
-	}
-	output.Step(presentation.StepSuccess, "Tailscale", "the background service is running")
-	return nil
-}
-
-// signIn connects this machine to a tailnet. The browser is where the account
-// lives, so this is the one step grat cannot take on somebody's behalf. It opens
-// the page and waits until the machine reports itself connected.
-func signIn(ctx context.Context, client tailscale.CommandClient, environment environment, output presentation.Renderer) error {
-	output.Step(presentation.StepInfo, "Tailnet", "this machine is signed in to no tailnet")
-	output.Step(presentation.StepWorking, "Sign-in", "opening the page in your browser")
-
-	signInContext, cancel := context.WithTimeout(ctx, signInTimeout)
-	defer cancel()
-
-	go func() {
-		address, err := waitForSignInAddress(signInContext, client)
-		if err != nil || address == "" {
-			return
-		}
-		_ = tailscale.OpenInBrowser(signInContext, address)
-	}()
-
-	if err := client.SignIn(signInContext); err != nil {
-		return err
-	}
-	if err := client.WaitUntilReady(signInContext, readinessInterval); err != nil {
-		return err
-	}
-	output.Step(presentation.StepSuccess, "Tailnet", "this machine is connected")
-	return nil
-}
-
-// waitForSignInAddress polls until Tailscale reports the address to open, which it
-// does only once the sign-in has begun.
-func waitForSignInAddress(ctx context.Context, client tailscale.CommandClient) (string, error) {
-	ticker := time.NewTicker(readinessInterval / 4)
-	defer ticker.Stop()
-	for {
-		address, err := client.SignInURL(ctx)
-		if err == nil && address != "" {
-			return address, nil
-		}
-		select {
-		case <-ctx.Done():
-			return "", ctx.Err()
-		case <-ticker.C:
-		}
-	}
-}
-
-// announceMachineChange names the exact line grat is about to run. It informs and
-// does not ask: the change is what the typed command needs in order to work.
-func announceMachineChange(output presentation.Renderer, line string, note string) {
-	output.Step(presentation.StepInfo, "Command", line)
-	if note != "" {
-		output.Step(presentation.StepInfo, "Note", note)
-	}
 }

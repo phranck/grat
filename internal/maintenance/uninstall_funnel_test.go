@@ -43,16 +43,17 @@ func TestOnlyWhatGratOpenedIsClosed(t *testing.T) {
 	}
 }
 
-// TestAServiceWithoutAnExposeTablePublishesAllOfItself pins the defaulting rule
-// that decides which funnel belongs to which service. Getting it wrong at
-// uninstall means closing the wrong funnel or missing grat's own.
-func TestAServiceWithoutAnExposeTablePublishesAllOfItself(t *testing.T) {
+// TestAServiceWithoutAnExposeTableNamesNoPath pins the rule that decides which
+// funnel belongs to which service. A service that names no path is published
+// only where a command gives it one, so there is no path to derive here, and
+// deriving one anyway would have uninstall close a funnel of somebody else's.
+func TestAServiceWithoutAnExposeTableNamesNoPath(t *testing.T) {
 	t.Parallel()
 
 	plain := config.Service{Name: "frontend", Role: config.RoleFrontend, Host: "localhost", Port: 3000}
 	path, publicPort := plain.Exposure()
-	if path != config.DefaultExposePath || publicPort != config.DefaultPublicPort {
-		t.Fatalf("path, port = %q, %d; want the documented defaults", path, publicPort)
+	if path != "" || publicPort != config.DefaultPublicPort {
+		t.Fatalf("path, port = %q, %d; want no path and the default port", path, publicPort)
 	}
 
 	narrowed := config.Service{

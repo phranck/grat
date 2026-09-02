@@ -62,8 +62,11 @@ func reportNewerVersion(ctx context.Context, command string, environment environ
 	}
 
 	installed := version.Current()
-	latest, err := latestKnownVersion(ctx, environment, installed)
-	if err != nil || latest == "" || latest == installed {
+	latest, err := latestKnownVersion(ctx, environment)
+	// Only a newer release is worth a line. Comparing the two for difference
+	// alone nagged about an older release for as long as GitHub carried one
+	// marked as the latest, and pointed at an update that would go backwards.
+	if err != nil || latest == "" || version.Compare(latest, installed) <= 0 {
 		return
 	}
 
@@ -73,7 +76,7 @@ func reportNewerVersion(ctx context.Context, command string, environment environ
 
 // latestKnownVersion returns the newest release grat knows of, asking only where
 // the remembered answer has expired.
-func latestKnownVersion(ctx context.Context, environment environment, installed string) (string, error) {
+func latestKnownVersion(ctx context.Context, environment environment) (string, error) {
 	path, err := updateCheckPath(environment)
 	if err != nil {
 		return "", err

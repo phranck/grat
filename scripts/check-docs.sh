@@ -165,5 +165,16 @@ else
 fi
 require_in CONTRIBUTING.md 'Go 1.25.13 or newer'
 require_in SECURITY.md '`BACKEND_URL`'
+# The one application file grat reads, and the helpers it resolves through PATH.
+# SECURITY.md said grat read neither, whilst detection was reading a .env for one
+# key and five helpers were being looked up on PATH.
+require_in SECURITY.md '`QUEUE_CONNECTION`'
+require_in SECURITY.md 'resolved through `PATH`'
+# The install snippet verifies before it installs. Checking a binary that is
+# already on the path is checking the wrong moment.
+require_in README.md 'gh attestation verify ./grat'
 require_in .github/workflows/ci.yml 'go build -trimpath -o dist/grat ./cmd/grat'
 require_in .github/workflows/release.yml 'dist/grat_${VERSION}_${GOOS}_${GOARCH}'
+# Without this the two Linux binaries are linked against the runner's C library
+# and the two macOS ones are not, so the four differ in what they depend on.
+require_in .github/workflows/release.yml 'CGO_ENABLED: 0'

@@ -156,7 +156,7 @@ grat signals only what it can prove is its own: the recorded process must still 
 
 The signal goes to the whole process group, which is what takes the descendants with it, such as the Vapor application under swift run or a reload process under Vite. SIGTERM comes first, then SIGKILL after shutdown_timeout if the recorded process is still there.
 
-Where a service is still published, the command says so and offers to close it, because a funnel outlives the service behind it and the address now points at nothing. Declining leaves it open and says how to close it later. Where there is no terminal to ask in, it is reported and left alone, since closing somebody's public address unasked is not something to do quietly.
+Where a service is still published, the command closes its public address and says so, with the line that opens it again. A funnel outlives the service behind it, so one left standing forwards to a local port that nothing holds any more, and whatever binds that port next is what answers the internet. No question is put, because it could only be put where there is a terminal, and a stop inside a script is exactly where the address would be left open. Nothing is lost by this: a funnel's address is the tailnet name and the path, so reopening one gives back the address it had.
 
 ### grat restart [name...]
 
@@ -202,39 +202,45 @@ Publish services to the internet; all takes every one, --path narrows a single o
 
 Publishes services to the internet through Tailscale Funnel, at a name that stays the same between runs. This is what a webhook from another server needs, since a service on your machine cannot otherwise be reached from outside.
 
-Several services can be named at once, and the word all takes every service that has an address to publish. A process-only service has none, so all passes over it rather than refusing; named on its own it is still an error, because the name says what you meant.
+A service is published only where a path says so. Use --path for one run, or a [services.expose] table for a path that always applies, and the one on the command line wins. A service that names neither is refused, because publishing all of a development server is a decision worth making on purpose: a request through a funnel reaches the service from the machine itself, so a debug toolbar or an interactive traceback treats the internet as local. Writing --path / or path = "/" publishes all of it, and grat says so in the line it reports.
 
-The whole service is published unless a path narrows it. Naming a path is worth it for a service whose only business outside is a callback, because everything else it serves then stays on the machine. A path names one path, so it goes with one service and is refused beside several.
+Several services can be named at once, and the word all takes every service that names a path. It names the ones it passed over, so a success never reads as more than it was. A process-only service has no address at all; all passes over it too, and naming it on its own is still an error, because the name says what you meant. A path names one path, so it goes with one service and is refused beside several.
 
-A funnel is its public port and its path rather than the service behind it, so two services that name no path both take the default and cannot both be public. grat refuses that before publishing anything, rather than letting the second replace the first, and says which two collide. Giving one of them its own path in a [services.expose] table is what lets both go out.
+A funnel is its public port and its path rather than the service behind it, so two services asking for the same path cannot both be public. grat refuses that before publishing anything, rather than letting the second replace the first, and says which two collide. Giving one of them its own path is what lets both go out.
 
 Each service says what became of it. One that cannot be published does not undo the ones already published.
 
-Where Tailscale is missing, grat installs it, starts its background service and signs the machine in. It reports each step and does not ask, because that is what the typed command needs in order to work. Two steps cannot be taken for you: the background service starts with administrator rights, so the system asks for your password, and the sign-in happens in the browser, which grat opens. An existing Tailscale is never upgraded, reconfigured or removed.
+Where Tailscale is missing, grat asks before it changes anything. It says in two sentences what Tailscale is, prints the exact command it would run, and waits for a yes; the answer is No unless you type otherwise. Saying no ends the command and leaves the machine alone, and the next grat expose asks again. Where there is no terminal to answer in, nothing is agreed to and the commands are printed so you can run them yourself. Everything else in grat works without Tailscale.
+
+Once you have agreed, grat installs it, starts its background service and signs the machine in, reporting each step. Two of them cannot be taken for you: the background service starts with administrator rights, so the system asks for your password, and the sign-in happens in the browser, which grat opens. An existing Tailscale is never upgraded, reconfigured or removed.
 
 Where the tailnet has not enabled Funnel, grat says so and opens the page that grants it, which only the owner of that tailnet can do.
 
 **`--path PATH`**
 
-Publish only this path for this run. It wins over a path in the configuration. Without either, the whole service is published.
+Publish this path for this run. It wins over a path in the configuration. Without either, nothing is published. A path of / is all of the service.
 
 ### grat expose status [name...]
 
 Show what is published, with the public address.
 
-Reports what is currently published and at which address, for the named services or for all of them.
+Reports what is currently published and at which address, for the named services or for all of them. A funnel is recognised by the local address it forwards to, so one opened with --path is listed as well, even though no path in the configuration matches it.
+
+It changes nothing on the machine. Where Tailscale is missing, stopped or signed out, it says so in one line and reports nothing published, because a question about what is public must not install anything to answer itself.
 
 ### grat hide [--path P] NAME...
 
 Withdraw published services; all takes every one this project has open.
 
-Withdraws published services, so their addresses stop answering. It closes exactly what was published and leaves every other funnel standing, including one you set up yourself.
+Withdraws published services, so their addresses stop answering. It closes what Tailscale reports for those services and leaves every other funnel standing, including one you set up yourself.
 
-Several services can be named at once, and the word all takes every funnel this project currently has open, which grat reads from Tailscale rather than assuming. A service named explicitly is closed either way, so somebody who knows better than grat can still say so.
+Several services can be named at once, and the word all takes every service of this project that has an address. Which funnels belong to them is read from Tailscale rather than assumed, so an address opened with --path is closed as well. Naming a path closes exactly that one, which is the way to withdraw an address grat cannot see in the configuration.
+
+It changes nothing on the machine either. Where Tailscale is missing, stopped or signed out, nothing of this project is published, so hide says that and stops.
 
 **`--path PATH`**
 
-Withdraw only this path, where the service was published on more than one.
+Withdraw exactly this path, rather than everything Tailscale reports for the service.
 
 ### grat ports audit
 
@@ -248,6 +254,8 @@ Assign free role-compatible ports.
 
 Gives the named services of the current project a free port from their role's range, or every service when no name is given. Ports reserved by another configuration and ports held by a live listener are left alone.
 
+A service whose port changes has its public address closed before the new configuration is written, because a funnel forwards to a port rather than to a service and would go on pointing at the number the service is leaving. The line that opens the address again is printed with it.
+
 ### grat ports reassign
 
 Stop managed services and globally reassign ports.
@@ -255,6 +263,8 @@ Stop managed services and globally reassign ports.
 Gives every service of every registered project a fresh port. It validates the whole registry first, stops what grat manages, writes the new configurations, and leaves the services stopped so their next start uses the new numbers.
 
 This is the command for a machine whose ranges have drifted apart, and it holds a lock across the scan, the allocation and the writes, so no other grat command can allocate against a registry that is being rewritten.
+
+Every service whose port changes has its public address closed first, with the line that opens it again. Here that matters most: the numbers move across projects, so an address left standing would very likely end up forwarding to somebody else's service.
 
 ### grat directories add PATH
 
@@ -448,15 +458,19 @@ Ctrl+C cancels a lifecycle command. Cancelling during a stop keeps the managed s
 
 ## Public access
 
-A service reachable only on your machine cannot receive a webhook. grat expose makes a service reachable from the internet through Tailscale Funnel, at a name that stays the same between runs. Several can be named at once, and the word all takes every service that has an address to publish. grat hide withdraws them again, and takes all as well, which there means every funnel this project has open.
+A service reachable only on your machine cannot receive a webhook. grat expose makes a service reachable from the internet through Tailscale Funnel, at a name that stays the same between runs. Several can be named at once, and the word all takes every service that names a path. grat hide withdraws them again, and takes all as well, which there means every funnel this project has open.
 
-The whole service is published unless a path narrows it, with --path for one run or a [services.expose] table for good. The path on the command line wins. Naming one is worth it for a service whose only business outside is a callback, because everything else it serves then stays on the machine. A path names one path, so it goes with one service.
+A service is published only where a path says so, with --path for one run or a [services.expose] table for good, and the path on the command line wins. A service that names neither is refused. That is because a request arriving through a funnel reaches the service from the machine itself, so a development server cannot tell the internet from you, and several of them show a debug page or an interactive traceback to anything that looks local. Writing --path / or path = "/" publishes all of a service, and grat says so in the line it reports. A path names one path, so it goes with one service.
 
-Where Tailscale is missing, grat installs it, starts its background service and signs the machine in, reporting each step. It does not ask, because that is what the typed command needs in order to work. On a Mac it installs through Homebrew; on Linux it runs the vendor's install script. An existing Tailscale is never upgraded, reconfigured or removed. Two steps cannot be taken for you: the background service starts with administrator rights, so the system asks for your password, and the sign-in happens in the browser, which grat opens.
+Which funnel belongs to which service is read from the local address it forwards to, so an address opened with --path is listed by grat status and closed by grat hide, even though no path in the configuration matches it.
+
+Where Tailscale is missing, grat asks before it changes the machine. It says what Tailscale is, prints the exact command, and waits for a yes, with No as the answer unless you type otherwise. A no ends the command and changes nothing, the next grat expose asks again, and a run with no terminal to answer in agrees to nothing and prints the commands instead. Everything else in grat works without Tailscale.
+
+After a yes it installs Tailscale, starts its background service and signs the machine in, reporting each step. On a Mac it installs through Homebrew; on Linux it runs the vendor's install script. An existing Tailscale is never upgraded, reconfigured or removed. Two steps cannot be taken for you: the background service starts with administrator rights, so the system asks for your password, and the sign-in happens in the browser, which grat opens.
 
 Where the tailnet has not enabled Funnel, grat says so and opens the page that grants it, which only the owner of that tailnet can do.
 
-A funnel outlives the service behind it, which is why grat status carries the public address in a column of its own and grat stop offers to close one that is left pointing at a service no longer running.
+A funnel outlives the service behind it, because it is configuration in Tailscale rather than a process. One left standing forwards to a local port that nothing holds any more, and whatever binds that port next is what answers the internet. So grat stop closes the addresses of the services it stopped, and grat ports assign and grat ports reassign close the addresses of every service whose port changes. Each says which address it closed and prints the line that opens it again, since a funnel's address is the tailnet name and the path and comes back unchanged. grat start names an address that already points at a service it has just started, and grat status carries the public address in a column of its own.
 
 ## Ports
 
@@ -698,11 +712,11 @@ Optional. Names of further parent variables this service may receive, beyond the
 
 **`expose`**
 
-Optional. A table narrowing what grat expose publishes to a single path. Without it, the whole service is published.
+Optional. A table naming the single path grat expose publishes. Without it, the service is published only where a command gives it a path.
 
 ## The expose table
 
-This narrows what reaches the internet. It is worth writing for a service whose only business out there is a callback, because everything else it serves then stays on the machine, including whatever a development setup leaves more open than production would.
+This says what of a service reaches the internet, and a service without it reaches the internet only where a command names a path for one run. Naming one here is worth it for a service whose only business out there is a callback, because everything else it serves then stays on the machine, including whatever a development setup leaves more open than production would. A path of "/" publishes all of it, which is a decision written down rather than one grat makes for you.
 
 **`path`**
 

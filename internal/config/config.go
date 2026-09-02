@@ -39,8 +39,9 @@ const (
 // section needs the same value.
 const DefaultPublicPort = 443
 
-// DefaultExposePath is what a service publishes when it names no path: all of it.
-// Naming a path in the configuration narrows that to the one address.
+// DefaultExposePath is the path that means the whole of a service. Writing it
+// down is how a service is published in full, and leaving the path out publishes
+// nothing at all.
 const DefaultExposePath = "/"
 
 // funnelPublicPorts lists the ports a public funnel can listen on. Tailscale
@@ -101,20 +102,23 @@ type Durations struct {
 	LogTailLines    int
 }
 
-// Expose publishes exactly one path of a service to the public internet.
+// Expose publishes one path of a service to the public internet.
 //
 // Path is required and is the only address that leaves the machine. Everything
 // else the service offers stays inside, including whatever a development setup
-// deliberately leaves open. PublicPort defaults to 443 and accepts only the
-// ports in funnelPublicPorts.
+// deliberately leaves open. Setting it to DefaultExposePath publishes all of the
+// service, which is a decision written down rather than one grat makes for
+// somebody. PublicPort defaults to 443 and accepts only the ports in
+// funnelPublicPorts.
 type Expose struct {
 	Path       string `toml:"path"`
 	PublicPort int    `toml:"public_port,omitempty"`
 }
 
 // Service defines one command managed from the project root. A service without
-// an Expose section cannot be published, which is deliberate: exposing one is a
-// decision that belongs in the configuration rather than in a command.
+// an Expose section names no path, so it is published only where a command gives
+// it one for that single run. Which of a service reaches the internet is a
+// decision somebody writes down, in the configuration or on the command line.
 type Service struct {
 	Name       string   `toml:"name"`
 	Command    string   `toml:"command"`
@@ -135,19 +139,19 @@ func (service Service) URL() string {
 	return "http://" + net.JoinHostPort(service.Host, strconv.Itoa(service.Port)) + "/"
 }
 
-// Exposure returns the path a service publishes and the port it publishes on,
-// with the defaults already applied.
+// Exposure returns the path a service publishes and the port it publishes on.
 //
-// It lives here rather than at each caller because the rule is one rule: a
-// service without an expose table publishes all of itself on the default port.
-// Two places working that out separately would eventually disagree about which
-// funnel belongs to which service, and closing a funnel needs exactly the one
-// that was opened.
+// A service without an expose table names no path, so the path comes back empty
+// and whoever asked has to be given one before anything can be published. It
+// lives here rather than at each caller because the rule is one rule, and two
+// places working it out separately would eventually disagree about which funnel
+// belongs to which service, whilst closing a funnel needs exactly the one that
+// was opened.
 func (service Service) Exposure() (path string, publicPort int) {
 	if service.Expose != nil {
 		return service.Expose.Path, service.Expose.PublicPort
 	}
-	return DefaultExposePath, DefaultPublicPort
+	return "", DefaultPublicPort
 }
 
 // Config is the complete, declarative contents of a grat.config file.

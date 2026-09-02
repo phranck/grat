@@ -14,6 +14,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/phranck/grat/internal/version"
 )
 
 const (
@@ -102,7 +104,16 @@ func (service Service) updateDirectRelease(ctx context.Context, executable strin
 	if latest.TagName == "" {
 		return Result{}, errors.New("latest grat release has no tag")
 	}
-	if latest.TagName == currentVersion {
+	// Only forwards. GitHub's latest release is whatever is marked as such, and
+	// a release marked by mistake, or by somebody who reached the release
+	// listing, is otherwise installed however old it is. The checksum and the
+	// attestation prove where a binary came from and nothing about its age.
+	if order := version.Compare(latest.TagName, currentVersion); order < 0 {
+		return Result{}, fmt.Errorf(
+			"the latest published release is %s, which is older than the installed %s, so grat was not replaced",
+			latest.TagName, currentVersion,
+		)
+	} else if order == 0 {
 		return Result{Message: updateMessage(currentVersion, latest.TagName, "")}, nil
 	}
 	assetName := service.assetName(latest.TagName)
@@ -501,11 +512,24 @@ func (service Service) command(ctx context.Context, name string, arguments ...st
 	return service.Command(ctx, name, arguments...)
 }
 
+// buildInfo answers how the running grat was built, reading the executable that
+// is actually running rather than the name it was invoked by.
+//
+// It goes through the same two seams the update path uses, so a test can point
+// it at a file it wrote itself.
 func (service Service) buildInfo() (string, string, bool) {
-	if service.BuildInfo == nil {
-		return runningBuildInfo()
+	if service.BuildInfo != nil {
+		return service.BuildInfo()
 	}
-	return service.BuildInfo()
+	path, err := service.executable()
+	if err != nil {
+		return "", "", false
+	}
+	resolved, err := service.evalSymlinks(path)
+	if err != nil {
+		return "", "", false
+	}
+	return runningBuildInfo(resolved)
 }
 
 func (service Service) currentVersion() string {
@@ -577,7 +601,15 @@ func checksumForAsset(document string, assetName string) (string, error) {
 	return "", fmt.Errorf("checksums.txt has no checksum for %s", assetName)
 }
 
+// fileDigest hashes a file grat is about to trust or replace.
+//
+// Both paths it is given come from grat: the running executable, resolved
+// through os.Executable and its symlinks, and a temporary file this package
+// wrote itself. Neither is read from a configuration or from a release
+// document, so there is no name here for anybody else to steer.
 func fileDigest(path string) (string, error) {
+	// #nosec G304 -- path is the running executable or grat's own temporary
+	// file; see above.
 	file, err := os.Open(path)
 	if err != nil {
 		return "", err

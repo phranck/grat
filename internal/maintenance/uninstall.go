@@ -14,6 +14,7 @@ import (
 	"github.com/phranck/grat/internal/config"
 	"github.com/phranck/grat/internal/operations"
 	"github.com/phranck/grat/internal/project"
+	"github.com/phranck/grat/internal/publish"
 	gratruntime "github.com/phranck/grat/internal/runtime"
 	"github.com/phranck/grat/internal/settings"
 	"github.com/phranck/grat/internal/tailscale"
@@ -557,20 +558,17 @@ func (service Service) withdrawFunnels(ctx context.Context, artifacts uninstallA
 			if configured.Port == 0 {
 				continue
 			}
-			path, publicPort := configured.Exposure()
-			funnel := tailscale.Funnel{
-				Path:       path,
-				PublicPort: publicPort,
-				Target:     strings.TrimSuffix(configured.URL(), "/"),
-			}
-			if !funnel.IsAmong(published) {
-				continue
-			}
-			if closeErr := client.Close(ctx, funnel); closeErr != nil {
-				return fmt.Errorf("close the funnel for %s in %s: %w", configured.Name, filepath.Dir(configPath), closeErr)
-			}
-			if _, writeErr := fmt.Fprintf(output, "  Tailscale: withdrew %s for %s\n", funnel.Path, configured.Name); writeErr != nil {
-				return writeErr
+			// By the address the funnel forwards to, so one opened for a single
+			// run with --path is withdrawn as well. Its path was never written
+			// into the configuration, and deriving one from the configuration
+			// would leave exactly that address answering.
+			for _, funnel := range publish.FunnelsFor(configured, published) {
+				if closeErr := client.Close(ctx, funnel); closeErr != nil {
+					return fmt.Errorf("close the funnel for %s in %s: %w", configured.Name, filepath.Dir(configPath), closeErr)
+				}
+				if _, writeErr := fmt.Fprintf(output, "  Tailscale: withdrew %s for %s\n", funnel.Path, configured.Name); writeErr != nil {
+					return writeErr
+				}
 			}
 		}
 	}

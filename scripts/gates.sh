@@ -61,6 +61,23 @@ go build -trimpath -o /dev/null ./cmd/grat
 step "Vulnerability scan"
 go tool govulncheck ./...
 
+# The nosec annotations in the code name this tool, so a reader takes them as a
+# record that it ran. It has to run for that to be true.
+#
+# Both platforms, for the reason the vet and lint loop above gives: a file
+# guarded by a build tag is not compiled for the other one and is therefore not
+# analysed there either. The scanner is built once for this machine and then
+# pointed at each platform, because go tool would build it for GOOS as well and
+# produce a binary this machine cannot run.
+scanner=$(mktemp -d)/gosec
+trap 'rm -rf "$(dirname "$linter")" "$(dirname "$scanner")"' EXIT
+go build -o "$scanner" github.com/securego/gosec/v2/cmd/gosec
+
+for platform in darwin linux; do
+	step "Security scan ($platform)"
+	GOOS=$platform "$scanner" -quiet -exclude-generated ./...
+done
+
 step "Documentation"
 sh scripts/check-docs.sh
 

@@ -134,7 +134,7 @@ func runWithEnvironment(ctx context.Context, args []string, cwd string, out io.W
 		if rootErr != nil {
 			err = rootErr
 		} else {
-			err = runPorts(ctx, args[1:], cwd, roots, environment.operationLock, output)
+			err = runPorts(ctx, args[1:], cwd, roots, environment, output)
 		}
 	case "update":
 		if _, rootErr := configuredRoots(cwd, environment, output); rootErr != nil {

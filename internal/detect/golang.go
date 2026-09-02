@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/phranck/grat/internal/project"
 )
 
 // mainPackagePattern matches the package clause of a runnable program, allowing
@@ -19,11 +21,14 @@ var mainPackagePattern = regexp.MustCompile(`(?m)^package\s+main\b`)
 // variable.
 var portReaders = map[string]struct{}{"Getenv": {}, "LookupEnv": {}}
 
-// skippedGoDirectories are not part of a module's own source. Walking them costs
-// time and can only produce a match that says nothing about this program.
-var skippedGoDirectories = map[string]struct{}{
-	"vendor": {}, "testdata": {}, "node_modules": {}, ".git": {},
-}
+// skippedGoDirectories are what a Go module keeps that the shared project scan
+// has no reason to know about. Everything else it leaves out, such as vendor,
+// node_modules and .git, is already in project.SkipsScanning, and repeating a
+// name here would mean two lists that can disagree.
+//
+// testdata is Go's own convention for input the toolchain ignores, so what it
+// declares says nothing about what this module runs.
+var skippedGoDirectories = map[string]struct{}{"testdata": {}}
 
 // goProgram is one runnable program of a module.
 type goProgram struct {
@@ -127,16 +132,21 @@ func holdsMainPackage(directory string) bool {
 // comment, an error message or a documentation line is not read as a call. A
 // text search reports every tool that merely writes about the variable, and grat
 // itself is one of them.
+//
+// It walks through project.Walk, which is the bounded traversal every other scan
+// uses. Its own walk read the whole module without a limit on entries or on
+// depth, so grat discover over a folder holding a large unpacked module tree
+// spent its time in there.
 func readsPortFromGoSource(root string) bool {
 	found := false
 	fileSet := token.NewFileSet()
-	_ = filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
-		if err != nil || found {
-			return nil
+	_, _ = project.Walk(root, project.MaxScanEntries, func(path string, entry fs.DirEntry) error {
+		if found {
+			return filepath.SkipAll
 		}
 		if entry.IsDir() {
 			if _, skipped := skippedGoDirectories[entry.Name()]; skipped {
-				return filepath.SkipDir
+				return fs.SkipDir
 			}
 			return nil
 		}

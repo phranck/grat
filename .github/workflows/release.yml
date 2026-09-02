@@ -26,11 +26,18 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
           go-version-file: go.mod
+      # CGO_ENABLED is set, so the four binaries are linked the same way. Left
+      # unset, Go turns cgo on where it can, and this runner can only do that
+      # for Linux: the two Linux binaries came out dynamically linked against
+      # the runner's C library whilst the two macOS ones were cross-compiled
+      # without one. A pure Go binary also depends on nothing, which is what the
+      # README promises of the release file.
       - name: Build
         env:
           VERSION: ${{ github.ref_name }}
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
         run: |
           mkdir -p dist
           go build -trimpath \

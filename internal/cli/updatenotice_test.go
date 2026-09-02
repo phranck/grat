@@ -56,6 +56,17 @@ func TestTheInstalledVersionIsNotReported(t *testing.T) {
 	}
 }
 
+// TestAnOlderVersionIsNotReported is the fault this guards. The notice fired on
+// any difference, so a release marked as the latest by mistake nagged about an
+// update on every command, and the update it pointed at went backwards.
+func TestAnOlderVersionIsNotReported(t *testing.T) {
+	value, _ := noticeEnvironment(t, func(context.Context) (string, error) { return "v0.0.1", nil })
+
+	if printed := notice(t, value, "status"); printed != "" {
+		t.Fatalf("an older release was announced as an update:\n%s", printed)
+	}
+}
+
 // TestAFailureSaysNothing is the whole point of where this runs. A machine with
 // no network, a rate-limited API and a GitHub that is down all mean the same
 // thing, which is that grat has nothing to say about versions today.

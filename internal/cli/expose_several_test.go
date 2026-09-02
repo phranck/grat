@@ -20,7 +20,7 @@ func TestExposeTakesSeveralServices(t *testing.T) {
 	client := &tailscaletest.Client{Name: "fixture.tail1234.ts.net"}
 
 	var stdout, stderr bytes.Buffer
-	code := runWithEnvironment(context.Background(), []string{"expose", "backend", "frontend"}, root,
+	code := runWithEnvironment(context.Background(), []string{"expose", "backend", "dashboard"}, root,
 		&stdout, &stderr, exposeEnvironment(t, store, root, client))
 	if code != 0 {
 		t.Fatalf("expose exit = %d, stderr = %q", code, stderr.String())
@@ -29,16 +29,20 @@ func TestExposeTakesSeveralServices(t *testing.T) {
 		t.Fatalf("opened %d funnels, want one per service: %+v", len(client.Opened), client.Opened)
 	}
 	// Each service reports for itself, so a partial failure would be visible.
-	for _, name := range []string{"backend", "frontend"} {
+	for _, name := range []string{"backend", "dashboard"} {
 		if !strings.Contains(stdout.String(), name) {
 			t.Fatalf("the output does not mention %q:\n%s", name, stdout.String())
 		}
 	}
 }
 
-// TestExposeAllTakesEveryServiceThatHasAnAddress covers the word, and that a
-// process-only service is passed over rather than refused.
-func TestExposeAllTakesEveryServiceThatHasAnAddress(t *testing.T) {
+// TestExposeAllTakesOnlyTheServicesThatNameAPath covers the word, and that both
+// kinds of service it leaves alone are handled: a process-only one has no
+// address, and one that names no path has made no decision to be public.
+//
+// The ones it passes over are named, because somebody who typed all and read a
+// success would otherwise believe their project is public where it is not.
+func TestExposeAllTakesOnlyTheServicesThatNameAPath(t *testing.T) {
 	t.Parallel()
 
 	store, cwd := newCLITestStore(t)
@@ -52,7 +56,15 @@ func TestExposeAllTakesEveryServiceThatHasAnAddress(t *testing.T) {
 		t.Fatalf("expose all exit = %d, stderr = %q", code, stderr.String())
 	}
 	if len(client.Opened) != 2 {
-		t.Fatalf("opened %d funnels, want one per publishable service: %+v", len(client.Opened), client.Opened)
+		t.Fatalf("opened %d funnels, want one per service that names a path: %+v", len(client.Opened), client.Opened)
+	}
+	for _, funnel := range client.Opened {
+		if funnel.Target == "http://localhost:3000" {
+			t.Fatalf("the service that names no path was published: %+v", funnel)
+		}
+	}
+	if !strings.Contains(stdout.String(), "frontend") {
+		t.Fatalf("the output does not name the service it passed over:\n%s", stdout.String())
 	}
 }
 

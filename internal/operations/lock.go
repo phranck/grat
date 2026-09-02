@@ -28,6 +28,8 @@ func withLockIn(ctx context.Context, directory string, callback func() error) er
 	if err := os.MkdirAll(directory, 0o700); err != nil {
 		return fmt.Errorf("create operation lock directory: %w", err)
 	}
+	// #nosec G302 -- a directory, not a file: 0700 is the owner-only mode for
+	// one, because a directory needs its execute bit to be entered at all.
 	if err := os.Chmod(directory, 0o700); err != nil {
 		return fmt.Errorf("set operation lock directory permissions: %w", err)
 	}

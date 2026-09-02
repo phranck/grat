@@ -34,7 +34,7 @@ grat manages long-running development commands on macOS and Linux. A configured 
 - An HTTP service that takes a configurable local port and answers its health path with a status from 200 through 299.
 - A worker that has no HTTP port and only has to stay alive, such as a queue consumer or a file watcher.
 
-An HTTP service can also publish one path to the internet at an address that stays the same, which is what a webhook from a payment provider or any other server-to-server callback needs.
+An HTTP service can also publish one path to the internet at an address that stays the same, which is what a webhook from a payment provider or any other server-to-server callback needs. Which path that is has to be said, either in the configuration or on the command line, so a development server never goes public because nobody said otherwise.
 
 Each command runs from the project root through non-login `/bin/sh`, and receives its port in `PORT`. A command that puts itself in the background leaves nothing for grat to watch, and a service whose port is held by a separate daemon never becomes ready.
 
@@ -53,9 +53,16 @@ On Linux without Homebrew, take the release binary. It is one file and depends o
 ```sh
 version=$(curl -fsSL https://api.github.com/repos/phranck/grat/releases/latest | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p')
 curl -fsSL -o grat "https://github.com/phranck/grat/releases/download/$version/grat_${version}_linux_amd64"
+gh attestation verify ./grat \
+  --repo phranck/grat \
+  --signer-workflow phranck/grat/.github/workflows/release.yml \
+  --source-ref "refs/tags/$version" \
+  --deny-self-hosted-runners
 chmod +x grat
 sudo install -m 0755 grat /usr/local/bin/grat
 ```
+
+The verification runs before the install, because installing first and checking afterwards is checking a file that is already on the path. It proves the binary was built by this repository's release workflow from that exact tag, and it needs the [GitHub CLI](https://cli.github.com). Without that, take the checksum instead: [Documentation.md](Documentation.md#installation) carries both.
 
 The version is read from the newest release rather than written here, so this stays current. Use `linux_arm64` on ARM. macOS binaries are published the same way, as `darwin_amd64` and `darwin_arm64`. A binary installed this way carries no man pages; `grat.1` and `grat.config.7` sit beside it in the same release, and [Documentation.md](Documentation.md#installation) says where to put them.
 

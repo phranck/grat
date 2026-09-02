@@ -104,6 +104,8 @@ func (store Store) Save(settings Settings) error {
 	if err := os.MkdirAll(directory, 0o700); err != nil {
 		return fmt.Errorf("create settings directory: %w", err)
 	}
+	// #nosec G302 -- a directory, not a file: 0700 is the owner-only mode for
+	// one, because a directory needs its execute bit to be entered at all.
 	if err := os.Chmod(directory, 0o700); err != nil {
 		return fmt.Errorf("set settings directory permissions: %w", err)
 	}
