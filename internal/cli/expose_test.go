@@ -440,7 +440,7 @@ func TestTheCommandReferenceNamesBothCommands(t *testing.T) {
 			usage.WriteString(command.Usage + "\n")
 		}
 	}
-	for _, wanted := range []string{"expose [--path P] NAME", "expose status", "hide [--path P] NAME"} {
+	for _, wanted := range []string{"expose [--path P] [--always] NAME", "expose status", "hide [--path P] [--always] NAME"} {
 		if !strings.Contains(usage.String(), wanted) {
 			t.Fatalf("command reference is missing %q:\n%s", wanted, usage.String())
 		}
