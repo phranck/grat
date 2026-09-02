@@ -5,3 +5,23 @@
 /coverage.out
 /dist/
 /graphify-out/
+
+# Working documents and design sources, synchronised outside this repository and
+# absent from every clone. An index of the repository that carries them
+# describes something nobody else has.
+/Papers/
+/Graphics/
+
+# Local agent state rather than project content.
+/.serena/
+
+# Marks and icons. They are outlines, so a reader learns nothing from them that
+# the stylesheet does not already say, and each one otherwise costs a pass of
+# its own.
+*.png
+*.svg
+*.ico
+
+# Licence texts of the typefaces. They belong in the repository and say nothing
+# about what grat does.
+/docs/fonts/
