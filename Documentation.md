@@ -196,13 +196,13 @@ Prints the log of one service, which grat wrote whilst that service ran. Both th
 
 Keep printing as the service writes, rather than stopping at the end of the file.
 
-### grat expose [--path P] NAME...
+### grat expose [--path P] [--always] NAME...
 
-Publish services to the internet; all takes every one, --path narrows a single one.
+Publish services to the internet at a path you name.
 
 Publishes services to the internet through Tailscale Funnel, at a name that stays the same between runs. This is what a webhook from another server needs, since a service on your machine cannot otherwise be reached from outside.
 
-A service is published only where a path says so. Use --path for one run, or a [services.expose] table for a path that always applies, and the one on the command line wins. A service that names neither is refused, because publishing all of a development server is a decision worth making on purpose: a request through a funnel reaches the service from the machine itself, so a debug toolbar or an interactive traceback treats the internet as local. Writing --path / or path = "/" publishes all of it, and grat says so in the line it reports.
+A service is published only where a path says so. Use --path for one run, or --always beside it to keep that path in grat.config, so the next run of this command needs no flag at all. A path written in the configuration is what always applies, and the one on the command line wins over it. A service that names neither is refused, because publishing all of a development server is a decision worth making on purpose: a request through a funnel reaches the service from the machine itself, so a debug toolbar or an interactive traceback treats the internet as local. Writing --path / or path = "/" publishes all of it, and grat says so in the line it reports.
 
 Several services can be named at once, and the word all takes every service that names a path. It names the ones it passed over, so a success never reads as more than it was. A process-only service has no address at all; all passes over it too, and naming it on its own is still an error, because the name says what you meant. A path names one path, so it goes with one service and is refused beside several.
 
@@ -220,6 +220,10 @@ Where the tailnet has not enabled Funnel, grat says so and opens the page that g
 
 Publish this path for this run. It wins over a path in the configuration. Without either, nothing is published. A path of / is all of the service.
 
+**`--always`**
+
+Keep the path --path names in grat.config, after it has been published, so the next run needs no flag. It goes with --path and with one service.
+
 ### grat expose status [name...]
 
 Show what is published, with the public address.
@@ -228,19 +232,23 @@ Reports what is currently published and at which address, for the named services
 
 It changes nothing on the machine. Where Tailscale is missing, stopped or signed out, it says so in one line and reports nothing published, because a question about what is public must not install anything to answer itself.
 
-### grat hide [--path P] NAME...
+### grat hide [--path P] [--always] NAME...
 
-Withdraw published services; all takes every one this project has open.
+Withdraw published services, and their stored paths.
 
 Withdraws published services, so their addresses stop answering. It closes what Tailscale reports for those services and leaves every other funnel standing, including one you set up yourself.
 
-Several services can be named at once, and the word all takes every service of this project that has an address. Which funnels belong to them is read from Tailscale rather than assumed, so an address opened with --path is closed as well. Naming a path closes exactly that one, which is the way to withdraw an address grat cannot see in the configuration.
+Several services can be named at once, and the word all takes every service of this project that has an address. Which funnels belong to them is read from Tailscale rather than assumed, so an address opened with --path is closed as well. Naming a path closes exactly that one, which is the way to withdraw an address grat cannot see in the configuration. Naming --always additionally takes the stored path out of grat.config, so the service goes back to being publishable only with --path. That happens whether or not Tailscale answers, because a setting in a file has nothing to do with what is published right now.
 
 It changes nothing on the machine either. Where Tailscale is missing, stopped or signed out, nothing of this project is published, so hide says that and stops.
 
 **`--path PATH`**
 
 Withdraw exactly this path, rather than everything Tailscale reports for the service.
+
+**`--always`**
+
+Also remove the path grat.config holds for the service, so it is published only with --path again.
 
 ### grat ports audit
 
@@ -460,7 +468,7 @@ Ctrl+C cancels a lifecycle command. Cancelling during a stop keeps the managed s
 
 A service reachable only on your machine cannot receive a webhook. grat expose makes a service reachable from the internet through Tailscale Funnel, at a name that stays the same between runs. Several can be named at once, and the word all takes every service that names a path. grat hide withdraws them again, and takes all as well, which there means every funnel this project has open.
 
-A service is published only where a path says so, with --path for one run or a [services.expose] table for good, and the path on the command line wins. A service that names neither is refused. That is because a request arriving through a funnel reaches the service from the machine itself, so a development server cannot tell the internet from you, and several of them show a debug page or an interactive traceback to anything that looks local. Writing --path / or path = "/" publishes all of a service, and grat says so in the line it reports. A path names one path, so it goes with one service.
+A service is published only where a path says so, with --path for one run or a [services.expose] table for good, and the path on the command line wins. Adding --always to grat expose keeps the path it just published in grat.config, so the next run needs no flag; grat hide --always takes it out again. Neither asks you to open the file. A service that names neither is refused. That is because a request arriving through a funnel reaches the service from the machine itself, so a development server cannot tell the internet from you, and several of them show a debug page or an interactive traceback to anything that looks local. Writing --path / or path = "/" publishes all of a service, and grat says so in the line it reports. A path names one path, so it goes with one service.
 
 Which funnel belongs to which service is read from the local address it forwards to, so an address opened with --path is listed by grat status and closed by grat hide, even though no path in the configuration matches it.
 

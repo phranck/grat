@@ -6,11 +6,13 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"path/filepath"
 	"sort"
 	"strings"
 
 	"github.com/phranck/grat/internal/config"
 	"github.com/phranck/grat/internal/presentation"
+	"github.com/phranck/grat/internal/project"
 	"github.com/phranck/grat/internal/publish"
 	"github.com/phranck/grat/internal/tailscale"
 )
@@ -26,19 +28,25 @@ func runExpose(ctx context.Context, args []string, cwd string, environment envir
 		return runExposeStatus(ctx, args[1:], cwd, environment, output)
 	}
 
-	names, pathOverride, err := parseExposeArguments("expose", args)
+	arguments, err := parseExposeArguments("expose", args)
 	if err != nil {
 		return err
 	}
-	if len(names) == 0 {
+	if len(arguments.Names) == 0 {
 		return errors.New("expose requires a service name, several of them, or all")
 	}
+	// --always keeps the path that was given, so there has to be one. Without
+	// --path it would store what the configuration already holds, which changes
+	// nothing and reads as though it had.
+	if arguments.Always && arguments.Path == "" {
+		return errors.New("--always keeps the path --path names, so the two go together")
+	}
 
-	_, value, err := loadConfig(cwd)
+	root, value, err := loadConfig(cwd)
 	if err != nil {
 		return err
 	}
-	selection, err := publish.Select(value, names, pathOverride)
+	selection, err := publish.Select(value, arguments.Names, arguments.Path)
 	if err != nil {
 		return err
 	}
@@ -79,6 +87,16 @@ func runExpose(ctx context.Context, args []string, cwd string, environment envir
 		}
 		output.Step(presentation.StepSuccess, service.Name, reachableAt(publication, hostname))
 		published = append(published, service.Name)
+		// After the funnel opened, never before. A run that failed to publish
+		// must not leave a configuration saying it succeeded.
+		if arguments.Always {
+			if err := storeExposePath(root, value, service, funnel); err != nil {
+				output.Step(presentation.StepFailure, service.Name, "the path was published but not kept: "+err.Error())
+				continue
+			}
+			output.Step(presentation.StepSuccess, service.Name,
+				"grat.config now says "+funnel.Path+", so grat expose "+service.Name+" needs no flag")
+		}
 	}
 	if len(published) == 0 {
 		return errors.New("nothing was published")
@@ -109,27 +127,38 @@ func reachableAt(publication publish.Publication, hostname string) string {
 // configuration, so deriving one from the configuration would leave exactly that
 // address standing.
 func runHide(ctx context.Context, args []string, cwd string, environment environment, output presentation.Renderer) error {
-	names, pathOverride, err := parseExposeArguments("hide", args)
+	arguments, err := parseExposeArguments("hide", args)
 	if err != nil {
 		return err
 	}
-	if len(names) == 0 {
+	if len(arguments.Names) == 0 {
 		return errors.New("hide requires a service name, several of them, or all")
 	}
 
-	_, value, err := loadConfig(cwd)
+	root, value, err := loadConfig(cwd)
 	if err != nil {
 		return err
 	}
-	services, err := publish.Named(value, names)
+	services, err := publish.Named(value, arguments.Names)
 	if err != nil {
 		return err
 	}
-	if pathOverride != "" && len(services) > 1 {
+	if arguments.Path != "" && len(services) > 1 {
 		return errors.New("--path names one path, so it takes one service")
 	}
 
 	output.Heading("Hiding services", value.Project.Name)
+
+	// Before the tailnet is asked anything, because taking a stored path out of
+	// the configuration has nothing to do with what is published right now.
+	// Somebody who wants a service to stop being publishable should not need a
+	// working Tailscale to say so.
+	if arguments.Always {
+		if err := forgetExposePaths(root, value, services, output); err != nil {
+			return err
+		}
+	}
+
 	// The reporting provider, because a command that takes something away must
 	// not put Tailscale on the machine to do it. Where nothing is set up,
 	// nothing of this project is published either.
@@ -145,7 +174,7 @@ func runHide(ctx context.Context, args []string, cwd string, environment environ
 
 	closed := 0
 	for _, service := range services {
-		for _, funnel := range funnelsToClose(service, pathOverride, open) {
+		for _, funnel := range funnelsToClose(service, arguments.Path, open) {
 			if err := client.Close(ctx, funnel); err != nil {
 				output.Step(presentation.StepFailure, service.Name, err.Error())
 				continue
@@ -156,6 +185,59 @@ func runHide(ctx context.Context, args []string, cwd string, environment environ
 	}
 	if closed == 0 {
 		output.Step(presentation.StepInfo, "Public access", "nothing of this project was published")
+	}
+	return nil
+}
+
+// storeExposePath writes the path that was just published into the service's
+// expose table, so the next grat expose needs no flag.
+//
+// This is what keeps a decision about public access out of a text editor. grat
+// writes its own configuration everywhere else, through discover and through the
+// ports commands, and a path that could only be kept by opening the file was the
+// one setting it did not.
+//
+// config.Write validates the whole configuration before it replaces anything, so
+// a path that the file could not have held is refused here rather than written.
+func storeExposePath(root string, value config.Config, service config.Service, funnel tailscale.Funnel) error {
+	for index := range value.Services {
+		if value.Services[index].Name != service.Name {
+			continue
+		}
+		value.Services[index].Expose = &config.Expose{Path: funnel.Path, PublicPort: funnel.PublicPort}
+		return config.Write(filepath.Join(root, project.ConfigFileName), value)
+	}
+	return fmt.Errorf("unknown service %q", service.Name)
+}
+
+// forgetExposePaths takes the stored path away from each named service, so the
+// service goes back to being publishable only with --path.
+//
+// A setting somebody can create and not remove is half a setting, and the only
+// other way back would be the text editor this exists to avoid.
+func forgetExposePaths(root string, value config.Config, services []config.Service, output presentation.Renderer) error {
+	forgotten := make([]string, 0, len(services))
+	for _, service := range services {
+		for index := range value.Services {
+			if value.Services[index].Name != service.Name || value.Services[index].Expose == nil {
+				continue
+			}
+			forgotten = append(forgotten, service.Name)
+			value.Services[index].Expose = nil
+		}
+	}
+	if len(forgotten) == 0 {
+		output.Step(presentation.StepInfo, "Public access", "no service named here had a path in grat.config")
+		return nil
+	}
+	// One write for all of them, so a failure leaves the file as it was rather
+	// than partly changed.
+	if err := config.Write(filepath.Join(root, project.ConfigFileName), value); err != nil {
+		return err
+	}
+	for _, name := range forgotten {
+		output.Step(presentation.StepSuccess, name,
+			"grat.config no longer names a path, so it is published only with --path")
 	}
 	return nil
 }
@@ -200,10 +282,11 @@ func readyTailscale(ctx context.Context) (tailscale.Client, bool) {
 
 // runExposeStatus lists what is published right now, with the address.
 func runExposeStatus(ctx context.Context, args []string, cwd string, environment environment, output presentation.Renderer) error {
-	names, _, err := parseExposeArguments("expose status", args)
+	arguments, err := parseExposeArguments("expose status", args)
 	if err != nil {
 		return err
 	}
+	names := arguments.Names
 
 	_, value, err := loadConfig(cwd)
 	if err != nil {
@@ -254,24 +337,38 @@ func runExposeStatus(ctx context.Context, args []string, cwd string, environment
 	return nil
 }
 
-// parseExposeArguments reads the service names and the optional path override.
-func parseExposeArguments(name string, args []string) ([]string, string, error) {
+// exposeArguments is what was typed on an expose or a hide command line.
+type exposeArguments struct {
+	// Names are the services, with the word all still among them where it was
+	// given.
+	Names []string
+	// Path is what --path named, and is empty where it was left out.
+	Path string
+	// Always asks for the path to be kept, so the next run of the command needs
+	// no flag at all. On expose it stores what was published; on hide it takes
+	// the stored path away again.
+	Always bool
+}
+
+// parseExposeArguments reads the service names and the flags.
+func parseExposeArguments(name string, args []string) (exposeArguments, error) {
 	flags := flag.NewFlagSet(name, flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	path := flags.String("path", "", "publish this path of the service, where / is all of it")
+	always := flags.Bool("always", false, "keep this decision in grat.config, so the next run needs no flag")
 	if err := flags.Parse(args); err != nil {
-		return nil, "", err
+		return exposeArguments{}, err
 	}
 	if *path != "" {
 		if err := publish.ValidatePath(*path); err != nil {
-			return nil, "", fmt.Errorf("--path: %w", err)
+			return exposeArguments{}, fmt.Errorf("--path: %w", err)
 		}
 	}
 	names, err := serviceNames(flags.Args())
 	if err != nil {
-		return nil, "", err
+		return exposeArguments{}, err
 	}
-	return names, *path, nil
+	return exposeArguments{Names: names, Path: *path, Always: *always}, nil
 }
 
 // serviceNames splits what was typed into names.

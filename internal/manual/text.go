@@ -212,7 +212,10 @@ takes every service that names a path. grat hide withdraws them again, and takes
 all as well, which there means every funnel this project has open.
 
 A service is published only where a path says so, with --path for one run or a
-[services.expose] table for good, and the path on the command line wins. A
+[services.expose] table for good, and the path on the command line wins. Adding
+--always to grat expose keeps the path it just published in grat.config, so the
+next run needs no flag; grat hide --always takes it out again. Neither asks you
+to open the file. A
 service that names neither is refused. That is because a request arriving through
 a funnel reaches the service from the machine itself, so a development server
 cannot tell the internet from you, and several of them show a debug page or an
