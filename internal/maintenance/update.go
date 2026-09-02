@@ -14,6 +14,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/phranck/grat/internal/version"
 )
 
 const (
@@ -102,7 +104,16 @@ func (service Service) updateDirectRelease(ctx context.Context, executable strin
 	if latest.TagName == "" {
 		return Result{}, errors.New("latest grat release has no tag")
 	}
-	if latest.TagName == currentVersion {
+	// Only forwards. GitHub's latest release is whatever is marked as such, and
+	// a release marked by mistake, or by somebody who reached the release
+	// listing, is otherwise installed however old it is. The checksum and the
+	// attestation prove where a binary came from and nothing about its age.
+	if order := version.Compare(latest.TagName, currentVersion); order < 0 {
+		return Result{}, fmt.Errorf(
+			"the latest published release is %s, which is older than the installed %s, so grat was not replaced",
+			latest.TagName, currentVersion,
+		)
+	} else if order == 0 {
 		return Result{Message: updateMessage(currentVersion, latest.TagName, "")}, nil
 	}
 	assetName := service.assetName(latest.TagName)
