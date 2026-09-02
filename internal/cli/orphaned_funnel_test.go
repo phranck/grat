@@ -6,15 +6,16 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/phranck/grat/internal/config"
 	"github.com/phranck/grat/internal/presentation"
 	"github.com/phranck/grat/internal/settings"
 	"github.com/phranck/grat/internal/tailscale"
 	"github.com/phranck/grat/internal/tailscale/tailscaletest"
 )
 
-// stoppedWithOpenFunnel builds the state this offer exists for: a project whose
+// stoppedWithOpenFunnel builds the state this exists for: a project whose
 // service has been stopped whilst its address is still published.
-func stoppedWithOpenFunnel(t *testing.T, answer string, interactive bool) (environment, *tailscaletest.Client, *bytes.Buffer) {
+func stoppedWithOpenFunnel(t *testing.T, interactive bool) (environment, *tailscaletest.Client, *bytes.Buffer) {
 	t.Helper()
 	store, cwd := newCLITestStore(t)
 	root := exposeProject(t, cwd)
@@ -27,42 +28,44 @@ func stoppedWithOpenFunnel(t *testing.T, answer string, interactive bool) (envir
 	}
 	value := exposeEnvironment(t, store, root, client)
 	value.interactive = interactive
-	value.input = strings.NewReader(answer)
-	value.tailscaleReady = func(context.Context) (tailscale.Client, bool) { return client, true }
+	value.input = strings.NewReader("")
 	if err := store.Save(settings.Settings{Version: settings.CurrentVersion, Directories: []string{root}}); err != nil {
 		t.Fatalf("save settings: %v", err)
 	}
 	return value, client, &bytes.Buffer{}
 }
 
-// settle runs the offer against the project's configuration, with the backend
-// named as the service that was just stopped.
-func settle(t *testing.T, value environment, output *bytes.Buffer) {
+// settle runs the funnel handling for one command, with the backend named as the
+// service the command acted on.
+func settle(t *testing.T, command string, value environment, output *bytes.Buffer) {
 	t.Helper()
-	store := value.settings
-	settingsValue, _, err := store.Load()
-	if err != nil {
-		t.Fatalf("load settings: %v", err)
-	}
-	root := settingsValue.Directories[0]
-	_, config, err := loadConfig(root)
-	if err != nil {
-		t.Fatalf("load config: %v", err)
-	}
-	settleOrphanedFunnels(
-		context.Background(), "stop", config, config.Services[:1], value,
+	settleFunnels(
+		context.Background(), command, configuredServices(t, value)[:1], value,
 		presentation.New(output, presentation.ColorNever),
 	)
 }
 
-// TestAnOpenFunnelIsClosedWhenAsked is the behaviour #14 asked for: the address
-// points at nothing once the service behind it has stopped, so grat offers to
-// close it in the same step rather than leaving it to a second command.
-func TestAnOpenFunnelIsClosedWhenAsked(t *testing.T) {
+func configuredServices(t *testing.T, value environment) []config.Service {
+	t.Helper()
+	settingsValue, _, err := value.settings.Load()
+	if err != nil {
+		t.Fatalf("load settings: %v", err)
+	}
+	_, configValue, err := loadConfig(settingsValue.Directories[0])
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	return configValue.Services
+}
+
+// TestStopClosesTheFunnelOfTheServiceItStopped is the defect this guards. A
+// funnel is configuration in Tailscale rather than a process, so it survives the
+// stop and goes on forwarding to a local port that nothing holds any more.
+func TestStopClosesTheFunnelOfTheServiceItStopped(t *testing.T) {
 	t.Parallel()
 
-	value, client, output := stoppedWithOpenFunnel(t, "\n", true)
-	settle(t, value, output)
+	value, client, output := stoppedWithOpenFunnel(t, true)
+	settle(t, "stop", value, output)
 
 	if len(client.Closed) != 1 {
 		t.Fatalf("closed %d funnels, want the one that was open: %+v", len(client.Closed), client.Closed)
@@ -70,47 +73,63 @@ func TestAnOpenFunnelIsClosedWhenAsked(t *testing.T) {
 	if client.Closed[0].Path != "/api/webhooks/creem" {
 		t.Fatalf("closed %+v, want the path that was published", client.Closed[0])
 	}
-	if !strings.Contains(output.String(), "no longer reachable") {
-		t.Fatalf("the output does not say what happened:\n%s", output.String())
+	// Closing costs nothing permanent, and the line that says so is what makes
+	// that true for whoever is reading.
+	if !strings.Contains(output.String(), "grat expose backend --path /api/webhooks/creem") {
+		t.Fatalf("the output does not say how to put the address back:\n%s", output.String())
 	}
 }
 
-// TestDecliningLeavesTheFunnelOpen covers the other answer, and that grat then
-// says how to close it later. An address is often the reason the service exists,
-// so closing it is never the silent outcome.
-func TestDecliningLeavesTheFunnelOpen(t *testing.T) {
+// TestStopClosesItWithoutATerminalToo is where the address used to be left
+// standing: a stop in a script had nobody to ask, so it asked nobody and closed
+// nothing.
+func TestStopClosesItWithoutATerminalToo(t *testing.T) {
 	t.Parallel()
 
-	value, client, output := stoppedWithOpenFunnel(t, "n\n", true)
-	settle(t, value, output)
+	value, client, output := stoppedWithOpenFunnel(t, false)
+	settle(t, "stop", value, output)
 
-	if len(client.Closed) != 0 {
-		t.Fatalf("a declined offer closed %+v", client.Closed)
+	if len(client.Closed) != 1 {
+		t.Fatalf("closed %d funnels, want the one that was open: %+v", len(client.Closed), client.Closed)
 	}
-	if !strings.Contains(output.String(), "grat hide") {
-		t.Fatalf("the output does not say how to close it:\n%s", output.String())
+	if strings.Contains(output.String(), "?") {
+		t.Fatalf("a question was asked where nobody could answer it:\n%s", output.String())
 	}
 }
 
-// TestWithoutATerminalItIsOnlyReported keeps the behaviour that was there
-// before. There is nobody to ask, and closing somebody's public address unasked
-// is not something to do quietly.
-func TestWithoutATerminalItIsOnlyReported(t *testing.T) {
+// TestStartNamesAFunnelThatIsAlreadyOpen is the other direction. The address
+// points at the service that has just come up, which is what somebody wanted,
+// and they should not have to ask Tailscale whether it is there.
+func TestStartNamesAFunnelThatIsAlreadyOpen(t *testing.T) {
 	t.Parallel()
 
-	value, client, output := stoppedWithOpenFunnel(t, "", false)
-	settle(t, value, output)
+	value, client, output := stoppedWithOpenFunnel(t, true)
+	settle(t, "start", value, output)
 
 	if len(client.Closed) != 0 {
-		t.Fatalf("a run with no terminal closed %+v", client.Closed)
+		t.Fatalf("start closed %+v, and it closes nothing", client.Closed)
 	}
-	printed := output.String()
-	for _, wanted := range []string{"is still open", "grat hide"} {
-		if !strings.Contains(printed, wanted) {
-			t.Fatalf("the output does not carry %q:\n%s", wanted, printed)
-		}
+	if !strings.Contains(output.String(), "https://fixture.tail1234.ts.net/api/webhooks/creem") {
+		t.Fatalf("the output does not name the public address:\n%s", output.String())
 	}
-	if strings.Contains(printed, "Close it?") {
-		t.Fatalf("a question was asked where nobody could answer it:\n%s", printed)
+}
+
+// TestAPortChangeClosesTheFunnel is the same fault reached differently. A funnel
+// forwards to a port rather than to a service, so a service that moves leaves
+// its address pointing at a number that whatever binds it next will answer on.
+func TestAPortChangeClosesTheFunnel(t *testing.T) {
+	t.Parallel()
+
+	value, client, output := stoppedWithOpenFunnel(t, false)
+	backend := configuredServices(t, value)[0]
+
+	reporter := funnelWithdrawalReporter{output: presentation.New(output, presentation.ColorNever)}
+	withdrawMovedFunnels(context.Background(), []config.Service{backend}, value, reporter)
+
+	if len(client.Closed) != 1 || client.Closed[0].Target != "http://localhost:4001" {
+		t.Fatalf("closed %+v, want the funnel pointing at the port that is moving", client.Closed)
+	}
+	if !strings.Contains(output.String(), "grat expose backend --path /api/webhooks/creem") {
+		t.Fatalf("the output does not say how to put the address back:\n%s", output.String())
 	}
 }

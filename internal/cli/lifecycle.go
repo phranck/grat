@@ -3,9 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
-	"strings"
 
 	"github.com/charmbracelet/x/term"
 	"github.com/phranck/grat/internal/config"
@@ -50,7 +48,7 @@ func runLifecycleLocked(ctx context.Context, command string, names []string, cwd
 		if err != nil {
 			return err
 		}
-		settleOrphanedFunnels(ctx, command, manager.Config, services, environment, output)
+		settleFunnels(ctx, command, services, environment, output)
 		return nil
 	}
 	output.Heading(lifecycleTitle(command), manager.Config.Project.Name)
@@ -62,109 +60,122 @@ func runLifecycleLocked(ctx context.Context, command string, names []string, cwd
 	if err := renderStatus(ctx, manager, environment.tailscaleReady, output); err != nil {
 		return err
 	}
-	settleOrphanedFunnels(ctx, command, manager.Config, services, environment, output)
+	settleFunnels(ctx, command, services, environment, output)
 	return nil
 }
 
-// reportOrphanedFunnels says so when a public address outlives the service behind
-// it, which is what happens after a stop: a funnel stands until somebody closes
-// it, so the address is left pointing at nothing.
+// settleFunnels keeps a public address and the service behind it in step.
 //
-// It reports and does not act, because closing somebody's funnel unasked would be
-// the surprise this warning exists to prevent.
-func settleOrphanedFunnels(ctx context.Context, command string, value config.Config, stopped []config.Service, environment environment, output presentation.Renderer) {
-	if command != "stop" {
-		return
-	}
-	addresses := publicAddresses(ctx, value, environment.tailscaleReady)
-	if len(addresses) == 0 {
-		return
-	}
-
-	orphaned := make([]config.Service, 0, len(stopped))
-	for _, service := range stopped {
-		if _, open := addresses[service.Name]; open {
-			orphaned = append(orphaned, service)
-		}
-	}
-	if len(orphaned) == 0 {
-		return
-	}
-
-	for _, service := range orphaned {
-		output.Step(presentation.StepWarning, service.Name,
-			"is stopped but "+addresses[service.Name]+" is still open")
-	}
-
-	if !environment.interactive {
-		// Nobody to ask, so it stays reported. Closing somebody's public address
-		// without being asked is not a thing to do quietly, and the address is
-		// often the reason the service existed.
-		for _, service := range orphaned {
-			output.Step(presentation.StepInfo, service.Name, "close it with: grat hide "+service.Name)
-		}
-		return
-	}
-
-	closeThem, err := askToClose(environment.input, output, orphaned)
-	if err != nil || !closeThem {
-		if err != nil {
-			output.Step(presentation.StepInfo, "Public access", err.Error())
-		}
-		for _, service := range orphaned {
-			output.Step(presentation.StepInfo, service.Name, "left open; close it with: grat hide "+service.Name)
-		}
-		return
-	}
-
-	// The provider rather than a fresh inspection, which is the same seam expose
-	// and hide use and therefore the one a test can stand in for. Reaching here
-	// means a funnel was found, so Tailscale is ready and the provider returns
-	// straight away rather than installing anything.
+// After a stop, a funnel goes on forwarding to a local port that nothing holds
+// any more, and whatever binds that port next is what answers the internet. So
+// stop closes them and says how to put each one back, rather than asking: the
+// question could only be put where there is a terminal, and a stop in a script
+// is exactly where the address would be left standing.
+//
+// After a start or a restart, an address that is already open is reported rather
+// than changed. It points at the service that has just come up, which is what
+// somebody wanted, and they should know it is there.
+func settleFunnels(ctx context.Context, command string, services []config.Service, environment environment, output presentation.Renderer) {
 	client, onTailnet := environment.tailscaleReady(ctx)
 	if !onTailnet {
-		output.Step(presentation.StepFailure, "Public access", "Tailscale did not answer, so nothing was closed")
 		return
 	}
-	open, err := client.Funnels(ctx)
-	if err != nil {
-		output.Step(presentation.StepFailure, "Public access", "Tailscale did not say what is published, so nothing was closed")
+	switch command {
+	case "start", "restart":
+		reportOpenFunnels(ctx, client, services, output)
+		return
+	case "stop":
+	default:
 		return
 	}
-	for _, service := range orphaned {
-		// Exactly what Tailscale reports for that service, so a funnel pointing
-		// somewhere else is left standing.
-		for _, funnel := range publish.FunnelsFor(service, open) {
-			if err := client.Close(ctx, funnel); err != nil {
-				output.Step(presentation.StepFailure, service.Name, "could not be closed: "+err.Error())
-				continue
-			}
-			output.Step(presentation.StepSuccess, service.Name, "no longer reachable from the internet")
-		}
+	if err := publish.Withdraw(ctx, client, services, funnelWithdrawalReporter{output: output}); err != nil {
+		output.Step(presentation.StepWarning, "Public access",
+			"Tailscale did not say what is published, so an address may still be open")
 	}
 }
 
-// askToClose puts the one question, with closing as the expected answer: the
-// service behind the address has just been stopped, so the address points at
-// nothing until it is closed or the service is started again.
-func askToClose(input io.Reader, output presentation.Renderer, orphaned []config.Service) (bool, error) {
-	prompt := "Close it? [Y/n]: "
-	if len(orphaned) > 1 {
-		prompt = "Close them? [Y/n]: "
+// reportOpenFunnels names an address that already points at a service that has
+// just been started, with the address itself, so it is not something to go and
+// look up.
+func reportOpenFunnels(ctx context.Context, client tailscale.Client, services []config.Service, output presentation.Renderer) {
+	open, err := publish.Open(ctx, client, services)
+	if err != nil || len(open) == 0 {
+		return
 	}
-	if _, err := io.WriteString(output.Writer(), prompt); err != nil {
-		return false, err
-	}
-	answer, err := readPromptLine(input)
+	hostname, err := client.Hostname(ctx)
 	if err != nil {
-		return false, err
+		return
 	}
-	switch strings.ToLower(strings.TrimSpace(answer)) {
-	case "", "y", "yes":
-		return true, nil
-	default:
-		return false, nil
+	for _, publication := range open {
+		output.Step(presentation.StepInfo, publication.Service.Name,
+			"is public at "+publication.Funnel.PublicURL(hostname))
 	}
+}
+
+// withdrawMovedFunnels closes the public addresses of services whose port is
+// about to change.
+//
+// A funnel forwards to a local port rather than to a service, so one left
+// standing after a service moves points at a number that service no longer
+// holds. Whatever binds it next is then what answers the internet, and after a
+// reassignment across projects that is very often somebody else's service.
+func withdrawMovedFunnels(ctx context.Context, moved []config.Service, environment environment, observer publish.WithdrawalObserver) {
+	if len(moved) == 0 {
+		return
+	}
+	client, onTailnet := environment.tailscaleReady(ctx)
+	if !onTailnet {
+		return
+	}
+	if err := publish.Withdraw(ctx, client, moved, observer); err != nil {
+		observer.ObserveWithdrawal(publish.Withdrawal{Err: err})
+	}
+}
+
+// funnelWithdrawalCollector keeps what was closed until there is somewhere to
+// print it, which is what a command running a live view needs: the view owns the
+// screen whilst it runs, so a line written during it is overwritten.
+type funnelWithdrawalCollector struct {
+	withdrawals []publish.Withdrawal
+}
+
+// ObserveWithdrawal keeps one result for later.
+func (collector *funnelWithdrawalCollector) ObserveWithdrawal(withdrawal publish.Withdrawal) {
+	collector.withdrawals = append(collector.withdrawals, withdrawal)
+}
+
+// render prints everything that was kept, in the order it happened.
+func (collector *funnelWithdrawalCollector) render(output presentation.Renderer) {
+	reporter := funnelWithdrawalReporter{output: output}
+	for _, withdrawal := range collector.withdrawals {
+		reporter.ObserveWithdrawal(withdrawal)
+	}
+}
+
+// funnelWithdrawalReporter renders one closed public address as two lines: what
+// happened, and the command that undoes it.
+type funnelWithdrawalReporter struct {
+	output presentation.Renderer
+}
+
+// ObserveWithdrawal prints what became of one public address.
+func (reporter funnelWithdrawalReporter) ObserveWithdrawal(withdrawal publish.Withdrawal) {
+	// A failure before any funnel was reached carries no service, so it is
+	// reported against the subject rather than against a nameless one.
+	if withdrawal.Err != nil && withdrawal.Service.Name == "" {
+		reporter.output.Step(presentation.StepWarning, "Public access",
+			"Tailscale did not say what is published, so an address may still point at the old port")
+		return
+	}
+	if withdrawal.Err != nil {
+		reporter.output.Step(presentation.StepFailure, withdrawal.Service.Name,
+			"its public address could not be closed: "+withdrawal.Err.Error())
+		return
+	}
+	reporter.output.Step(presentation.StepWarning, withdrawal.Service.Name,
+		withdrawal.Funnel.Path+" was still public, and is now closed")
+	reporter.output.Step(presentation.StepInfo, withdrawal.Service.Name,
+		"the same address comes back with: "+withdrawal.Reopen)
 }
 
 func executeLifecycle(ctx context.Context, manager gratruntime.Manager, command string, names []string) error {

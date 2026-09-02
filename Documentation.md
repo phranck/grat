@@ -156,7 +156,7 @@ grat signals only what it can prove is its own: the recorded process must still 
 
 The signal goes to the whole process group, which is what takes the descendants with it, such as the Vapor application under swift run or a reload process under Vite. SIGTERM comes first, then SIGKILL after shutdown_timeout if the recorded process is still there.
 
-Where a service is still published, the command says so and offers to close it, because a funnel outlives the service behind it and the address now points at nothing. Declining leaves it open and says how to close it later. Where there is no terminal to ask in, it is reported and left alone, since closing somebody's public address unasked is not something to do quietly.
+Where a service is still published, the command closes its public address and says so, with the line that opens it again. A funnel outlives the service behind it, so one left standing forwards to a local port that nothing holds any more, and whatever binds that port next is what answers the internet. No question is put, because it could only be put where there is a terminal, and a stop inside a script is exactly where the address would be left open. Nothing is lost by this: a funnel's address is the tailnet name and the path, so reopening one gives back the address it had.
 
 ### grat restart [name...]
 
@@ -248,6 +248,8 @@ Assign free role-compatible ports.
 
 Gives the named services of the current project a free port from their role's range, or every service when no name is given. Ports reserved by another configuration and ports held by a live listener are left alone.
 
+A service whose port changes has its public address closed before the new configuration is written, because a funnel forwards to a port rather than to a service and would go on pointing at the number the service is leaving. The line that opens the address again is printed with it.
+
 ### grat ports reassign
 
 Stop managed services and globally reassign ports.
@@ -255,6 +257,8 @@ Stop managed services and globally reassign ports.
 Gives every service of every registered project a fresh port. It validates the whole registry first, stops what grat manages, writes the new configurations, and leaves the services stopped so their next start uses the new numbers.
 
 This is the command for a machine whose ranges have drifted apart, and it holds a lock across the scan, the allocation and the writes, so no other grat command can allocate against a registry that is being rewritten.
+
+Every service whose port changes has its public address closed first, with the line that opens it again. Here that matters most: the numbers move across projects, so an address left standing would very likely end up forwarding to somebody else's service.
 
 ### grat directories add PATH
 
@@ -458,7 +462,7 @@ Where Tailscale is missing, grat installs it, starts its background service and 
 
 Where the tailnet has not enabled Funnel, grat says so and opens the page that grants it, which only the owner of that tailnet can do.
 
-A funnel outlives the service behind it, which is why grat status carries the public address in a column of its own and grat stop offers to close one that is left pointing at a service no longer running.
+A funnel outlives the service behind it, because it is configuration in Tailscale rather than a process. One left standing forwards to a local port that nothing holds any more, and whatever binds that port next is what answers the internet. So grat stop closes the addresses of the services it stopped, and grat ports assign and grat ports reassign close the addresses of every service whose port changes. Each says which address it closed and prints the line that opens it again, since a funnel's address is the tailnet name and the path and comes back unchanged. grat start names an address that already points at a service it has just started, and grat status carries the public address in a column of its own.
 
 ## Ports
 

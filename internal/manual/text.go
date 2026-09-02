@@ -235,9 +235,15 @@ password, and the sign-in happens in the browser, which grat opens.
 Where the tailnet has not enabled Funnel, grat says so and opens the page that
 grants it, which only the owner of that tailnet can do.
 
-A funnel outlives the service behind it, which is why grat status carries the
-public address in a column of its own and grat stop offers to close one that is
-left pointing at a service no longer running.
+A funnel outlives the service behind it, because it is configuration in Tailscale
+rather than a process. One left standing forwards to a local port that nothing
+holds any more, and whatever binds that port next is what answers the internet.
+So grat stop closes the addresses of the services it stopped, and grat ports
+assign and grat ports reassign close the addresses of every service whose port
+changes. Each says which address it closed and prints the line that opens it
+again, since a funnel's address is the tailnet name and the path and comes back
+unchanged. grat start names an address that already points at a service it has
+just started, and grat status carries the public address in a column of its own.
 `
 
 // portAllocation describes how ports are chosen.
