@@ -180,9 +180,15 @@ says which two collide. Giving one of them its own path is what lets both go out
 Each service says what became of it. One that cannot be published does not undo
 the ones already published.
 
-Where Tailscale is missing, grat installs it, starts its background service and
-signs the machine in. It reports each step and does not ask, because that is what
-the typed command needs in order to work. Two steps cannot be taken for you: the
+Where Tailscale is missing, grat asks before it changes anything. It says in two
+sentences what Tailscale is, prints the exact command it would run, and waits for
+a yes; the answer is No unless you type otherwise. Saying no ends the command and
+leaves the machine alone, and the next grat expose asks again. Where there is no
+terminal to answer in, nothing is agreed to and the commands are printed so you
+can run them yourself. Everything else in grat works without Tailscale.
+
+Once you have agreed, grat installs it, starts its background service and signs
+the machine in, reporting each step. Two of them cannot be taken for you: the
 background service starts with administrator rights, so the system asks for your
 password, and the sign-in happens in the browser, which grat opens. An existing
 Tailscale is never upgraded, reconfigured or removed.

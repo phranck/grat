@@ -224,13 +224,19 @@ Which funnel belongs to which service is read from the local address it forwards
 to, so an address opened with --path is listed by grat status and closed by
 grat hide, even though no path in the configuration matches it.
 
-Where Tailscale is missing, grat installs it, starts its background service and
-signs the machine in, reporting each step. It does not ask, because that is what
-the typed command needs in order to work. On a Mac it installs through Homebrew;
-on Linux it runs the vendor's install script. An existing Tailscale is never
-upgraded, reconfigured or removed. Two steps cannot be taken for you: the
-background service starts with administrator rights, so the system asks for your
-password, and the sign-in happens in the browser, which grat opens.
+Where Tailscale is missing, grat asks before it changes the machine. It says what
+Tailscale is, prints the exact command, and waits for a yes, with No as the
+answer unless you type otherwise. A no ends the command and changes nothing, the
+next grat expose asks again, and a run with no terminal to answer in agrees to
+nothing and prints the commands instead. Everything else in grat works without
+Tailscale.
+
+After a yes it installs Tailscale, starts its background service and signs the
+machine in, reporting each step. On a Mac it installs through Homebrew; on Linux
+it runs the vendor's install script. An existing Tailscale is never upgraded,
+reconfigured or removed. Two steps cannot be taken for you: the background
+service starts with administrator rights, so the system asks for your password,
+and the sign-in happens in the browser, which grat opens.
 
 Where the tailnet has not enabled Funnel, grat says so and opens the page that
 grants it, which only the owner of that tailnet can do.

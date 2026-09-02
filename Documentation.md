@@ -210,7 +210,9 @@ A funnel is its public port and its path rather than the service behind it, so t
 
 Each service says what became of it. One that cannot be published does not undo the ones already published.
 
-Where Tailscale is missing, grat installs it, starts its background service and signs the machine in. It reports each step and does not ask, because that is what the typed command needs in order to work. Two steps cannot be taken for you: the background service starts with administrator rights, so the system asks for your password, and the sign-in happens in the browser, which grat opens. An existing Tailscale is never upgraded, reconfigured or removed.
+Where Tailscale is missing, grat asks before it changes anything. It says in two sentences what Tailscale is, prints the exact command it would run, and waits for a yes; the answer is No unless you type otherwise. Saying no ends the command and leaves the machine alone, and the next grat expose asks again. Where there is no terminal to answer in, nothing is agreed to and the commands are printed so you can run them yourself. Everything else in grat works without Tailscale.
+
+Once you have agreed, grat installs it, starts its background service and signs the machine in, reporting each step. Two of them cannot be taken for you: the background service starts with administrator rights, so the system asks for your password, and the sign-in happens in the browser, which grat opens. An existing Tailscale is never upgraded, reconfigured or removed.
 
 Where the tailnet has not enabled Funnel, grat says so and opens the page that grants it, which only the owner of that tailnet can do.
 
@@ -462,7 +464,9 @@ A service is published only where a path says so, with --path for one run or a [
 
 Which funnel belongs to which service is read from the local address it forwards to, so an address opened with --path is listed by grat status and closed by grat hide, even though no path in the configuration matches it.
 
-Where Tailscale is missing, grat installs it, starts its background service and signs the machine in, reporting each step. It does not ask, because that is what the typed command needs in order to work. On a Mac it installs through Homebrew; on Linux it runs the vendor's install script. An existing Tailscale is never upgraded, reconfigured or removed. Two steps cannot be taken for you: the background service starts with administrator rights, so the system asks for your password, and the sign-in happens in the browser, which grat opens.
+Where Tailscale is missing, grat asks before it changes the machine. It says what Tailscale is, prints the exact command, and waits for a yes, with No as the answer unless you type otherwise. A no ends the command and changes nothing, the next grat expose asks again, and a run with no terminal to answer in agrees to nothing and prints the commands instead. Everything else in grat works without Tailscale.
+
+After a yes it installs Tailscale, starts its background service and signs the machine in, reporting each step. On a Mac it installs through Homebrew; on Linux it runs the vendor's install script. An existing Tailscale is never upgraded, reconfigured or removed. Two steps cannot be taken for you: the background service starts with administrator rights, so the system asks for your password, and the sign-in happens in the browser, which grat opens.
 
 Where the tailnet has not enabled Funnel, grat says so and opens the page that grants it, which only the owner of that tailnet can do.
 
