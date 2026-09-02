@@ -25,12 +25,28 @@ stored in project configuration. The only topology-derived value beyond the
 service's managed `PORT` is `BACKEND_URL`: when exactly one backend role exists,
 grat injects its non-secret local origin into the other services. An inherited
 `BACKEND_URL` overrides discovery only when the consumer explicitly lists it in
-`inherit_env`. grat does not read or write application environment files. This
-reduces accidental secret propagation but does not prevent a trusted command
-running as the current user from reading user-accessible files. Platform
-inspection helpers such as `ps`, `lsof`, and `tail` are invoked only through
-fixed absolute system paths and never resolved through a project-controlled
-`PATH` entry.
+`inherit_env`. This reduces accidental secret propagation but does not prevent
+a trusted command running as the current user from reading user-accessible
+files.
+
+grat never writes an application environment file, and it reads one in a single
+place. Detection of a Laravel project opens `.env` for the value of
+`QUEUE_CONNECTION`, which is what decides whether the project needs a queue
+worker. Only that one name is taken out of the file, nothing else in it reaches
+a result, and the value is not written into `grat.config`.
+
+Platform inspection helpers are invoked through fixed absolute system paths, so
+a project-controlled `PATH` entry cannot stand in for one. Those are `/bin/ps`,
+`/usr/sbin/lsof`, `/usr/bin/tail`, and `/usr/bin/open` on macOS.
+
+Five helpers are resolved through `PATH`, because their location differs between
+systems and installations: `tailscale`, `brew`, `sudo`, `xdg-open` on Linux, and
+`gh`. On Linux the Tailscale install path additionally runs the vendor's install
+script through `/bin/sh`, which fetches it with `curl`. Every argument grat
+passes to any of them is one of grat's own literals or a path grat resolved
+itself; nothing from a project configuration reaches them. `gh` is the one that
+matters most, since it is what verifies an update's provenance, so a `PATH` you
+do not control is a `PATH` that decides what that verification is.
 
 Release workflow binaries receive GitHub artifact attestations backed by
 Sigstore. Direct update and direct-install ownership checks are fail-closed:

@@ -53,9 +53,16 @@ On Linux without Homebrew, take the release binary. It is one file and depends o
 ```sh
 version=$(curl -fsSL https://api.github.com/repos/phranck/grat/releases/latest | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p')
 curl -fsSL -o grat "https://github.com/phranck/grat/releases/download/$version/grat_${version}_linux_amd64"
+gh attestation verify ./grat \
+  --repo phranck/grat \
+  --signer-workflow phranck/grat/.github/workflows/release.yml \
+  --source-ref "refs/tags/$version" \
+  --deny-self-hosted-runners
 chmod +x grat
 sudo install -m 0755 grat /usr/local/bin/grat
 ```
+
+The verification runs before the install, because installing first and checking afterwards is checking a file that is already on the path. It proves the binary was built by this repository's release workflow from that exact tag, and it needs the [GitHub CLI](https://cli.github.com). Without that, take the checksum instead: [Documentation.md](Documentation.md#installation) carries both.
 
 The version is read from the newest release rather than written here, so this stays current. Use `linux_arm64` on ARM. macOS binaries are published the same way, as `darwin_amd64` and `darwin_arm64`. A binary installed this way carries no man pages; `grat.1` and `grat.config.7` sit beside it in the same release, and [Documentation.md](Documentation.md#installation) says where to put them.
 
