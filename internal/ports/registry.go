@@ -30,7 +30,7 @@ type scanCounters struct {
 
 var defaultScanLimits = scanLimits{
 	MaxRoots:    64,
-	MaxEntries:  250_000,
+	MaxEntries:  project.MaxScanEntries,
 	MaxConfigs:  1_024,
 	MaxServices: 16_384,
 }

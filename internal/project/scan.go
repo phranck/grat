@@ -18,6 +18,15 @@ import (
 // alone measured 70,146 entries on one machine.
 const MaxScanDepth = 6
 
+// MaxScanEntries is how many directory entries one scan may look at in total.
+//
+// A development folder holds far more files than projects, so the bound is what
+// keeps a scan from spending its time inside one of them: an icon set alone
+// measured 70,146 entries on one machine, and an unpacked module tree measures
+// more. It is one number rather than one per caller, because a scan that is
+// bounded in one command and unbounded in another is unbounded.
+const MaxScanEntries = 250_000
+
 // ignoredScanDirectories are the directory names a scan for project roots never
 // descends into.
 //

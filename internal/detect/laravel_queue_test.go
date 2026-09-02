@@ -18,7 +18,7 @@ func laravelProject(t *testing.T, extra map[string]string) string {
 	for name, content := range extra {
 		files[name] = content
 	}
-	return project(t, files)
+	return writeProject(t, files)
 }
 
 // hasService reports whether the finding carries a service of that name.

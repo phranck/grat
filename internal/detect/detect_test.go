@@ -9,9 +9,9 @@ import (
 	"github.com/phranck/grat/internal/config"
 )
 
-// project writes a directory from a map of relative paths to contents and
+// writeProject writes a directory from a map of relative paths to contents and
 // returns its root, so each test states only the files that matter to it.
-func project(t *testing.T, files map[string]string) string {
+func writeProject(t *testing.T, files map[string]string) string {
 	t.Helper()
 	root := t.TempDir()
 	for name, content := range files {
@@ -40,7 +40,7 @@ func commandOf(t *testing.T, finding Finding, name string) string {
 func TestNodeYieldsOneServicePerConventionalScript(t *testing.T) {
 	t.Parallel()
 
-	root := project(t, map[string]string{
+	root := writeProject(t, map[string]string{
 		"package.json": `{"scripts": {"dev:backend": "node server.js", "dev:frontend": "vite", "build": "vite build"}}`,
 	})
 
@@ -59,7 +59,7 @@ func TestNodeYieldsOneServicePerConventionalScript(t *testing.T) {
 func TestNodePrefersDevFrontendOverDev(t *testing.T) {
 	t.Parallel()
 
-	root := project(t, map[string]string{
+	root := writeProject(t, map[string]string{
 		"package.json": `{"scripts": {"dev": "vite", "dev:frontend": "vite --host"}}`,
 	})
 
@@ -75,14 +75,14 @@ func TestNodePrefersDevFrontendOverDev(t *testing.T) {
 func TestNodeUsesPnpmWhenTheManifestSaysSo(t *testing.T) {
 	t.Parallel()
 
-	byField := project(t, map[string]string{
+	byField := writeProject(t, map[string]string{
 		"package.json": `{"packageManager": "pnpm@9.0.0", "scripts": {"dev": "vite"}}`,
 	})
 	if got := commandOf(t, Directory(byField), "frontend"); got != "pnpm dev" {
 		t.Fatalf("command = %q, want pnpm from the packageManager field", got)
 	}
 
-	byLockfile := project(t, map[string]string{
+	byLockfile := writeProject(t, map[string]string{
 		"package.json":   `{"scripts": {"dev": "vite"}}`,
 		"pnpm-lock.yaml": "lockfileVersion: 9.0\n",
 	})
@@ -94,7 +94,7 @@ func TestNodeUsesPnpmWhenTheManifestSaysSo(t *testing.T) {
 func TestNodeWithoutADevelopmentScriptIsReportedRatherThanGuessed(t *testing.T) {
 	t.Parallel()
 
-	finding := Directory(project(t, map[string]string{
+	finding := Directory(writeProject(t, map[string]string{
 		"package.json": `{"scripts": {"build": "vite build", "test": "vitest"}}`,
 	}))
 	if len(finding.Services) != 0 {
@@ -108,7 +108,7 @@ func TestNodeWithoutADevelopmentScriptIsReportedRatherThanGuessed(t *testing.T) 
 func TestLaravelNeedsBothComposerAndArtisan(t *testing.T) {
 	t.Parallel()
 
-	full := project(t, map[string]string{
+	full := writeProject(t, map[string]string{
 		"composer.json": `{"require": {"laravel/framework": "^11.0"}}`,
 		"artisan":       "#!/usr/bin/env php\n",
 	})
@@ -117,7 +117,7 @@ func TestLaravelNeedsBothComposerAndArtisan(t *testing.T) {
 	}
 
 	// A PHP library has a Composer manifest and nothing to serve.
-	library := Directory(project(t, map[string]string{
+	library := Directory(writeProject(t, map[string]string{
 		"composer.json": `{"require": {"psr/log": "^3.0"}}`,
 	}))
 	if library.Any() {
@@ -128,7 +128,7 @@ func TestLaravelNeedsBothComposerAndArtisan(t *testing.T) {
 func TestArtisanWithoutLaravelIsReportedRatherThanAssumed(t *testing.T) {
 	t.Parallel()
 
-	finding := Directory(project(t, map[string]string{
+	finding := Directory(writeProject(t, map[string]string{
 		"composer.json": `{"require": {"symfony/console": "^7.0"}}`,
 		"artisan":       "#!/usr/bin/env php\n",
 	}))
@@ -143,7 +143,7 @@ func TestArtisanWithoutLaravelIsReportedRatherThanAssumed(t *testing.T) {
 func TestVaporReadsTheTargetNameOutOfTheManifest(t *testing.T) {
 	t.Parallel()
 
-	finding := Directory(project(t, map[string]string{
+	finding := Directory(writeProject(t, map[string]string{
 		"Package.swift": `// swift-tools-version:6.0
 import PackageDescription
 let package = Package(
@@ -162,7 +162,7 @@ let package = Package(
 func TestSeveralExecutableTargetsAreReportedRatherThanPicked(t *testing.T) {
 	t.Parallel()
 
-	finding := Directory(project(t, map[string]string{
+	finding := Directory(writeProject(t, map[string]string{
 		"Package.swift": `import PackageDescription
 // vapor
 let package = Package(targets: [
@@ -181,7 +181,7 @@ let package = Package(targets: [
 func TestASwiftPackageWithoutVaporIsNotAService(t *testing.T) {
 	t.Parallel()
 
-	finding := Directory(project(t, map[string]string{
+	finding := Directory(writeProject(t, map[string]string{
 		"Package.swift": `let package = Package(targets: [.executableTarget(name: "Tool")])`,
 	}))
 	if finding.Any() {
@@ -192,7 +192,7 @@ func TestASwiftPackageWithoutVaporIsNotAService(t *testing.T) {
 func TestPythonReadsBothTheModuleAndTheApplicationVariable(t *testing.T) {
 	t.Parallel()
 
-	finding := Directory(project(t, map[string]string{
+	finding := Directory(writeProject(t, map[string]string{
 		"requirements.txt": "fastapi==0.115.0\nuvicorn==0.32.0\n",
 		"service.py":       "from fastapi import FastAPI\n\napi = FastAPI()\n",
 	}))
@@ -206,7 +206,7 @@ func TestPythonReadsBothTheModuleAndTheApplicationVariable(t *testing.T) {
 func TestPythonWithoutAnApplicationIsReported(t *testing.T) {
 	t.Parallel()
 
-	finding := Directory(project(t, map[string]string{
+	finding := Directory(writeProject(t, map[string]string{
 		"pyproject.toml": "[project]\ndependencies = [\"fastapi\"]\n",
 	}))
 	if len(finding.Services) != 0 {
@@ -220,7 +220,7 @@ func TestPythonWithoutAnApplicationIsReported(t *testing.T) {
 func TestGoYieldsOneServicePerProgramBelowCmd(t *testing.T) {
 	t.Parallel()
 
-	finding := Directory(project(t, map[string]string{
+	finding := Directory(writeProject(t, map[string]string{
 		"go.mod":                "module example.com/thing\n\ngo 1.25\n",
 		"cmd/api/main.go":       "package main\n\nfunc main() {}\n",
 		"cmd/dashboard/main.go": "package main\n\nfunc main() {}\n",
@@ -243,7 +243,7 @@ func TestGoYieldsOneServicePerProgramBelowCmd(t *testing.T) {
 func TestGoFallsBackToTheRootProgram(t *testing.T) {
 	t.Parallel()
 
-	root := project(t, map[string]string{
+	root := writeProject(t, map[string]string{
 		"go.mod":  "module example.com/tool\n\ngo 1.25\n",
 		"main.go": "package main\n\nfunc main() { _ = os.Getenv(\"PORT\") }\n",
 	})
@@ -259,7 +259,7 @@ func TestGoFallsBackToTheRootProgram(t *testing.T) {
 func TestAGoLibraryIsReportedRatherThanInvented(t *testing.T) {
 	t.Parallel()
 
-	finding := Directory(project(t, map[string]string{
+	finding := Directory(writeProject(t, map[string]string{
 		"go.mod":   "module example.com/library\n\ngo 1.25\n",
 		"thing.go": "package library\n",
 	}))
@@ -274,7 +274,7 @@ func TestAGoLibraryIsReportedRatherThanInvented(t *testing.T) {
 func TestTheRoleFollowsFromTheServiceName(t *testing.T) {
 	t.Parallel()
 
-	finding := Directory(project(t, map[string]string{
+	finding := Directory(writeProject(t, map[string]string{
 		"go.mod":          "module example.com/thing\n\ngo 1.25\n",
 		"cmd/api/main.go": "package main\n\nfunc main() { _ = os.Getenv(\"PORT\") }\n",
 	}))
@@ -294,7 +294,7 @@ func TestAnEmptyDirectoryIsNotAProject(t *testing.T) {
 func TestATwoStackProjectYieldsBothInAStableOrder(t *testing.T) {
 	t.Parallel()
 
-	root := project(t, map[string]string{
+	root := writeProject(t, map[string]string{
 		"package.json":  `{"scripts": {"dev:frontend": "vite"}}`,
 		"composer.json": `{"require": {"laravel/framework": "^11.0"}}`,
 		"artisan":       "#!/usr/bin/env php\n",
@@ -316,7 +316,7 @@ func TestATwoStackProjectYieldsBothInAStableOrder(t *testing.T) {
 func TestEveryDetectedCommandCarriesItsEvidence(t *testing.T) {
 	t.Parallel()
 
-	finding := Directory(project(t, map[string]string{
+	finding := Directory(writeProject(t, map[string]string{
 		"package.json": `{"scripts": {"dev": "vite"}}`,
 	}))
 	for _, service := range finding.Services {
@@ -329,7 +329,7 @@ func TestEveryDetectedCommandCarriesItsEvidence(t *testing.T) {
 func TestAGoProgramThatIgnoresThePortIsReportedRatherThanOffered(t *testing.T) {
 	t.Parallel()
 
-	finding := Directory(project(t, map[string]string{
+	finding := Directory(writeProject(t, map[string]string{
 		"go.mod":           "module example.com/tool\n\ngo 1.25\n",
 		"cmd/tool/main.go": "package main\n\nfunc main() { println(\"hello\") }\n",
 	}))
@@ -346,7 +346,7 @@ func TestAMentionOfThePortIsNotAReadOfIt(t *testing.T) {
 
 	// A tool that writes about the variable is not a service that listens on it.
 	// grat is such a tool, and a text search over its own source offers it as one.
-	finding := Directory(project(t, map[string]string{
+	finding := Directory(writeProject(t, map[string]string{
 		"go.mod": "module example.com/tool\n\ngo 1.25\n",
 		"cmd/tool/main.go": "package main\n\n" +
 			"// The service is told its port through os.Getenv(\"PORT\").\n" +
@@ -366,7 +366,7 @@ func TestAFrameworkWinsOverTheBuildToolUnderIt(t *testing.T) {
 
 	// A SvelteKit project depends on Vite as well, and Vite alone would produce a
 	// command that starts the wrong thing.
-	finding := Directory(project(t, map[string]string{
+	finding := Directory(writeProject(t, map[string]string{
 		"package.json": `{"devDependencies": {"@sveltejs/kit": "^2.0.0", "vite": "^6.0.0"}}`,
 	}))
 	want := "npx vite dev --port $PORT --host 127.0.0.1 --strictPort"
@@ -374,7 +374,7 @@ func TestAFrameworkWinsOverTheBuildToolUnderIt(t *testing.T) {
 		t.Fatalf("command = %q, want %q", got, want)
 	}
 
-	next := Directory(project(t, map[string]string{
+	next := Directory(writeProject(t, map[string]string{
 		"package.json": `{"dependencies": {"next": "^15.0.0", "vite": "^6.0.0"}}`,
 	}))
 	if got := commandOf(t, next, "frontend"); !strings.HasPrefix(got, "npx next dev") {
@@ -387,7 +387,7 @@ func TestNamedServicesWinOverAHoistedBuildTool(t *testing.T) {
 
 	// A workspace root installs its members' build tools, so vite here belongs to
 	// one workspace and says nothing about the other three.
-	finding := Directory(project(t, map[string]string{
+	finding := Directory(writeProject(t, map[string]string{
 		"package.json": `{"devDependencies": {"vite": "^6.0.0"},
 			"scripts": {"dev": "run-all", "dev:backend": "…", "dev:dashboard": "…", "dev:shared": "…"}}`,
 	}))
@@ -407,7 +407,7 @@ func TestAngularIsRecognisedByItsWorkspaceFile(t *testing.T) {
 
 	// The workspace exists before the packages are installed, so the manifest is
 	// silent and the file is the only evidence.
-	finding := Directory(project(t, map[string]string{
+	finding := Directory(writeProject(t, map[string]string{
 		"angular.json": `{"version": 1, "projects": {}}`,
 		"package.json": `{"scripts": {}}`,
 	}))
@@ -431,7 +431,7 @@ func TestTheBinaryRunnerFollowsThePackageManager(t *testing.T) {
 		{lockfile: "yarn.lock", want: "yarn vite"},
 		{lockfile: "bun.lock", want: "bunx vite"},
 	} {
-		finding := Directory(project(t, map[string]string{
+		finding := Directory(writeProject(t, map[string]string{
 			"package.json":    `{"devDependencies": {"vite": "^6.0.0"}}`,
 			testCase.lockfile: "",
 		}))
@@ -446,7 +446,7 @@ func TestAnExpressServerNeedsThePortInItsSource(t *testing.T) {
 
 	// Express reads no port of its own, so the source is what decides whether the
 	// server would listen where grat expects it.
-	silent := Directory(project(t, map[string]string{
+	silent := Directory(writeProject(t, map[string]string{
 		"package.json": `{"dependencies": {"express": "^5.0.0"}, "scripts": {"start": "node server.js"}}`,
 		"server.js":    "const app = require('express')()\napp.listen(3000)\n",
 	}))
@@ -457,7 +457,7 @@ func TestAnExpressServerNeedsThePortInItsSource(t *testing.T) {
 		t.Fatalf("unresolved = %+v, want the missing port read named", silent.Unresolved)
 	}
 
-	reading := Directory(project(t, map[string]string{
+	reading := Directory(writeProject(t, map[string]string{
 		"package.json":  `{"dependencies": {"express": "^5.0.0"}, "scripts": {"start": "node src/server.js"}}`,
 		"src/server.js": "const app = require('express')()\napp.listen(process.env.PORT)\n",
 	}))
@@ -471,7 +471,7 @@ func TestAServerWithoutAStartScriptIsReportedRatherThanGuessed(t *testing.T) {
 
 	// There is no standard entry point for a hand-written server, so index.js,
 	// app.js and server.js are all guesses.
-	finding := Directory(project(t, map[string]string{
+	finding := Directory(writeProject(t, map[string]string{
 		"package.json": `{"dependencies": {"fastify": "^5.0.0"}, "scripts": {"build": "tsc"}}`,
 		"server.js":    "require('fastify')().listen({ port: process.env.PORT })\n",
 	}))
@@ -486,7 +486,7 @@ func TestAServerWithoutAStartScriptIsReportedRatherThanGuessed(t *testing.T) {
 func TestDjangoNeedsTheRealManagementScript(t *testing.T) {
 	t.Parallel()
 
-	full := Directory(project(t, map[string]string{
+	full := Directory(writeProject(t, map[string]string{
 		"manage.py": "import os\nos.environ.setdefault('DJANGO_SETTINGS_MODULE', 'site.settings')\nfrom django.core.management import execute_from_command_line\n",
 	}))
 	want := "python manage.py runserver 127.0.0.1:$PORT"
@@ -495,7 +495,7 @@ func TestDjangoNeedsTheRealManagementScript(t *testing.T) {
 	}
 
 	// manage.py is a common name for a project's own script.
-	unrelated := Directory(project(t, map[string]string{
+	unrelated := Directory(writeProject(t, map[string]string{
 		"manage.py": "import sys\nprint('a helper of our own')\n",
 	}))
 	if unrelated.Any() {
@@ -506,7 +506,7 @@ func TestDjangoNeedsTheRealManagementScript(t *testing.T) {
 func TestRailsNeedsBothTheGemfileAndTheGeneratedBinary(t *testing.T) {
 	t.Parallel()
 
-	full := Directory(project(t, map[string]string{
+	full := Directory(writeProject(t, map[string]string{
 		"Gemfile":   "source 'https://rubygems.org'\ngem 'rails', '~> 8.0'\n",
 		"bin/rails": "#!/usr/bin/env ruby\n",
 	}))
@@ -515,7 +515,7 @@ func TestRailsNeedsBothTheGemfileAndTheGeneratedBinary(t *testing.T) {
 		t.Fatalf("command = %q, want %q", got, want)
 	}
 
-	ungenerated := Directory(project(t, map[string]string{
+	ungenerated := Directory(writeProject(t, map[string]string{
 		"Gemfile": "source 'https://rubygems.org'\ngem 'rails', '~> 8.0'\n",
 	}))
 	if len(ungenerated.Services) != 0 {
@@ -526,7 +526,7 @@ func TestRailsNeedsBothTheGemfileAndTheGeneratedBinary(t *testing.T) {
 	}
 
 	// A Ruby project that is not Rails has no server this can start.
-	other := Directory(project(t, map[string]string{
+	other := Directory(writeProject(t, map[string]string{
 		"Gemfile": "source 'https://rubygems.org'\ngem 'sinatra'\n",
 	}))
 	if other.Any() {
