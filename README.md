@@ -96,6 +96,8 @@ grat discover --name example-api \
 
 The resulting `grat.config` is regular TOML and can be read and edited before the first start.
 
+For a repository you cannot write into, `grat discover --registry` keeps the same configuration in grat's own registry and leaves the directory untouched. Everything else works as it does otherwise, and `grat status` says where the configuration came from. The file stays the default because it travels with a clone and with a branch, so a colleague types `grat start` and it works.
+
 Given a path, `grat discover` searches below it instead and shows what it found as a list you move through, so a folder of twenty projects is set up in one pass and you decide per project whether its configuration is written:
 
 ```sh

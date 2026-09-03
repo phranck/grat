@@ -14,6 +14,7 @@ import (
 	"github.com/phranck/grat/internal/ports"
 	"github.com/phranck/grat/internal/presentation"
 	"github.com/phranck/grat/internal/project"
+	"github.com/phranck/grat/internal/settings"
 )
 
 // discoverHere writes the configuration for the project the command was run in.
@@ -21,16 +22,19 @@ import (
 // This is grat discover without a path. It writes straight away rather than
 // asking which projects to take, because there is only one and you named it by
 // standing in it.
-func discoverHere(ctx context.Context, cwd string, input io.Reader, interactive bool, roots []string, name string, force bool, serviceSpecs []string, output presentation.Renderer) error {
+//
+// hold keeps the result in grat's own registry instead, for a repository that
+// must not be written into. The rest of the command is the same either way,
+// including the port allocation, because a project managed from the registry is
+// a project like any other to everything except the place its answer is kept.
+func discoverHere(ctx context.Context, cwd string, input io.Reader, interactive bool, roots []string, name string, force bool, hold bool, serviceSpecs []string, environment environment, output presentation.Renderer) error {
 	root, err := filepath.Abs(cwd)
 	if err != nil {
 		return fmt.Errorf("resolve current directory: %w", err)
 	}
 	configPath := filepath.Join(root, project.ConfigFileName)
-	if _, err := os.Stat(configPath); err == nil && !force {
-		return fmt.Errorf("%s already exists; use --force to replace it", configPath)
-	} else if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return fmt.Errorf("inspect %s: %w", configPath, err)
+	if err := refuseExistingConfiguration(root, configPath, hold, force, environment.settings); err != nil {
+		return err
 	}
 	if !interactive && strings.TrimSpace(name) == "" {
 		return fmt.Errorf("discover requires --name when standard input is not a terminal")
@@ -60,12 +64,12 @@ func discoverHere(ctx context.Context, cwd string, input io.Reader, interactive 
 	output.Step(presentation.StepWorking, "Ports", "scanning configured directories and live listeners")
 	services := make([]config.Service, 0, len(definitions))
 	err = ports.WithRegistryLock(ctx, func() error {
-		if _, statErr := os.Stat(configPath); statErr == nil && !force {
-			return fmt.Errorf("%s already exists; use --force to replace it", configPath)
-		} else if statErr != nil && !errors.Is(statErr, os.ErrNotExist) {
-			return fmt.Errorf("inspect %s: %w", configPath, statErr)
+		// Checked again under the lock, because the first check was before the
+		// interview and somebody may have set the project up in between.
+		if lockedErr := refuseExistingConfiguration(root, configPath, hold, force, environment.settings); lockedErr != nil {
+			return lockedErr
 		}
-		report, scanErr := ports.Scan(roots)
+		report, scanErr := scanProjects(roots, environment.settings)
 		if scanErr != nil {
 			return scanErr
 		}
@@ -91,13 +95,21 @@ func discoverHere(ctx context.Context, cwd string, input io.Reader, interactive 
 		}
 
 		value := config.Config{Version: 1, Project: config.Project{Name: projectName}, Runtime: config.DefaultRuntime(), Services: services}
-		output.Step(presentation.StepWorking, "Configuration", "writing grat.config")
+		if hold {
+			output.Step(presentation.StepWorking, "Configuration", "keeping the configuration in grat's registry")
+			return environment.settings.HoldProject(root, value)
+		}
+		output.Step(presentation.StepWorking, "Configuration", "writing "+project.ConfigFileName)
 		return config.Write(configPath, value)
 	})
 	if err != nil {
 		return err
 	}
-	output.Step(presentation.StepSuccess, "Configuration", "created "+configPath)
+	if hold {
+		output.Step(presentation.StepSuccess, "Configuration", "held in grat's registry for "+root)
+	} else {
+		output.Step(presentation.StepSuccess, "Configuration", "created "+configPath)
+	}
 	rows := make([][]string, 0, len(services))
 	for _, service := range services {
 		if service.Port == 0 {
@@ -107,6 +119,36 @@ func discoverHere(ctx context.Context, cwd string, input io.Reader, interactive 
 		}
 	}
 	output.Table([]string{"SERVICE", "PORT"}, rows)
+	return nil
+}
+
+// refuseExistingConfiguration stops a run that would replace a configuration
+// nobody asked to replace.
+//
+// The two places are checked in both directions. A file already there is a
+// refusal whichever way the result would be kept, because a file wins over a
+// held configuration and holding one beside it would produce an answer nothing
+// reads. A held configuration is a refusal for the same reason a file is: it is
+// this project's setup, wherever it sits.
+func refuseExistingConfiguration(root string, configPath string, hold bool, force bool, store settings.Store) error {
+	if _, err := os.Stat(configPath); err == nil {
+		if hold {
+			return fmt.Errorf("%s already exists, and a file wins over a held configuration; remove it first", configPath)
+		}
+		if !force {
+			return fmt.Errorf("%s already exists; use --force to replace it", configPath)
+		}
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("inspect %s: %w", configPath, err)
+	}
+
+	_, held, err := store.HeldProject(root)
+	if err != nil {
+		return err
+	}
+	if held && !force {
+		return fmt.Errorf("grat already holds a configuration for %s; use --force to replace it", root)
+	}
 	return nil
 }
 

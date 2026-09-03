@@ -34,6 +34,7 @@ func ConfigDocument(version string, date string) Document {
 				Prose("grat.config - the declarative description of a project's services"),
 			}},
 			{Title: "Description", Blocks: []Block{Prose(configDescription)}},
+			{Title: "Where a configuration lives", Blocks: []Block{Prose(configLocation)}},
 			{Title: "Example", Blocks: []Block{Literal(configExample)}},
 			{Title: "Top level", Blocks: []Block{fieldList(topLevelFields)}},
 			{Title: "The project table", Blocks: []Block{fieldList(projectFields)}},

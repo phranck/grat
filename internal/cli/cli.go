@@ -7,15 +7,12 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/charmbracelet/x/term"
-	"github.com/phranck/grat/internal/config"
 	"github.com/phranck/grat/internal/maintenance"
 	"github.com/phranck/grat/internal/operations"
 	"github.com/phranck/grat/internal/presentation"
-	"github.com/phranck/grat/internal/project"
 	gratruntime "github.com/phranck/grat/internal/runtime"
 	"github.com/phranck/grat/internal/settings"
 	"github.com/phranck/grat/internal/version"
@@ -102,11 +99,11 @@ func runWithEnvironment(ctx context.Context, args []string, cwd string, out io.W
 		}
 	case "status":
 		if _, err = configuredRoots(cwd, environment, output); err == nil {
-			err = runStatus(ctx, cwd, output)
+			err = runStatus(ctx, cwd, environment.settings, output)
 		}
 	case "logs":
 		if _, err = configuredRoots(cwd, environment, output); err == nil {
-			err = runLogs(ctx, args[1:], cwd, output)
+			err = runLogs(ctx, args[1:], cwd, environment.settings, output)
 		}
 	case "ports":
 		roots, rootErr := configuredRoots(cwd, environment, output)
@@ -163,22 +160,10 @@ func exitCode(err error) int {
 	return 1
 }
 
-func loadManager(cwd string) (gratruntime.Manager, error) {
-	root, value, err := loadConfig(cwd)
+func loadManager(cwd string, store settings.Store) (gratruntime.Manager, error) {
+	resolved, err := resolveProject(cwd, store)
 	if err != nil {
 		return gratruntime.Manager{}, err
 	}
-	return gratruntime.Manager{Root: root, Config: value}, nil
-}
-
-func loadConfig(cwd string) (string, config.Config, error) {
-	root, err := project.FindRoot(cwd)
-	if err != nil {
-		return "", config.Config{}, err
-	}
-	value, err := config.Load(filepath.Join(root, project.ConfigFileName))
-	if err != nil {
-		return "", config.Config{}, fmt.Errorf("load grat config: %w", err)
-	}
-	return root, value, nil
+	return gratruntime.Manager{Root: resolved.Root, Config: resolved.Config}, nil
 }

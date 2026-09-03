@@ -45,6 +45,7 @@ func runDiscover(ctx context.Context, args []string, cwd string, input io.Reader
 	name := flags.String("name", "", "project name")
 	force := flags.Bool("force", false, "replace an existing grat.config")
 	writeAll := flags.Bool("write", false, "write every configuration without asking, for a script")
+	registry := flags.Bool("registry", false, "keep the configuration in grat's registry instead of writing a file into the project")
 	var serviceSpecs repeatedValue
 	flags.Var(&serviceSpecs, "service", "service definition in name=command form; repeatable")
 	if err := flags.Parse(args); err != nil {
@@ -55,7 +56,13 @@ func runDiscover(ctx context.Context, args []string, cwd string, input io.Reader
 	}
 
 	if flags.NArg() == 0 {
-		return discoverHere(ctx, cwd, input, interactive, roots, *name, *force, serviceSpecs, output)
+		return discoverHere(ctx, cwd, input, interactive, roots, *name, *force, *registry, serviceSpecs, environment, output)
+	}
+	if *registry {
+		// Choosing not to write into a repository is a decision about that one
+		// repository, and a run over a directory of twenty is where the file is
+		// exactly right.
+		return fmt.Errorf("--registry keeps one project's configuration, so it cannot be combined with a path")
 	}
 	if len(serviceSpecs) > 0 {
 		return fmt.Errorf("--service names the services of one project, so it cannot be combined with a path")
