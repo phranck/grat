@@ -62,8 +62,24 @@ func (manager Manager) logPath(name string) string {
 	return filepath.Join(manager.logDirectory(), name+".log")
 }
 
+// ensureStateDirectories creates .grat and its two directories, and refuses any
+// of the three that is a symbolic link or is not a directory.
+//
+// .grat sits inside the project, so a cloned repository decides what is in it.
+// MkdirAll and Chmod both follow a link, so .grat/log pointing at a directory
+// elsewhere would have that directory's permissions changed to 0700 on the next
+// grat start. Each level is therefore inspected with Lstat, which reports the
+// link rather than what it points at, from the outside in, so a link higher up
+// is caught before anything below it is touched.
 func (manager Manager) ensureStateDirectories() error {
-	for _, directory := range []string{manager.logDirectory(), manager.pidDirectory()} {
+	for _, directory := range []string{
+		manager.serviceStateDirectory(),
+		manager.logDirectory(),
+		manager.pidDirectory(),
+	} {
+		if err := refuseLinkedDirectory(directory); err != nil {
+			return err
+		}
 		if err := os.MkdirAll(directory, 0o700); err != nil {
 			return fmt.Errorf("create service state directory: %w", err)
 		}
@@ -84,8 +100,54 @@ func (manager Manager) ensureStateDirectories() error {
 	return nil
 }
 
+// refuseLinkedDirectory reports a path that exists and is not a real directory.
+//
+// Lstat rather than Stat, because Stat answers about the target and the question
+// here is about the entry itself. A path that does not exist yet is fine: it is
+// what MkdirAll is about to create.
+// readBounded reads at most limit bytes, and reports a file longer than that
+// rather than loading it.
+func readBounded(path string, limit int64) ([]byte, error) {
+	// #nosec G304 -- path is derived from the project root and a validated service name.
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = file.Close() }()
+	data, err := io.ReadAll(io.LimitReader(file, limit+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(data)) > limit {
+		return nil, fmt.Errorf("%s exceeds the maximum of %d bytes", path, limit)
+	}
+	return data, nil
+}
+
+func refuseLinkedDirectory(path string) error {
+	info, err := os.Lstat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("inspect service state directory: %w", err)
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		return fmt.Errorf("%s is a symbolic link, and grat keeps its state only in real directories", path)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("%s exists and is not a directory, so grat cannot keep its state there", path)
+	}
+	return nil
+}
+
+// maxStateBytes bounds a managed state file, the way the configuration reader
+// bounds a grat.config. The file is grat's own, and a bound on what is read is
+// what keeps a damaged or replaced one from being loaded whole.
+const maxStateBytes = 1 << 20
+
 func (manager Manager) readState(name string) (loadedState, bool, error) {
-	data, err := os.ReadFile(manager.statePath(name))
+	data, err := readBounded(manager.statePath(name), maxStateBytes)
 	if err == nil {
 		var state processState
 		if err := json.Unmarshal(data, &state); err != nil {
