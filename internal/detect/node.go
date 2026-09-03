@@ -31,6 +31,16 @@ const singleServiceScript = "dev"
 // so its command comes from a script and its port has to be found in the source.
 // What is left is the one conventional script.
 func detectNode(root string) ([]Service, []Unresolved) {
+	// A project whose own source calls Bun.serve is answered by the Bun
+	// detector: the command is bun run and the port question is Bun's rather
+	// than this one's, and both firing would give one project two services
+	// under two names. A Bun lockfile alone does not mean that, because Bun is
+	// also used as a package manager for an ordinary frontend, which this
+	// detector already handles and which keeps its bunx command.
+	if servesWithBun(root) {
+		return nil, nil
+	}
+
 	value, unresolved, ok := readManifest(root)
 	if !ok {
 		return nil, unresolved

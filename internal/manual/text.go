@@ -70,6 +70,15 @@ all do, and for those grat writes the flag into the command and the matter is
 settled. A Go module yields one service per program below cmd, and a Swift
 package depending on Vapor yields its executable target.
 
+Two runtimes put the whole question into the application's own source, because
+neither has a framework to answer it. Deno reads nothing of its own, so a
+project is proposed only where its source calls Deno.env.get("PORT"), and the
+task that starts it is read out of deno.json because a Deno entry point has no
+standard name. Bun is the one runtime that reads PORT by itself, and only where
+the application leaves the port out of its Bun.serve options; one that sets a
+port there wins over everything, so that is the case grat refuses. It is the
+only detector looking for a reason to refuse rather than one to accept.
+
 Two more need something else read first. Flask settles the port on the command
 line but not the entry point, since it enforces no layout, so grat looks for the
 module that creates the application and names it with --app. A Rust crate needs
