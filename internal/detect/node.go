@@ -46,6 +46,14 @@ func detectNode(root string) ([]Service, []Unresolved) {
 		return nil, unresolved
 	}
 
+	// Eleventy is reported rather than proposed, and this detector would
+	// otherwise reach its dev script and offer a command carrying no port at
+	// all, so the project would be answered twice and one of the answers would
+	// not work.
+	if refused := detectEleventy(root, value); len(refused) > 0 {
+		return nil, refused
+	}
+
 	if services := namedServices(root, value); len(services) > 0 {
 		return services, nil
 	}

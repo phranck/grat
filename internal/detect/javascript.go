@@ -13,10 +13,12 @@ type jsFramework struct {
 	name string
 	// dependency is the package that identifies the framework in a manifest.
 	dependency string
-	// marker is a file that identifies the framework on its own, for the
-	// frameworks that have one. It matters because a workspace exists before its
-	// packages are installed, and the manifest is silent until they are.
-	marker string
+	// markers are files that identify the framework on their own, for the
+	// frameworks that have one. They matter because a workspace exists before
+	// its packages are installed, and the manifest is silent until they are.
+	// Several are listed where a framework accepts several names, and whichever
+	// is present becomes the evidence.
+	markers []string
 	// binary is the executable the package installs, run through the project's
 	// package runner.
 	binary string
@@ -39,7 +41,7 @@ type jsFramework struct {
 var jsFrameworks = []jsFramework{
 	// angular.dev/cli/serve, and angular.dev/reference/configs/workspace-config
 	// for the workspace file.
-	{name: "frontend", dependency: "@angular/core", marker: "angular.json", binary: "ng", arguments: "serve --port $PORT --host 127.0.0.1"},
+	{name: "frontend", dependency: "@angular/core", markers: []string{"angular.json"}, binary: "ng", arguments: "serve --port $PORT --host 127.0.0.1"},
 	// nextjs.org/docs/app/api-reference/cli/next. The default hostname is
 	// 0.0.0.0, so the host flag is what keeps this off the network.
 	{name: "frontend", dependency: "next", binary: "next", arguments: "dev --port $PORT --hostname 127.0.0.1"},
@@ -70,11 +72,11 @@ func detectJavaScriptFramework(root string, value manifest) ([]Service, []Unreso
 }
 
 // frameworkEvidence reports whether the framework is present and names what said
-// so, because the marker and the dependency are different answers and the report
-// should say which one was found.
+// so, because a marker file and the dependency are different answers and the
+// report should say which one was found.
 func frameworkEvidence(root string, value manifest, framework jsFramework) (string, bool) {
-	if framework.marker != "" && fileExists(join(root, framework.marker)) {
-		return framework.marker, true
+	if marker := firstExisting(root, framework.markers); marker != "" {
+		return marker, true
 	}
 	if value.declares(framework.dependency) {
 		return "package.json", true

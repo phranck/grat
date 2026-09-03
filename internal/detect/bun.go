@@ -12,8 +12,8 @@ var bunLockfiles = []string{"bun.lock", "bun.lockb"}
 
 // bunServeWithPort matches a Bun.serve() whose options set a port.
 //
-// This is the one detector that looks for a reason to refuse rather than a
-// reason to accept, because Bun is the one runtime that reads PORT by itself.
+// This detector looks for a reason to refuse rather than a reason to accept,
+// because Bun is the one runtime that reads PORT by itself.
 // Measured on Bun 1.3.14: with port left out of the options the server took
 // PORT from the environment; with port: 8123 in them it took 8123 and ignored
 // the environment entirely. So an application that names its own port is the
