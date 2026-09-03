@@ -83,6 +83,20 @@ Vite's --strictPort to stop it. grat reports an Eleventy project with that
 reason rather than writing the one command in a configuration that would do
 both.
 
+Two tools sit beside an application rather than instead of one, so grat reports
+them in addition to whatever else the directory yields. A Docusaurus site is
+recognised from its configuration file together with @docusaurus/core and
+becomes a service called docs, and a Storybook from the main file in its
+configuration directory together with the storybook package, becoming one called
+storybook. Both names take the developer role, which owns a range of its own, so
+neither competes with the application for a port.
+
+The Storybook command carries --exact-port, and that is
+a condition rather than a preference: without it Storybook moves to another port
+when the assigned one is taken, and the prompt that would ask about it is
+suppressed whenever CI is set. It states the host as well, because Storybook
+hands its host option straight to listen and never gives it a default.
+
 Two runtimes put the whole question into the application's own source, because
 neither has a framework to answer it. Deno reads nothing of its own, so a
 project is proposed only where its source calls Deno.env.get("PORT"), and the

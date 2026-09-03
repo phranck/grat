@@ -41,7 +41,10 @@ const (
 	RoleFrontend Role = "frontend"
 	// RoleWebsite owns a browser-facing local website.
 	RoleWebsite Role = "website"
-	// RoleDeveloper owns a developer portal.
+	// RoleDeveloper owns a browser service built for the people building the
+	// product rather than for the people using it, such as a developer portal,
+	// a documentation site or a component workshop. It has a range of its own so
+	// these do not compete with the application for the frontend lane.
 	RoleDeveloper Role = "developer"
 	// RoleBackend owns an HTTP backend.
 	RoleBackend Role = "backend"
@@ -566,7 +569,7 @@ func InferRole(name string) Role {
 		return RoleFrontend
 	case "website", "web":
 		return RoleWebsite
-	case "developer", "developer-portal":
+	case "developer", "developer-portal", "docs", "documentation", "storybook":
 		return RoleDeveloper
 	case "backend":
 		return RoleBackend
