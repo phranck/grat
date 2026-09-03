@@ -1,25 +1,21 @@
 name: Pages
 
-# The site is published from here rather than straight from the branch, so the
-# version it shows can be put in at publish time.
+# The site is what main holds, including the version in its badge. Raising that
+# badge is the first step of a release, so the site is right from the moment that
+# commit lands.
 #
-# A badge edited by hand claims a release the moment the change reaches main,
-# which is before the tag exists and before anything is downloadable. Reading it
-# from the newest release when the site is built removes that window without
-# holding website changes back until the next version, and without a request to
-# GitHub from every visitor's browser.
+# It used to be written in here from the newest release instead, which was meant
+# to stop the site naming a version whose tag did not exist yet. It did the
+# opposite: the badge commit reaches main before the tag, so that run wrote the
+# previous version and the site kept it until something else rebuilt. A site two
+# minutes ahead of its tag is a smaller fault than one indefinitely behind.
+#
+# A push to main is the only trigger. Deploying from anything else does not
+# reach the served content: a deployment from a tag is accepted, marked active,
+# and never served.
 on:
   push:
     branches: [main]
-  # Called by the release workflow once the release exists, which is what makes
-  # the new version appear on the site. It cannot be an event: the release is
-  # created with GITHUB_TOKEN, and GitHub raises no workflow run from an event
-  # a workflow's own token caused.
-  workflow_call:
-  # This one covers a release somebody publishes by hand in the web interface,
-  # which is the only case where the event does arrive.
-  release:
-    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -41,28 +37,6 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-
-      - name: Put the released version in the badge
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: |
-          set -eu
-          version=$(gh release view --json tagName --jq .tagName)
-          if [ -z "$version" ]; then
-            echo "no published release to name on the site" >&2
-            exit 1
-          fi
-          # The badge is the one place the site states a version, and this is
-          # what makes it the released one rather than whatever was committed.
-          perl -0pi -e "s{(badge__dot\"></span> )v[0-9][0-9.]*}{\${1}$version}" docs/index.html
-          if ! grep -q "$version · macOS" docs/index.html; then
-            echo "the badge was not rewritten; its shape must have changed" >&2
-            grep -n 'badge__dot' docs/index.html >&2
-            exit 1
-          fi
-          echo "the site names $version"
-
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
