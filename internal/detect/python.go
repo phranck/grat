@@ -37,7 +37,10 @@ func detectPython(root string) ([]Service, []Unresolved) {
 		return nil, nil
 	}
 
-	modules := applicationModules(root)
+	modules, rejected := applicationModules(root)
+	if rejected != nil {
+		return nil, []Unresolved{unresolvedIdentifier(marker, "the application module", rejected.name, rejected.offending)}
+	}
 	if len(modules) == 0 {
 		return nil, []Unresolved{{
 			Marker: marker,
@@ -58,7 +61,7 @@ func detectPython(root string) ([]Service, []Unresolved) {
 // applicationModules returns every `module:variable` pair found directly below
 // root. Only the top level is read, because a module further down is imported
 // through a package path this cannot reconstruct from the filesystem alone.
-func applicationModules(root string) []string {
+func applicationModules(root string) ([]string, *rejectedName) {
 	found := make([]string, 0, 1)
 	for _, entry := range entries(root) {
 		if entry.IsDir() || filepath.Ext(entry.Name()) != ".py" {
@@ -73,7 +76,15 @@ func applicationModules(root string) []string {
 			continue
 		}
 		module := strings.TrimSuffix(entry.Name(), ".py")
+		// The module and the variable both go into `uvicorn <module>:<variable>`,
+		// so neither may carry anything a shell would read.
+		if offending, ok := safeIdentifier(module); !ok {
+			return nil, &rejectedName{name: module, offending: offending}
+		}
+		if offending, ok := safeIdentifier(string(match[1])); !ok {
+			return nil, &rejectedName{name: string(match[1]), offending: offending}
+		}
 		found = append(found, module+":"+string(match[1]))
 	}
-	return found
+	return found, nil
 }

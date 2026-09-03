@@ -45,6 +45,9 @@ func detectVapor(root string) ([]Service, []Unresolved) {
 	}
 
 	target := matches[0][1]
+	if offending, ok := safeIdentifier(target); !ok {
+		return nil, []Unresolved{unresolvedIdentifier("Package.swift", "the executable target", target, offending)}
+	}
 	command := "swift run " + target + " serve --hostname 127.0.0.1 --port $PORT"
 	return []Service{service("backend", command, "Package.swift")}, nil
 }
