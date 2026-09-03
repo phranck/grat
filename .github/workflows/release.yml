@@ -110,24 +110,3 @@ jobs:
           TAG: ${{ github.ref_name }}
           RELEASE_BASE_URL: https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}
         run: scripts/verify-homebrew-bottles.sh --version "$TAG" --base-url "$RELEASE_BASE_URL" --input bottles
-
-  # The site reads its version from the newest release, so it is published here,
-  # after the release exists. Waiting for the release event instead leaves the
-  # site naming the previous version until somebody pushes again, because
-  # GitHub raises no workflow run from an event GITHUB_TOKEN caused.
-  #
-  # A job of its own rather than a step, so the pages permissions stay off the
-  # job that writes releases, and it calls the Pages workflow rather than
-  # repeating its steps, so there is one definition of how the site is built.
-  #
-  # This deploys from a tag, so the github-pages environment carries a
-  # deployment policy for tags matching v*, beside the ones for main and
-  # gh-pages. Without it the environment refuses the deployment and this job
-  # fails after the release has already been published.
-  site:
-    needs: publish
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    uses: ./.github/workflows/pages.yml

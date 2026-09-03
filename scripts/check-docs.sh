@@ -148,13 +148,12 @@ if [ -z "$site_version" ]; then
 	exit 1
 fi
 if [ -n "$released_version" ]; then
-	# What the site actually shows is put in when it is published, from the newest
-	# release, so this checks the repository's own copy rather than the live page.
-	# It may name the release being prepared, since a version reaches the site in
-	# the commit the tag will point at and the tag does not exist whilst that
-	# commit is still in review. What it may not do is name an older one, which
-	# is the case this check exists for: the badge said v1.5.0 whilst v1.5.1 was
-	# out.
+	# This value is what the site shows, so the check is the only thing standing
+	# between a forgotten bump and a page naming last month's version. It may name
+	# the release being prepared, since the badge is raised in the commit the tag
+	# will point at and the tag does not exist whilst that commit is in review.
+	# What it may not do is name an older one, which is the case this check exists
+	# for: the badge said v1.5.0 whilst v1.5.1 was out.
 	oldest="$(printf '%s\n%s\n' "$released_version" "$site_version" | sort -V | head -1)"
 	if [ "$oldest" != "$released_version" ]; then
 		echo "docs/index.html says $site_version, which is older than the release $released_version" >&2
