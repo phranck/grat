@@ -65,12 +65,18 @@ That makes one question decisive, and it is not which framework a project uses.
 It is who decides the port.
 
 Most tools take the port as a command line flag. Vite, Next.js, Nuxt, Angular,
-Astro, React Router, SvelteKit, Django, Rails and Symfony all do, and for those
-grat writes the flag into the command and the matter is settled. A Go module
-yields one service per program below cmd, and a Swift package depending on Vapor
-yields its executable target.
+Astro, React Router, SvelteKit, Django, Rails, Symfony, Flask and ASP.NET Core
+all do, and for those grat writes the flag into the command and the matter is
+settled. A Go module yields one service per program below cmd, and a Swift
+package depending on Vapor yields its executable target.
 
-Three take it from the environment instead, each in its own way. Spring Boot
+Two more need something else read first. Flask settles the port on the command
+line but not the entry point, since it enforces no layout, so grat looks for the
+module that creates the application and names it with --app. A Rust crate needs
+one unambiguous binary as well as the port read, because cargo run refuses where
+a crate has several and names no default-run.
+
+Three take the port from the environment instead, each in its own way. Spring Boot
 reads SERVER_PORT rather than PORT, because that is the variable its own binding
 turns into the server.port setting. On Gradle its command carries --no-daemon,
 which is a condition rather than a preference: Gradle runs a build in a
@@ -83,13 +89,14 @@ remove; where that line is absent grat reports the project rather than proposing
 a command that would serve on a port of its own choosing.
 
 Some tools decide nothing, because they have no command line of their own.
-Express, Fastify, NestJS and every Go program read no port unless their own
-source reads it, and none of them offers a flag for one. For those the port
-lives in the application code, which the author wrote.
+Express, Fastify, NestJS, every Go program and a Rust crate using Axum or Actix
+read no port unless their own source reads it, and none of them offers a flag
+for one. For those the port lives in the application code, which the author
+wrote.
 
 So grat reads that code. It looks in the source near the project root for the
-port being read out of the environment, which is process.env.PORT in Node and
-os.Getenv("PORT") in Go. Where it finds that, it builds the command from the
+port being read out of the environment, which is process.env.PORT in Node,
+os.Getenv("PORT") in Go and std::env::var("PORT") in Rust. Where it finds that, it builds the command from the
 project's own start script. Where it does not, it reports the project with the
 reason instead of offering a command.
 

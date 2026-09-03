@@ -83,7 +83,7 @@ grat start
 grat status
 ```
 
-`grat discover` reads the project and proposes the services it recognises, so most projects need nothing written by hand. Angular, Astro, Next.js, Nuxt, React Router, SvelteKit and Vite are recognised on the frontend, Django, Laravel, Symfony, Rails, Phoenix, Spring Boot and FastAPI on the backend, along with Go modules and Swift packages using Vapor.
+`grat discover` reads the project and proposes the services it recognises, so most projects need nothing written by hand. Angular, Astro, Next.js, Nuxt, React Router, SvelteKit and Vite are recognised on the frontend, Django, Laravel, Symfony, Rails, Phoenix, Spring Boot, FastAPI, Flask and ASP.NET Core on the backend, along with Go modules, Rust crates using Axum or Actix, and Swift packages using Vapor.
 
 Express, Fastify, NestJS and Go are different: none of them reads `PORT` on its own and none has a flag for it, so the port lives in the line of your own code that starts the server. grat looks there, and where it does not find it, it says so instead of proposing a command that would never become ready. [What grat recognises](Documentation.md#how-grat-decides-what-a-project-runs) explains why.
 
