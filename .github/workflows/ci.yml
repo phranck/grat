@@ -74,3 +74,15 @@ jobs:
       - name: Documentation
         if: matrix.name == 'Linux Intel'
         run: sh scripts/check-docs.sh
+      # A Release-note trailer git will not read whole is silent: the commit
+      # looks right and the release page carries the subject instead. Catching
+      # it here is catching it before the merge rather than after the tag.
+      - name: Release notes
+        if: matrix.name == 'Linux Intel'
+        run: |
+          # The checkout is shallow, so the branch this adds to has to be
+          # fetched before there is anything to compare against. Fifty is more
+          # than any pull request here carries.
+          git fetch --no-tags --depth=50 origin main
+          sh scripts/test-check-trailers.sh
+          sh scripts/check-trailers.sh "$(git merge-base FETCH_HEAD HEAD)..HEAD"
