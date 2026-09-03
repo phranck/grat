@@ -1,7 +1,7 @@
 {
   "name": "grat",
   "short_name": "grat",
-  "description": "Start your project's services, wait until each one genuinely answers, and keep their ports apart.",
+  "description": "grat replaces the terminal tabs used to run a local development stack. Declare your commands once, then manage them together.",
   "start_url": "/",
   "scope": "/",
   "display": "browser",

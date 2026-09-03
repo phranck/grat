@@ -540,6 +540,41 @@ body {
   color: var(--accent);
 }
 
+/* --- The name defines itself ------------------------------------------------
+   A recursive acronym is a joke that only lands when the reader can see the
+   letters, so the four initials carry the accent and the rest does not. Showing
+   it beats explaining it, and explaining it would take a sentence the page has
+   no room for.
+
+   It sits between the title and the lead because that is where a subtitle goes,
+   and it is set in the mono face because it is the name of a command. */
+.acronym {
+  margin: var(--space-4) 0 0;
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--size-code-inline);
+}
+
+.acronym__term {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* The sign takes room around it and nothing else. It carries the whole meaning
+   of the line, since without it the two names read as one phrase rather than as
+   a definition, so it keeps the line's own colour and its full contrast. */
+.acronym__equals {
+  margin-inline: var(--space-1);
+}
+
+/* --accent-strong rather than --accent, because these letters are read at
+   18px: the strong one measures 5.98:1 against the paper and the plain one
+   4.21:1, which is under the 4.5:1 that text this size needs. */
+.acronym__initial {
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
 .hero__lead {
   margin: var(--space-6) 0 0;
   max-width: 34em;

@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>grat, a safe local service manager for macOS and Linux</title>
-<meta name="description" content="grat starts the long-running commands a project needs, waits until each one is genuinely ready, and keeps their ports out of each other's way.">
+<meta name="description" content="grat replaces the terminal tabs used to run a local development stack. Declare the commands for a frontend, an API, a dashboard or a background worker once, then manage them together.">
 <link rel="canonical" href="https://grat.layered.work/">
 <meta name="theme-color" content="#faf7f2">
 
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://grat.layered.work/">
 <meta property="og:title" content="grat, a safe local service manager">
-<meta property="og:description" content="Start your project's services, wait until each one genuinely answers, and keep their ports apart.">
+<meta property="og:description" content="grat replaces the terminal tabs used to run a local development stack. Declare your commands once, then manage them together.">
 <meta property="og:site_name" content="grat">
 <meta property="og:locale" content="en">
 <meta property="og:image" content="https://grat.layered.work/og-image.png">
@@ -22,7 +22,7 @@
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="grat, a safe local service manager">
-<meta name="twitter:description" content="Start your project's services, wait until each one genuinely answers, and keep their ports apart.">
+<meta name="twitter:description" content="grat replaces the terminal tabs used to run a local development stack. Declare your commands once, then manage them together.">
 <meta name="twitter:image" content="https://grat.layered.work/og-image.png">
 <meta name="twitter:image:alt" content="The grat wordmark beside a terminal window showing three services reported ready.">
 
@@ -44,7 +44,7 @@
   "downloadUrl": "https://github.com/phranck/grat/releases",
   "codeRepository": "https://github.com/phranck/grat",
   "license": "https://opensource.org/licenses/MIT",
-  "description": "grat starts the long-running commands a project needs, waits until each one is genuinely ready, and keeps their ports out of each other's way.",
+  "description": "grat replaces the terminal tabs used to run a local development stack. Declare the commands for a frontend, an API, a dashboard or a background worker once, then manage them together.",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
   "author": { "@type": "Person", "name": "phranck", "url": "https://layered.work" }
 }
@@ -97,7 +97,8 @@
       <div>
         <p class="badge"><span class="badge__dot"></span> v2.0.0 · macOS &amp; Linux</p>
         <h1 class="hero__title">Your dev services, <em>under control</em>.</h1>
-        <p class="hero__lead">grat starts the long-running commands a project needs, waits until each one is genuinely ready, and keeps their ports out of each other's way.</p>
+        <p class="acronym"><span class="acronym__term">grat</span> <span class="acronym__equals">=</span> <span class="acronym__initial">g</span>rat <span class="acronym__initial">r</span>uns <span class="acronym__initial">a</span>pproved <span class="acronym__initial">t</span>asks</p>
+        <p class="hero__lead">grat replaces the terminal tabs used to run a local development stack. Declare the commands for a frontend, an API, a dashboard or a background worker once, then manage them together.</p>
         <div class="hero__actions">
           <a class="button button--primary" href="#install"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-download-simple"/></svg> Install</a>
           <a target="_blank" rel="noopener noreferrer" class="button button--quiet" href="https://github.com/phranck/grat"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-book-open-text"/></svg> Read the docs</a>
@@ -156,8 +157,8 @@
   <section class="section measure" id="what">
     <div class="section__head">
       <span class="section__number">02. What it runs</span>
-      <h2 class="section__title">Any command that stays in the foreground</h2>
-      <p class="section__lead">grat is tied to no language, framework or package manager. It starts your command through <code class="inline-code">/bin/sh</code> from the project root, in a session of its own, and hands it the port in <code class="inline-code">PORT</code>. Whether that command is Node, PHP, Python, Swift or Go makes no difference to grat.</p>
+      <h2 class="section__title">Does grat fit your project?</h2>
+      <p class="section__lead">One project can start a React frontend, a Laravel or Vapor API, and a queue worker with one command. grat is tied to no language, framework or package manager: it starts your command through <code class="inline-code">/bin/sh</code> from the project root, in a session of its own, and hands it the port in <code class="inline-code">PORT</code>. Whether that command is Node, PHP, Python, Swift or Go makes no difference to it.</p>
     </div>
 
     <div class="table-wrap">
@@ -181,8 +182,8 @@
 
     <div class="split" style="margin-top: var(--space-8);">
       <div class="prose">
-        <p><strong>What a service has to do.</strong> Stay in the foreground, because a command that puts itself in the background leaves nothing for grat to watch. Serve its port from a process that grat started, or from one of its children. Answer its health path with a status in the 200s.</p>
-        <p>A <strong>worker</strong> does none of that. It has no port, and it counts as ready for as long as its process lives.</p>
+        <p><strong>Two kinds of command fit, and both stay in the foreground.</strong> An <strong>HTTP service</strong> takes a configurable local port and answers its health path with a status from 200 through 299. A <strong>worker</strong> has no port at all and only has to stay alive, such as a queue consumer or a file watcher.</p>
+        <p>Anything that puts itself in the background leaves nothing for grat to watch, so that is the one thing it cannot manage.</p>
       </div>
       <div class="prose">
         <p><strong>Where that boundary sits.</strong> grat follows the port back to the process holding it and up its chain of parents. If that chain does not lead to the command grat started, the service never becomes ready, and grat says so rather than pretending.</p>
