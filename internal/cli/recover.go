@@ -45,7 +45,7 @@ func runRecover(ctx context.Context, args []string, cwd string, environment envi
 	if err := manager.Recover(ctx, candidates); err != nil {
 		return err
 	}
-	return renderStatus(ctx, manager, environment.tailscaleReady, output)
+	return renderStatus(ctx, manager, output)
 }
 
 func renderRecoveryPreview(output presentation.Renderer, projectName string, candidates []gratruntime.RecoveryCandidate) {

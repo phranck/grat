@@ -13,7 +13,6 @@ import (
 	"github.com/phranck/grat/internal/config"
 	"github.com/phranck/grat/internal/maintenance"
 	"github.com/phranck/grat/internal/settings"
-	"github.com/phranck/grat/internal/tailscale"
 )
 
 func TestDirectoriesCommandsPersistAndListConfiguredRoots(t *testing.T) {
@@ -335,9 +334,6 @@ func environmentForTest(store settings.Store) environment {
 		interactive:   false,
 		settings:      store,
 		operationLock: func(_ context.Context, callback func() error) error { return callback() },
-		// No tailnet by default, so no test reaches a real machine and every
-		// command that reports a public address reports none.
-		tailscaleReady: func(context.Context) (tailscale.Client, bool) { return nil, false },
 	}
 }
 

@@ -43,11 +43,6 @@ type Manager struct {
 	ListenerLookup ports.ListenerLookup
 	HTTPClient     *http.Client
 	Observer       ProgressObserver
-	// TailnetHost is this machine's name inside the tailnet, or empty where the
-	// machine belongs to none. A development server that checks the Host header
-	// needs it to accept a request arriving through a funnel, and only the
-	// caller can find it out, so the runtime is told rather than asking.
-	TailnetHost string
 }
 
 // Services returns the configured services selected by names. An empty name list

@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>grat, a safe local service manager for macOS and Linux</title>
-<meta name="description" content="grat starts the long-running commands a project needs, waits until each one is genuinely ready, keeps their ports out of each other's way, and can publish a service to the internet when a webhook has to reach you.">
+<meta name="description" content="grat starts the long-running commands a project needs, waits until each one is genuinely ready, and keeps their ports out of each other's way.">
 <link rel="canonical" href="https://grat.layered.work/">
 <meta name="theme-color" content="#faf7f2">
 
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://grat.layered.work/">
 <meta property="og:title" content="grat, a safe local service manager">
-<meta property="og:description" content="Start your project's services, wait until each one genuinely answers, keep their ports apart, and publish one path to the internet when a webhook has to reach you.">
+<meta property="og:description" content="Start your project's services, wait until each one genuinely answers, and keep their ports apart.">
 <meta property="og:site_name" content="grat">
 <meta property="og:locale" content="en">
 <meta property="og:image" content="https://grat.layered.work/og-image.png">
@@ -22,7 +22,7 @@
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="grat, a safe local service manager">
-<meta name="twitter:description" content="Start your project's services, wait until each one genuinely answers, keep their ports apart, and publish one path to the internet when a webhook has to reach you.">
+<meta name="twitter:description" content="Start your project's services, wait until each one genuinely answers, and keep their ports apart.">
 <meta name="twitter:image" content="https://grat.layered.work/og-image.png">
 <meta name="twitter:image:alt" content="The grat wordmark beside a terminal window showing three services reported ready.">
 
@@ -44,7 +44,7 @@
   "downloadUrl": "https://github.com/phranck/grat/releases",
   "codeRepository": "https://github.com/phranck/grat",
   "license": "https://opensource.org/licenses/MIT",
-  "description": "grat starts the long-running commands a project needs, waits until each one is genuinely ready, keeps their ports out of each other's way, and can publish a service to the internet when a webhook has to reach you.",
+  "description": "grat starts the long-running commands a project needs, waits until each one is genuinely ready, and keeps their ports out of each other's way.",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
   "author": { "@type": "Person", "name": "phranck", "url": "https://layered.work" }
 }
@@ -85,7 +85,6 @@
       <a class="nav__link" href="#what">What it runs</a>
       <a class="nav__link" href="#services">Services</a>
       <a class="nav__link" href="#ports">Ports</a>
-      <a class="nav__link" href="#public">Public access</a>
       <a target="_blank" rel="noopener noreferrer" class="nav__link" href="https://github.com/phranck/grat"><svg class="icon nav__icon" aria-hidden="true" focusable="false"><use href="#i-github-logo"/></svg> GitHub</a>
     </nav>
   </div>
@@ -98,7 +97,7 @@
       <div>
         <p class="badge"><span class="badge__dot"></span> v1.11.2 · macOS &amp; Linux</p>
         <h1 class="hero__title">Your dev services, <em>under control</em>.</h1>
-        <p class="hero__lead">grat starts the long-running commands a project needs, waits until each one is genuinely ready, keeps their ports out of each other's way, and can put a single path on the public internet when a webhook has to reach you.</p>
+        <p class="hero__lead">grat starts the long-running commands a project needs, waits until each one is genuinely ready, and keeps their ports out of each other's way.</p>
         <div class="hero__actions">
           <a class="button button--primary" href="#install"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-download-simple"/></svg> Install</a>
           <a target="_blank" rel="noopener noreferrer" class="button button--quiet" href="https://github.com/phranck/grat"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-book-open-text"/></svg> Read the docs</a>
@@ -149,7 +148,7 @@
       <ol class="steps">
         <li><strong>grat discover</strong><span>Reads your project and writes a declarative <code class="inline-code">grat.config</code> from what it finds. Give it a path and it searches below there, so a whole folder of projects is set up in one pass.</span></li>
         <li><strong>grat start</strong><span>Starts every service and waits until each one answers.</span></li>
-        <li><strong>grat status</strong><span>Shows what runs, on which port, under which PID, and what is public.</span></li>
+        <li><strong>grat status</strong><span>Shows what runs, on which port, and under which PID.</span></li>
       </ol>
     </div>
   </section>
@@ -252,47 +251,6 @@
     </div>
   </section>
 
-  <section class="section measure" id="public">
-    <div class="section__head">
-      <span class="section__number">05. Public access</span>
-      <h2 class="section__title">A webhook can reach your laptop</h2>
-      <p class="section__lead">Whether you want to show somebody on the other side of the world how your site or web app currently looks, or you need a webhook URL that reaches your local development environment, grat gives you a way to do it. Underneath, the exposing runs on <a href="https://tailscale.com" target="_blank" rel="noopener noreferrer">Tailscale</a>. Where it is missing, grat asks first: it says what Tailscale is, shows the exact command, and waits for a yes. Say no and nothing on your machine changes, and everything else in grat carries on working. Say yes and grat installs it and says so as it goes. Two steps stay with you, because they cannot be taken on your behalf. The background service starts with administrator rights, so the system asks for your password, and the sign-in runs through your browser because that is where your account is.</p>
-    </div>
-    <div class="split split--wide">
-      <div class="stack">
-        <div class="command">
-          <span class="command__prompt">$</span>
-          <span class="command__text">grat expose backend</span>
-          <button class="copy" type="button" data-copy="grat expose backend" aria-label="Copy command"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-copy"/></svg></button>
-        </div>
-        <div class="command">
-          <span class="command__prompt">$</span>
-          <span class="command__text">grat expose --path /api/webhooks/creem backend</span>
-          <button class="copy" type="button" data-copy="grat expose --path /api/webhooks/creem backend" aria-label="Copy command"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-copy"/></svg></button>
-        </div>
-        <div class="prose">
-          <p>Running the command is the decision, so nothing has to be prepared first. Where only a callback has business with the internet, <strong>name the path</strong> and everything else stays inside.</p>
-        </div>
-      </div>
-
-      <div class="window">
-        <div class="window__chrome">
-          <span class="window__dot"></span><span class="window__dot"></span><span class="window__dot"></span>
-          <span class="window__title">grat expose backend</span>
-        </div>
-<pre class="window__body"><span class="t-title">Exposing service</span>  <span class="t-project">example.com</span>
-  [<span class="t-info">info</span>] <span class="t-name">Tailscale</span>        is not installed on this machine
-  [<span class="t-info">info</span>] <span class="t-name">Command</span>          brew install tailscale
-  [<span class="t-work">...</span>]  <span class="t-name">Tailscale</span>        installing
-  [<span class="t-ok">ok</span>]   <span class="t-name">Tailscale</span>        installed
-  [<span class="t-info">info</span>] <span class="t-name">Tailnet</span>          this machine is signed in to no tailnet
-  [<span class="t-work">...</span>]  <span class="t-name">Sign-in</span>          opening the page in your browser
-  [<span class="t-ok">ok</span>]   <span class="t-name">Tailnet</span>          this machine is connected
-  [<span class="t-work">...</span>]  <span class="t-name">backend</span>          publishing /api/webhooks/creem
-  [<span class="t-ok">ok</span>]   <span class="t-name">backend</span>          reachable at https://mini.tail1234.ts.net/api/webhooks/creem</pre>
-      </div>
-    </div>
-  </section>
 
 </main>
 

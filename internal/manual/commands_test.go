@@ -12,7 +12,7 @@ func TestAnEntryCarriesMoreThanTheOneLineReference(t *testing.T) {
 	t.Parallel()
 
 	// A word count would fire on a decision rather than on a defect, since a
-	// command such as expose status genuinely needs two sentences. What can be
+	// command such as ports reassign genuinely needs two sentences. What can be
 	// wrong is an entry that was never written, so that is what is checked.
 	for _, detail := range commandDetails {
 		prose := strings.TrimSpace(detail.detail)

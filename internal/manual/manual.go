@@ -65,7 +65,6 @@ func CommandDocument(version string, date string, groups []presentation.CommandG
 				Prose(statusColumns),
 			}},
 			{Title: "Shutdown and restart", Blocks: []Block{Prose(shutdown)}},
-			{Title: "Public access", Blocks: []Block{Prose(publicAccess)}},
 			{Title: "Ports", Blocks: []Block{Prose(portAllocation)}},
 			{Title: "Scan directories", Blocks: []Block{Prose(scanDirectories)}},
 			{Title: "Maintenance", Blocks: []Block{Prose(maintenance)}},
@@ -196,7 +195,6 @@ func environmentSection() Section {
 		Definitions(
 			Item{Term: "PORT", Detail: "The port grat assigned, for a service that has one."},
 			Item{Term: "BACKEND_URL", Detail: backendURLMeaning},
-			Item{Term: runtime.TailnetHostVariable(), Detail: tailnetHostMeaning},
 		),
 	}}
 }

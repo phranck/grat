@@ -158,7 +158,7 @@ func TestTheNoticeReachesARealCommand(t *testing.T) {
 	value := environmentForTest(store)
 	value.latestRelease = func(context.Context) (string, error) { return "v99.0.0", nil }
 
-	root := exposeProject(t, cwd)
+	root := serviceProject(t, cwd)
 	if err := store.Save(settings.Settings{Version: settings.CurrentVersion, Directories: []string{root}}); err != nil {
 		t.Fatalf("save settings: %v", err)
 	}

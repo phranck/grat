@@ -14,10 +14,8 @@ import (
 	"github.com/phranck/grat/internal/config"
 	"github.com/phranck/grat/internal/operations"
 	"github.com/phranck/grat/internal/project"
-	"github.com/phranck/grat/internal/publish"
 	gratruntime "github.com/phranck/grat/internal/runtime"
 	"github.com/phranck/grat/internal/settings"
-	"github.com/phranck/grat/internal/tailscale"
 )
 
 type installationKind int
@@ -93,11 +91,6 @@ func (service Service) uninstallLocked(ctx context.Context, store settings.Store
 	if err != nil {
 		return Result{}, err
 	}
-	// Before the configurations can go, because they are what says which funnels
-	// grat opened.
-	if err := service.withdrawFunnels(ctx, artifacts, output); err != nil {
-		return Result{}, err
-	}
 	if deleteState {
 		if err := removeArtifacts(roots, artifacts.stateDirectories); err != nil {
 			return Result{}, err
@@ -107,11 +100,6 @@ func (service Service) uninstallLocked(ctx context.Context, store settings.Store
 		if err := removeArtifacts(roots, artifacts.configFiles); err != nil {
 			return Result{}, err
 		}
-	}
-	// Before the settings go, because the note that grat installed Tailscale is
-	// in them and removing them first would lose the only record of it.
-	if err := service.removeTailscale(ctx, store, input, output); err != nil {
-		return Result{}, err
 	}
 	if err := service.removeGlobalSettings(store); err != nil {
 		return Result{}, err
@@ -478,123 +466,3 @@ func (service Service) remove(path string) error {
 	}
 	return os.Remove(path)
 }
-
-// removeTailscale takes Tailscale off the machine, but only where grat is the
-// one that put it there.
-//
-// Two things have to agree before anything happens: the note grat wrote when it
-// installed, and the executable still sitting where that installation puts it.
-// A person who replaced it with one of their own keeps it, because taking away
-// something grat did not install is the one mistake here that cannot be undone.
-//
-// A refused answer, a missing note or an unknown location all mean the same
-// thing, which is that nothing is touched.
-func (service Service) removeTailscale(ctx context.Context, store settings.Store, input io.Reader, output io.Writer) error {
-	value, exists, err := store.Load()
-	if err != nil || !exists || !value.InstalledTailscale {
-		return nil
-	}
-
-	_, client, err := tailscale.Inspect(ctx)
-	if err != nil {
-		return nil
-	}
-	executable := client.Executable()
-	if !tailscale.IsInstalledByPackageManager(executable) {
-		return nil
-	}
-
-	remove, err := confirm(output, input,
-		"Remove Tailscale, which grat installed? [Y/n]: ", true)
-	if err != nil {
-		return err
-	}
-	if !remove {
-		return nil
-	}
-
-	steps, err := tailscale.RemovalPath(executable)
-	if err != nil {
-		return nil
-	}
-	for _, step := range steps {
-		if _, writeErr := fmt.Fprintf(output, "  %s: %s\n", step.Subject, step.Display); writeErr != nil {
-			return writeErr
-		}
-		if runErr := tailscale.RunRemovalStep(ctx, step, output); runErr != nil {
-			if step.Optional {
-				continue
-			}
-			return tailscale.ErrRemovalStepFailed{Step: step, Err: runErr}
-		}
-	}
-	return writeTailscaleFootnote(output)
-}
-
-// withdrawFunnels closes every funnel grat published, before grat goes away.
-//
-// Otherwise an address published with grat expose keeps answering from the
-// internet and the tool that could close it has been removed. Only what grat
-// opened is closed, which is what internal/tailscale requires of every caller:
-// each funnel is derived from a discovered configuration and closed only where
-// Tailscale reports it as published.
-func (service Service) withdrawFunnels(ctx context.Context, artifacts uninstallArtifacts, output io.Writer) error {
-	stage, client, err := tailscale.Inspect(ctx)
-	if err != nil || stage != tailscale.StageReady {
-		return nil
-	}
-	published, err := client.Funnels(ctx)
-	if err != nil || len(published) == 0 {
-		return nil
-	}
-
-	for _, configPath := range artifacts.configFiles {
-		value, loadErr := config.Load(configPath)
-		if loadErr != nil {
-			// A configuration grat cannot read names no funnel it can identify.
-			continue
-		}
-		for _, configured := range value.Services {
-			if configured.Port == 0 {
-				continue
-			}
-			// By the address the funnel forwards to, so one opened for a single
-			// run with --path is withdrawn as well. Its path was never written
-			// into the configuration, and deriving one from the configuration
-			// would leave exactly that address answering.
-			for _, funnel := range publish.FunnelsFor(configured, published) {
-				if closeErr := client.Close(ctx, funnel); closeErr != nil {
-					return fmt.Errorf("close the funnel for %s in %s: %w", configured.Name, filepath.Dir(configPath), closeErr)
-				}
-				if _, writeErr := fmt.Fprintf(output, "  Tailscale: withdrew %s for %s\n", funnel.Path, configured.Name); writeErr != nil {
-					return writeErr
-				}
-			}
-		}
-	}
-	return nil
-}
-
-// writeTailscaleFootnote says what a person still has to do themselves.
-//
-// grat can sign the machine out and take the package away, and it cannot remove
-// the machine from the tailnet or delete the tailnet: Tailscale offers no command
-// for either, only the admin console and an API key grat deliberately does not
-// ask for. Saying nothing would leave somebody believing the machine is gone
-// when it is still listed.
-func writeTailscaleFootnote(output io.Writer) error {
-	_, err := io.WriteString(output, tailscaleFootnote)
-	return err
-}
-
-const tailscaleFootnote = `
-Tailscale is off this machine, and two things are left that only you can do.
-
-This machine is still listed in your tailnet. Signing out expires its login but
-does not remove the entry, so remove it at:
-  https://login.tailscale.com/admin/machines
-
-To have no tailnet at all, delete it at:
-  https://login.tailscale.com/admin/settings/general
-Signing in again with the same account creates a new one, so do that last.
-`
