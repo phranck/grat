@@ -56,7 +56,10 @@ func detectGo(root string) ([]Service, []Unresolved) {
 		return nil, nil
 	}
 
-	programs := goPrograms(root)
+	programs, rejected := goPrograms(root)
+	if rejected != nil {
+		return nil, []Unresolved{unresolvedIdentifier("go.mod", "the directory below cmd", rejected.name, rejected.offending)}
+	}
 	if len(programs) == 0 {
 		return nil, []Unresolved{{
 			Marker: "go.mod",
@@ -79,11 +82,17 @@ func detectGo(root string) ([]Service, []Unresolved) {
 
 // goPrograms lists what the module can run, preferring the programs under cmd
 // because a module that has them keeps its root for the library.
-func goPrograms(root string) []goProgram {
+func goPrograms(root string) ([]goProgram, *rejectedName) {
 	programs := make([]goProgram, 0, 2)
 	for _, entry := range entries(join(root, "cmd")) {
 		if !entry.IsDir() || !holdsMainPackage(join(root, "cmd", entry.Name())) {
 			continue
+		}
+		// The directory name becomes part of `go run ./cmd/<name>`, so a name
+		// that cannot be written into a command stops the whole detection and
+		// is reported by the caller.
+		if offending, ok := safeIdentifier(entry.Name()); !ok {
+			return nil, &rejectedName{name: entry.Name(), offending: offending}
 		}
 		programs = append(programs, goProgram{
 			name:     entry.Name(),
@@ -92,13 +101,20 @@ func goPrograms(root string) []goProgram {
 		})
 	}
 	if len(programs) > 0 {
-		return programs
+		return programs, nil
 	}
 
+	// The module's own directory name becomes the service name rather than part
+	// of the command, which is `go run .`, so it is checked against the same set
+	// for the sake of one answer rather than two.
 	if holdsMainPackage(root) {
-		return []goProgram{{name: filepath.Base(root), path: ".", evidence: "go.mod"}}
+		name := filepath.Base(root)
+		if offending, ok := safeIdentifier(name); !ok {
+			return nil, &rejectedName{name: name, offending: offending}
+		}
+		return []goProgram{{name: name, path: ".", evidence: "go.mod"}}, nil
 	}
-	return nil
+	return nil, nil
 }
 
 // holdsMainPackage reports whether any Go file directly in directory declares

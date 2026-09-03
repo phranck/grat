@@ -34,6 +34,16 @@ func FindRoot(start string) (string, error) {
 	}
 
 	for directory := absStart; ; directory = filepath.Dir(directory) {
+		// The walk stops where the owner changes, before the configuration in
+		// that directory is even looked at. A file another account placed in a
+		// shared parent, such as /tmp or the parent of a home directory, would
+		// otherwise be found from every directory below it that has none of its
+		// own, and its commands run as whoever typed the grat command. git
+		// closed the same shape in CVE-2022-24765.
+		if !OwnedByCurrentUser(directory) {
+			return "", ErrConfigNotFound
+		}
+
 		configPath := filepath.Join(directory, ConfigFileName)
 		if info, err := os.Stat(configPath); err == nil && info.Mode().IsRegular() {
 			return directory, nil

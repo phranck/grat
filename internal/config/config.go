@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/pelletier/go-toml/v2"
+	"github.com/phranck/grat/internal/project"
 	"github.com/phranck/grat/internal/textsafe"
 )
 
@@ -404,6 +405,16 @@ func readConfigFile(path string) ([]byte, error) {
 		return nil, err
 	}
 	defer func() { _ = file.Close() }()
+	// Who chose this file is asked before what it says is read, because what it
+	// says is a set of commands that run through /bin/sh. It is asked of the
+	// open file rather than of the path, so nothing can be exchanged in between.
+	info, err := file.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("inspect %s: %w", path, err)
+	}
+	if err := project.RefuseUnsafeConfig(info, path); err != nil {
+		return nil, err
+	}
 	data, err := io.ReadAll(io.LimitReader(file, maxConfigBytes+1))
 	if err != nil {
 		return nil, err
