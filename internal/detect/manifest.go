@@ -26,6 +26,20 @@ func (value manifest) declares(name string) bool {
 	return exists
 }
 
+// declaresWithin reports whether the manifest depends on any package under a
+// scope, which is how a tool is recognised across the shape it had before its
+// packages were consolidated into one.
+func (value manifest) declaresWithin(scope string) bool {
+	for _, list := range []map[string]string{value.Dependencies, value.DevDependencies} {
+		for name := range list {
+			if strings.HasPrefix(name, scope) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // packageManager names the tool this project installs and runs its packages
 // with. The manifest field wins where it is present, because that is the field
 // corepack enforces; otherwise the lockfile answers it.

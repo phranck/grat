@@ -63,6 +63,13 @@ func detectNode(root string) ([]Service, []Unresolved) {
 	if services, unresolved := detectNodeServer(root, value); len(services) > 0 || len(unresolved) > 0 {
 		return services, unresolved
 	}
+	if servesOnlyCompanion(root, value) {
+		// The conventional dev script of such a repository starts the very thing
+		// the companion detector has already answered, and it would carry no
+		// port. Where a real application is present this line is never reached,
+		// which is what lets a Storybook be reported beside it.
+		return nil, nil
+	}
 	return detectSingleService(root, value)
 }
 
