@@ -81,4 +81,10 @@ done
 step "Documentation"
 sh scripts/check-docs.sh
 
+# Before the commit rather than at publish time, when the tag already exists and
+# the release page is the first place anybody sees the note went missing.
+step "Release notes"
+sh scripts/test-check-trailers.sh
+sh scripts/check-trailers.sh
+
 printf '\nevery gate passed\n'
