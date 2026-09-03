@@ -80,6 +80,8 @@ var detectors = []detector{
 	detectFlask,
 	detectDeno,
 	detectBun,
+	detectHugo,
+	detectJekyll,
 }
 
 // Directory reports what grat could manage in root.
