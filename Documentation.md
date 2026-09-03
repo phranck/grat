@@ -419,7 +419,11 @@ grat uninstall removes grat from this machine and asks for your password, since 
 
 Each command starts in a process session of its own. grat signals a process only after its live process id, its start identity and its process group all match what grat recorded when it started that service, so a process id reused by something else is never signalled.
 
-Managed state and logs sit under .grat with restrictive permissions. A startup failure stops what that operation started, removes its state, and reports the closing lines of the service's log rather than only a timeout. An interrupted start cleans up the same way.
+grat runs a grat.config only where you decided what it says. The search for one walks upward from the current directory and stops where a directory belongs to another account, and a file that belongs to somebody else, or that its group or everybody can write, is refused by name rather than read. A configuration names commands that run as whoever typed the grat command, so who chose the file is the same question as what it runs.
+
+Managed state and logs sit under .grat with restrictive permissions. That directory sits inside the project, and a repository decides what it brings with it, so grat refuses a symbolic link in place of the log or of either state directory rather than writing through it. A startup failure stops what that operation started, removes its state, and reports the closing lines of the service's log rather than only a timeout. An interrupted start cleans up the same way.
+
+A name grat reads out of a project's own files, such as an executable target or a directory below cmd, reaches a command only where it is letters, digits, underscore, hyphen or full stop. Anything else is reported with the file and the character rather than written into a command line.
 
 State written by an older grat that a current one no longer understands is adopted by grat recover, which never starts anything and refuses without --yes where there is no terminal to show the preview in.
 
