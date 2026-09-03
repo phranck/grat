@@ -30,12 +30,17 @@ set -eu
 #
 #   Fix: take service names however they were typed
 #
-#   Release-note: grat expose frontend, developer no longer fails with unknown
-#   service "frontend,". Names separated by spaces, by commas or by both are the
-#   same list.
+#   Release-note: names separated by spaces, by commas or by both are now the
+#   same list, so a command no longer fails with unknown service "frontend,".
+#
+# The trailer is one line, however long. git reads a trailer's value as
+# continuing onto the next line only where that line begins with whitespace, so
+# a value wrapped at the margin is not a trailer at all and is silently dropped.
+# That happened to v1.11.0 and is why this says so here.
 #
 # Without the trailer the subject is used, which is right whenever the subject
-# already says what changed for the reader.
+# already says what changed for the reader. A trailer also overrules the
+# prefixes dropped above, which is how a removal reaches the notes.
 #
 # Usage: scripts/release-notes.sh <tag> [previous-tag]
 
@@ -69,14 +74,20 @@ git log --no-merges --reverse --format='%s%x1f%(trailers:key=Release-note,valueo
   subject ~ /^Chore: prepare v/ { next }
 
   # Work on the repository, its website and its tooling, which a release is not
-  # the place to report.
-  subject ~ /^Chore: /    { next }
-  subject ~ /^Test: /     { next }
-  subject ~ /^Refactor: / { next }
-
+  # the place to report. A Release-note trailer overrules that, because writing
+  # one is somebody saying this particular change is for the reader: the prefix
+  # answers what kind of work it was, and the trailer answers whether it needs
+  # telling. Without this, a removal has no prefix that both describes it and
+  # reaches the notes, and the biggest change in a release goes out unmentioned.
   {
     note = $2
     gsub(/^[ \t\n]+|[ \t\n]+$/, "", note)
+  }
+  note == "" && subject ~ /^Chore: /    { next }
+  note == "" && subject ~ /^Test: /     { next }
+  note == "" && subject ~ /^Refactor: / { next }
+
+  {
     if (note != "") {
       line = note
     } else {
