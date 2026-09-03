@@ -36,6 +36,15 @@
      cannot show different letters. */
   .card__mark { display: block; width: 420px; height: auto; color: var(--ink); }
 
+  /* The acronym the site's hero carries, at the size this canvas reads at. The
+     classes and colours come from the stylesheet, so the card cannot show a
+     different treatment from the page; only the size is the card's own, as with
+     everything else here. */
+  .card .acronym {
+    margin: var(--space-5) 0 0;
+    font-size: 26px;
+  }
+
   .card__line {
     margin: var(--space-5) 0 0;
     max-width: 22ch;
@@ -67,7 +76,8 @@
   <div class="card">
     <div>
       <img class="card__mark" src="../wordmark.svg" alt="grat">
-      <p class="card__line">Your project's services, started and actually ready.</p>
+      <p class="acronym"><span class="acronym__term">grat</span> <span class="acronym__equals">=</span> <span class="acronym__initial">g</span>rat <span class="acronym__initial">r</span>uns <span class="acronym__initial">a</span>pproved <span class="acronym__initial">t</span>asks</p>
+      <p class="card__line">Replaces the terminal tabs used to run a local development stack.</p>
       <div class="card__foot"><span>macOS &amp; Linux</span><span class="card__rule"></span><span>grat.layered.work</span></div>
     </div>
 
