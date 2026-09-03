@@ -552,7 +552,9 @@ body {
   margin: var(--space-4) 0 0;
   color: var(--ink-muted);
   font-family: var(--font-mono);
-  font-size: var(--size-code-inline);
+  /* The lead's size rather than an inline-code one: this is a line of its own
+     under the title, not a fragment inside a sentence. */
+  font-size: var(--size-lead);
 }
 
 .acronym__term {
