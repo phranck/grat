@@ -275,7 +275,9 @@ grat assigns a port, passes it as PORT, and then waits for that exact port to be
 
 That makes one question decisive, and it is not which framework a project uses. It is who decides the port.
 
-Most tools take the port as a command line flag. Vite, Next.js, Nuxt, Angular, Astro, React Router, SvelteKit, Django and Rails all do, and for those grat writes the flag into the command and the matter is settled. A Go module yields one service per program below cmd, and a Swift package depending on Vapor yields its executable target.
+Most tools take the port as a command line flag. Vite, Next.js, Nuxt, Angular, Astro, React Router, SvelteKit, Django, Rails and Symfony all do, and for those grat writes the flag into the command and the matter is settled. A Go module yields one service per program below cmd, and a Swift package depending on Vapor yields its executable target.
+
+Three take it from the environment instead, each in its own way. Spring Boot reads SERVER_PORT rather than PORT, because that is the variable its own binding turns into the server.port setting. On Gradle its command carries --no-daemon, which is a condition rather than a preference: Gradle runs a build in a long-lived daemon by default, and the application would then hang below that daemon rather than below the command grat started, so the port is held and readiness never arrives. On Maven the plugin forks its own child and needs no flag. Phoenix has no port flag at all and takes the port only where config/runtime.exs reads it, which the project generator writes and a project can remove; where that line is absent grat reports the project rather than proposing a command that would serve on a port of its own choosing.
 
 Some tools decide nothing, because they have no command line of their own. Express, Fastify, NestJS and every Go program read no port unless their own source reads it, and none of them offers a flag for one. For those the port lives in the application code, which the author wrote.
 

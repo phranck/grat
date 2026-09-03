@@ -67,11 +67,14 @@ type detector func(root string) ([]Service, []Unresolved)
 var detectors = []detector{
 	detectNode,
 	detectLaravel,
+	detectSymfony,
 	detectVapor,
 	detectDjango,
 	detectPython,
 	detectRails,
 	detectGo,
+	detectPhoenix,
+	detectSpringBoot,
 }
 
 // Directory reports what grat could manage in root.
