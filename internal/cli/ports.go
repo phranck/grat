@@ -123,9 +123,6 @@ func runPortAssignLocked(ctx context.Context, names []string, cwd string, roots 
 	reserved := removeSelectedReservations(report.Reservations, root, selectedNames)
 	lookup := ports.SystemListenerLookup{}
 	rows := make([][]string, 0, len(selected))
-	// Kept with the port they hold now, because that is the address their
-	// funnels forward to and therefore what identifies them.
-	moved := make([]config.Service, 0, len(selected))
 	for index := range value.Services {
 		if _, selected := selectedNames[value.Services[index].Name]; !selected {
 			continue
@@ -138,14 +135,10 @@ func runPortAssignLocked(ctx context.Context, names []string, cwd string, roots 
 		if err != nil {
 			return fmt.Errorf("allocate port for %s: %w", service.Name, err)
 		}
-		if newPort != service.Port {
-			moved = append(moved, *service)
-		}
 		service.Port = newPort
 		reserved[newPort] = append(reserved[newPort], ports.Reservation{Source: ports.SourceConfig, ProjectRoot: root, ProjectName: value.Project.Name, ServiceName: service.Name})
 		rows = append(rows, []string{service.Name, service.URL()})
 	}
-	withdrawMovedFunnels(ctx, moved, environment, funnelWithdrawalReporter{output: output})
 	output.Step(presentation.StepWorking, "Configuration", "writing grat.config")
 	if err := config.Write(filepath.Join(root, project.ConfigFileName), value); err != nil {
 		return err
@@ -172,9 +165,6 @@ func runPortReassignLocked(ctx context.Context, roots []string, environment envi
 	output.Spacer()
 
 	var assignments []portReassignment
-	// The live view owns the screen whilst it runs, so what was closed is kept
-	// and printed once it has finished.
-	withdrawn := &funnelWithdrawalCollector{}
 	if output.Live() && term.IsTerminal(os.Stdin.Fd()) {
 		err := presentation.RunLifecycle(
 			ctx,
@@ -204,15 +194,13 @@ func runPortReassignLocked(ctx context.Context, roots []string, environment envi
 				if err := runContext.Err(); err != nil {
 					return err
 				}
-				var moved []config.Service
-				assignments, moved, err = assignReassignedPorts(report.Projects)
+				assignments, err = assignReassignedPorts(report.Projects)
 				if err != nil {
 					return err
 				}
 				if err := runContext.Err(); err != nil {
 					return err
 				}
-				withdrawMovedFunnels(runContext, moved, environment, withdrawn)
 				return writeReassignedConfigs(report.Projects)
 			},
 		)
@@ -242,22 +230,19 @@ func runPortReassignLocked(ctx context.Context, roots []string, environment envi
 			return err
 		}
 		output.Step(presentation.StepWorking, "Ports", "calculating global allocations")
-		var moved []config.Service
-		assignments, moved, err = assignReassignedPorts(report.Projects)
+		assignments, err = assignReassignedPorts(report.Projects)
 		if err != nil {
 			return err
 		}
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		withdrawMovedFunnels(ctx, moved, environment, withdrawn)
 		output.Step(presentation.StepWorking, "Configuration", "writing grat.config files")
 		if err := writeReassignedConfigs(report.Projects); err != nil {
 			return err
 		}
 	}
 
-	withdrawn.render(output)
 	renderPortReassignSummary(output, assignments)
 	return nil
 }
@@ -303,13 +288,10 @@ func stopReassignProjects(ctx context.Context, projects []ports.ProjectConfig, o
 	return nil
 }
 
-func assignReassignedPorts(projects []ports.ProjectConfig) ([]portReassignment, []config.Service, error) {
+func assignReassignedPorts(projects []ports.ProjectConfig) ([]portReassignment, error) {
 	reserved := make(map[int][]ports.Reservation)
 	lookup := ports.SystemListenerLookup{}
 	assignments := make([]portReassignment, 0)
-	// Kept with the port they hold now, because that is the address their
-	// funnels forward to and therefore what identifies them.
-	moved := make([]config.Service, 0)
 	for projectIndex := range projects {
 		projectConfig := &projects[projectIndex]
 		for serviceIndex := range projectConfig.Config.Services {
@@ -319,10 +301,7 @@ func assignReassignedPorts(projects []ports.ProjectConfig) ([]portReassignment, 
 			}
 			assigned, err := ports.FirstFree(service.Role, reserved, lookup)
 			if err != nil {
-				return nil, nil, fmt.Errorf("allocate port for %s / %s: %w", projectConfig.Config.Project.Name, service.Name, err)
-			}
-			if assigned != service.Port {
-				moved = append(moved, *service)
+				return nil, fmt.Errorf("allocate port for %s / %s: %w", projectConfig.Config.Project.Name, service.Name, err)
 			}
 			service.Port = assigned
 			reserved[assigned] = append(reserved[assigned], ports.Reservation{
@@ -334,7 +313,7 @@ func assignReassignedPorts(projects []ports.ProjectConfig) ([]portReassignment, 
 			assignments = append(assignments, portReassignment{Project: projectConfig.Config.Project.Name, Service: service.Name, Endpoint: service.URL()})
 		}
 	}
-	return assignments, moved, nil
+	return assignments, nil
 }
 
 func writeReassignedConfigs(projects []ports.ProjectConfig) error {

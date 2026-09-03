@@ -11,9 +11,6 @@ Each service is given a port out of a range that follows from its role, so two
 projects on the same machine do not compete for the same number. The port
 reaches the service as the environment variable PORT.
 
-grat can also publish a running service to the internet over Tailscale Funnel,
-which gives it a stable public name without opening a port on the router.
-
 grat manages long-running commands on macOS and Linux. A configured command has
 to stay in the foreground, and it is either an HTTP service that takes a
 configurable local port and answers a health path, or a worker that has no port
@@ -147,18 +144,6 @@ backend is among the services being started, it is started before the services
 that consume it. Listing the name in inherit_env keeps a value you set yourself.
 `
 
-// tailnetHostMeaning describes the host a development server has to accept.
-const tailnetHostMeaning = `
-This machine's name inside the tailnet, where the machine belongs to one. A Vite
-development server answers only to localhost and to IP addresses unless it is
-told otherwise, which stops a malicious page reaching it through DNS rebinding,
-and a request arriving through a funnel carries the tailnet name instead. Without
-this a published service answers every public request with Vite's blocked-host
-page. grat names that one host rather than allowing every host. Listing the name
-in inherit_env keeps a value you set yourself, which is how further hosts are
-named. Other frameworks have their own rule and grat sets nothing for them yet.
-`
-
 // readiness says what grat waits for.
 const readiness = `
 A service counts as ready when three things hold. Its process is alive, the
@@ -177,9 +162,8 @@ before it reports anything:
 
 // statusColumns describes what the status table prints.
 const statusColumns = `
-The table carries the service, its state, its port, the process id, the local
-endpoint and the public address of anything currently published. An unhealthy
-service also prints the reason. The command exits with status 1 where any service
+The table carries the service, its state, its port, the process id and the local
+endpoint. An unhealthy service also prints the reason. The command exits with status 1 where any service
 is unhealthy, and 0 where every service is either running or stopped.
 `
 
@@ -201,58 +185,6 @@ restart is that sequence followed by a fresh start, waiting for readiness again.
 Ctrl+C cancels a lifecycle command. Cancelling during a stop keeps the managed
 state for a retry and does not escalate from SIGTERM to SIGKILL. A cancelled
 command exits with status 130.
-`
-
-// publicAccess describes expose, hide and the Tailscale setup.
-const publicAccess = `
-A service reachable only on your machine cannot receive a webhook. grat expose
-makes a service reachable from the internet through Tailscale Funnel, at a name
-that stays the same between runs. Several can be named at once, and the word all
-takes every service that names a path. grat hide withdraws them again, and takes
-all as well, which there means every funnel this project has open.
-
-A service is published only where a path says so, with --path for one run or a
-[services.expose] table for good, and the path on the command line wins. Adding
---always to grat expose keeps the path it just published in grat.config, so the
-next run needs no flag; grat hide --always takes it out again. Neither asks you
-to open the file. A
-service that names neither is refused. That is because a request arriving through
-a funnel reaches the service from the machine itself, so a development server
-cannot tell the internet from you, and several of them show a debug page or an
-interactive traceback to anything that looks local. Writing --path / or
-path = "/" publishes all of a service, and grat says so in the line it reports.
-A path names one path, so it goes with one service.
-
-Which funnel belongs to which service is read from the local address it forwards
-to, so an address opened with --path is listed by grat status and closed by
-grat hide, even though no path in the configuration matches it.
-
-Where Tailscale is missing, grat asks before it changes the machine. It says what
-Tailscale is, prints the exact command, and waits for a yes, with No as the
-answer unless you type otherwise. A no ends the command and changes nothing, the
-next grat expose asks again, and a run with no terminal to answer in agrees to
-nothing and prints the commands instead. Everything else in grat works without
-Tailscale.
-
-After a yes it installs Tailscale, starts its background service and signs the
-machine in, reporting each step. On a Mac it installs through Homebrew; on Linux
-it runs the vendor's install script. An existing Tailscale is never upgraded,
-reconfigured or removed. Two steps cannot be taken for you: the background
-service starts with administrator rights, so the system asks for your password,
-and the sign-in happens in the browser, which grat opens.
-
-Where the tailnet has not enabled Funnel, grat says so and opens the page that
-grants it, which only the owner of that tailnet can do.
-
-A funnel outlives the service behind it, because it is configuration in Tailscale
-rather than a process. One left standing forwards to a local port that nothing
-holds any more, and whatever binds that port next is what answers the internet.
-So grat stop closes the addresses of the services it stopped, and grat ports
-assign and grat ports reassign close the addresses of every service whose port
-changes. Each says which address it closed and prints the line that opens it
-again, since a funnel's address is the tailnet name and the path and comes back
-unchanged. grat start names an address that already points at a service it has
-just started, and grat status carries the public address in a column of its own.
 `
 
 // portAllocation describes how ports are chosen.
@@ -317,14 +249,9 @@ command that updates it.
 
 grat uninstall removes grat from this machine and asks for your password, since
 some of what it removes is owned by root. It lists any service still running and
-offers to stop them, withdraws every funnel grat published, and then asks about
-each kind of artefact. The .grat directories are grat's own state and go by
-default; a grat.config is your work and is kept unless you ask for it to go.
-Where grat installed Tailscale itself, it offers to remove that too.
-
-Two things it cannot do. Signing out expires the machine's login without removing
-its entry, so the machine stays listed in the tailnet until it is removed in the
-Tailscale admin console, and deleting a tailnet is possible only there as well.
+offers to stop them, and then asks about each kind of artefact. The .grat
+directories are grat's own state and go by default; a grat.config is your work
+and is kept unless you ask for it to go.
 `
 
 // safety describes what grat refuses to do.
@@ -364,7 +291,7 @@ var files = []struct {
 	{path: ".grat/pid", meaning: "The recorded state of each managed process, below the project root."},
 	{path: ".grat/log", meaning: "One log file per service, below the project root. This is what grat logs reads."},
 	{path: "grat/update-check", meaning: "When grat last asked whether a newer version exists, and what came back. It sits beside settings.toml."},
-	{path: "grat/settings.toml", meaning: "The directories grat scans for projects, and a note where grat installed Tailscale itself. It sits in the platform's user configuration directory, which is ~/Library/Application Support on macOS and $XDG_CONFIG_HOME or ~/.config on Linux."},
+	{path: "grat/settings.toml", meaning: "The directories grat scans for projects. It sits in the platform's user configuration directory, which is ~/Library/Application Support on macOS and $XDG_CONFIG_HOME or ~/.config on Linux."},
 }
 
 // exitStatus describes what grat returns to a caller.

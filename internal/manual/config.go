@@ -1,7 +1,6 @@
 package manual
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -19,7 +18,7 @@ func ConfigPage(version string, date string) string {
 //
 // Every figure in it comes from the code that enforces it: the runtime defaults
 // from config.DefaultRuntime, the ranges from Role.PortRange, the roles from
-// config.Roles, the funnel ports from config.FunnelPublicPorts, and the
+// config.Roles, and the
 // inherited variables from runtime.InheritedEnvironment. A field described here
 // and absent there would be a promise nothing keeps.
 func ConfigDocument(version string, date string) Document {
@@ -46,10 +45,6 @@ func ConfigDocument(version string, date string) Document {
 				Prose(serviceIntro),
 				fieldList(serviceFields),
 			}},
-			{Title: "The expose table", Blocks: []Block{
-				Prose(exposeIntro),
-				exposeFields(),
-			}},
 			{Title: "Roles and port ranges", Blocks: []Block{
 				Prose(rolesIntro),
 				roleRanges(),
@@ -58,7 +53,6 @@ func ConfigDocument(version string, date string) Document {
 				Prose(environmentIntro),
 				Prose(strings.Join(runtime.InheritedEnvironment(), ", ") + "."),
 				Prose(environmentRest),
-				Prose(fmt.Sprintf(environmentTailnetHost, runtime.TailnetHostVariable())),
 			}},
 			{Title: "See also", Blocks: []Block{Prose(configSeeAlso)}},
 		},
@@ -103,25 +97,6 @@ func runtimeFields() Block {
 		})
 	}
 	return Definitions(items...)
-}
-
-// exposeFields names the two keys of the expose table, with the ports taken
-// from the configuration rather than repeated.
-func exposeFields() Block {
-	ports := make([]string, 0, len(config.FunnelPublicPorts()))
-	for _, port := range config.FunnelPublicPorts() {
-		ports = append(ports, strconv.Itoa(port))
-	}
-	return Definitions(
-		Item{
-			Term:   "path",
-			Detail: "Required once the table exists. The only path that goes public, beginning with a slash. Everything else the service serves stays on the machine.",
-		},
-		Item{
-			Term:   "public_port",
-			Detail: "Optional. One of " + strings.Join(ports, ", ") + ", which are the ports a Tailscale funnel listens on. The default is " + strconv.Itoa(config.DefaultPublicPort) + ".",
-		},
-	)
 }
 
 // roleRanges builds the range table from the roles themselves.

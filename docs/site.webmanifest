@@ -1,7 +1,7 @@
 {
   "name": "grat",
   "short_name": "grat",
-  "description": "Start your project's services, wait until each one genuinely answers, keep their ports apart, and publish one path to the internet when a webhook has to reach you.",
+  "description": "Start your project's services, wait until each one genuinely answers, and keep their ports apart.",
   "start_url": "/",
   "scope": "/",
   "display": "browser",
