@@ -10,9 +10,10 @@ import (
 	"os/exec"
 
 	"github.com/phranck/grat/internal/presentation"
+	"github.com/phranck/grat/internal/settings"
 )
 
-func runLogs(ctx context.Context, args []string, cwd string, output presentation.Renderer) error {
+func runLogs(ctx context.Context, args []string, cwd string, store settings.Store, output presentation.Renderer) error {
 	flags := flag.NewFlagSet("logs", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	follow := flags.Bool("follow", false, "tail the log continuously")
@@ -23,7 +24,7 @@ func runLogs(ctx context.Context, args []string, cwd string, output presentation
 		return fmt.Errorf("logs requires exactly one service name")
 	}
 
-	manager, err := loadManager(cwd)
+	manager, err := loadManager(cwd, store)
 	if err != nil {
 		return err
 	}

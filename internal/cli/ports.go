@@ -14,6 +14,7 @@ import (
 	"github.com/phranck/grat/internal/presentation"
 	"github.com/phranck/grat/internal/project"
 	gratruntime "github.com/phranck/grat/internal/runtime"
+	"github.com/phranck/grat/internal/settings"
 )
 
 func runPorts(ctx context.Context, args []string, cwd string, roots []string, environment environment, output presentation.Renderer) error {
@@ -25,7 +26,7 @@ func runPorts(ctx context.Context, args []string, cwd string, roots []string, en
 		if len(args) != 1 {
 			return fmt.Errorf("ports audit does not accept service names")
 		}
-		return runPortAudit(roots, output)
+		return runPortAudit(roots, environment, output)
 	case "assign":
 		return runPortAssign(ctx, args[1:], cwd, roots, environment, output)
 	case "reassign":
@@ -38,10 +39,30 @@ func runPorts(ctx context.Context, args []string, cwd string, roots []string, en
 	}
 }
 
-func runPortAudit(roots []string, output presentation.Renderer) error {
+// reportMovedHeldProjects names the configurations grat holds for a directory
+// that is no longer there.
+//
+// The path is the key, so a project that is moved or deleted leaves its
+// configuration behind, still reserving its ports against everything else. This
+// is the command that reads every project on the machine, so it is where that
+// gets said rather than being cleaned up unasked.
+func reportMovedHeldProjects(store settings.Store, output presentation.Renderer) error {
+	held, _, err := store.HeldProjects()
+	if err != nil {
+		return err
+	}
+	for _, gone := range settings.MissingHeld(held) {
+		output.Step(presentation.StepWarning, "Configuration", fmt.Sprintf(
+			"grat holds a configuration for %s, which is no longer a directory on this machine", gone,
+		))
+	}
+	return nil
+}
+
+func runPortAudit(roots []string, environment environment, output presentation.Renderer) error {
 	output.Heading("Port audit", configuredDirectoriesLabel)
 	output.Step(presentation.StepWorking, "Registry", "reading declarative grat.config files")
-	report, err := ports.Scan(roots)
+	report, err := scanProjects(roots, environment.settings)
 	if err != nil {
 		return err
 	}
@@ -74,6 +95,9 @@ func runPortAudit(roots []string, output presentation.Renderer) error {
 	for _, problem := range report.Problems {
 		output.Step(presentation.StepWarning, "Configuration", fmt.Sprintf("cannot parse %s: %v", problem.Path, problem.Err))
 	}
+	if err := reportMovedHeldProjects(environment.settings, output); err != nil {
+		return err
+	}
 
 	if hasConfiguredCollision(report) {
 		return fmt.Errorf("configured port collision detected")
@@ -98,10 +122,11 @@ func runPortAssign(ctx context.Context, names []string, cwd string, roots []stri
 }
 
 func runPortAssignLocked(ctx context.Context, names []string, cwd string, roots []string, environment environment, output presentation.Renderer) error {
-	root, value, err := loadConfig(cwd)
+	resolved, err := resolveProject(cwd, environment.settings)
 	if err != nil {
 		return err
 	}
+	root, value := resolved.Root, resolved.Config
 	selected, err := selectPortServices(value, names)
 	if err != nil {
 		return err
@@ -109,7 +134,7 @@ func runPortAssignLocked(ctx context.Context, names []string, cwd string, roots 
 	output.Heading("Assigning ports", value.Project.Name)
 	output.Step(presentation.StepWorking, "Registry", "reading global port allocations")
 
-	report, err := ports.Scan(roots)
+	report, err := scanProjects(roots, environment.settings)
 	if err != nil {
 		return err
 	}
@@ -173,7 +198,7 @@ func runPortReassignLocked(ctx context.Context, roots []string, environment envi
 			newPortReassignLifecycleOperation(nil),
 			output.Width(),
 			func(runContext context.Context, lifecycleReport func(presentation.LifecycleEvent)) error {
-				report, err := ports.Scan(roots)
+				report, err := scanProjects(roots, environment.settings)
 				if err != nil {
 					return err
 				}
@@ -201,14 +226,14 @@ func runPortReassignLocked(ctx context.Context, roots []string, environment envi
 				if err := runContext.Err(); err != nil {
 					return err
 				}
-				return writeReassignedConfigs(report.Projects)
+				return writeReassignedConfigs(report.Projects, environment.settings)
 			},
 		)
 		if err != nil {
 			return err
 		}
 	} else {
-		report, err := ports.Scan(roots)
+		report, err := scanProjects(roots, environment.settings)
 		if err != nil {
 			return err
 		}
@@ -238,7 +263,7 @@ func runPortReassignLocked(ctx context.Context, roots []string, environment envi
 			return err
 		}
 		output.Step(presentation.StepWorking, "Configuration", "writing grat.config files")
-		if err := writeReassignedConfigs(report.Projects); err != nil {
+		if err := writeReassignedConfigs(report.Projects, environment.settings); err != nil {
 			return err
 		}
 	}
@@ -316,13 +341,32 @@ func assignReassignedPorts(projects []ports.ProjectConfig) ([]portReassignment, 
 	return assignments, nil
 }
 
-func writeReassignedConfigs(projects []ports.ProjectConfig) error {
+// writeReassignedConfigs puts every project's new ports back where that
+// project's configuration came from.
+//
+// The files go first and together, because WriteAll restores every earlier one
+// when a later replacement fails, and that guarantee only covers files. A held
+// configuration is written afterwards, one at a time, into grat's own
+// directory; a failure there leaves that project on its old ports, which the
+// next audit reports as the collision it is.
+func writeReassignedConfigs(projects []ports.ProjectConfig, store settings.Store) error {
 	writes := make([]config.FileWrite, 0, len(projects))
 	for _, projectConfig := range projects {
+		if projectConfig.Held {
+			continue
+		}
 		writes = append(writes, config.FileWrite{Path: filepath.Join(projectConfig.Root, project.ConfigFileName), Config: projectConfig.Config})
 	}
 	if err := config.WriteAll(writes); err != nil {
 		return fmt.Errorf("write reassigned grat.config files: %w", err)
+	}
+	for _, projectConfig := range projects {
+		if !projectConfig.Held {
+			continue
+		}
+		if err := store.HoldProject(projectConfig.Root, projectConfig.Config); err != nil {
+			return fmt.Errorf("write reassigned configuration held for %s: %w", projectConfig.Root, err)
+		}
 	}
 	return nil
 }

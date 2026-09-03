@@ -51,12 +51,17 @@ in no status.
 
 Where there is no terminal to ask in, the command lists what it found and writes
 nothing.
+
+Without --registry the result is a grat.config in the project. With it the same
+result is kept in grat's own registry instead, and nothing is written into the
+directory. The manual page grat.config explains which to choose.
 `,
 		options: []commandOption{
 			{flag: "--name NAME", meaning: "The project name to write. Required without a terminal, and refused together with a path, which names many projects rather than one."},
 			{flag: "--service NAME=COMMAND", meaning: "Give a service instead of detecting one. Repeatable, and refused together with a path."},
 			{flag: "--force", meaning: "Replace a grat.config that already exists. Without it an existing file is left alone."},
 			{flag: "--write", meaning: "Take every project found below a path without asking. This is the form for a script, since a run with no terminal otherwise writes nothing."},
+			{flag: "--registry", meaning: "Keep the configuration in grat's own registry instead of writing a file into the project, for a repository you cannot write into. Refused together with a path, because that is a decision about one repository."},
 		},
 	},
 	{
@@ -126,6 +131,10 @@ passes the checks its role calls for, and unhealthy when the process is alive
 whilst its identity, its listener ownership or its health check fails. An
 unhealthy service also prints the reason.
 
+Where the configuration is one grat holds rather than a file in the directory,
+the command says so before the table. Nothing in the project would otherwise
+tell somebody standing in it why it starts at all.
+
 The command exits with status 1 where any service is unhealthy, and 0 where every
 service is either running or stopped.
 `,
@@ -146,6 +155,11 @@ standard output and the error output of the command go there.
 Reads every grat.config below the registered directories and reports two things:
 services configured on the same port, and ports already held by something
 listening on this machine. It changes nothing.
+
+Configurations grat holds in its own registry take part as well, since their
+ports are reserved like any other. Where one names a directory that is no longer
+there, the command says so, because such an entry goes on reserving ports for a
+project that has moved.
 `,
 	},
 	{
@@ -218,8 +232,10 @@ nothing can be uninstalled whilst they run. Declining ends the command and
 changes nothing.
 
 It then asks about each kind of artefact. The .grat directories hold grat's own
-state and go by default. A grat.config is your work and survives a reinstall, so
-it is kept unless you ask for it to go.
+state and go by default. A configuration is your work and survives a reinstall,
+so it is kept unless you ask for it to go, and one question covers both the
+grat.config files and the configurations grat holds in its registry, because it
+is one decision.
 `,
 	},
 	{

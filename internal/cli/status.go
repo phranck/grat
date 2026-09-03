@@ -6,16 +6,36 @@ import (
 
 	"github.com/phranck/grat/internal/config"
 	"github.com/phranck/grat/internal/presentation"
+	"github.com/phranck/grat/internal/project"
 	gratruntime "github.com/phranck/grat/internal/runtime"
+	"github.com/phranck/grat/internal/settings"
 )
 
-func runStatus(ctx context.Context, cwd string, output presentation.Renderer) error {
-	manager, err := loadManager(cwd)
+func runStatus(ctx context.Context, cwd string, store settings.Store, output presentation.Renderer) error {
+	resolved, err := resolveProject(cwd, store)
 	if err != nil {
 		return err
 	}
+	manager := gratruntime.Manager{Root: resolved.Root, Config: resolved.Config}
+	reportConfigurationSource(resolved, output)
 	reportPortsOutsideTheirRange(manager.Config, output)
 	return renderStatus(ctx, manager, output)
+}
+
+// reportConfigurationSource says where the configuration came from, and it says
+// so only for the case a person cannot see.
+//
+// A grat.config in the directory explains itself. A configuration grat holds in
+// its own registry does not, and somebody looking at the project would otherwise
+// find nothing that says why it starts at all.
+func reportConfigurationSource(resolved resolvedProject, output presentation.Renderer) {
+	if resolved.Source != projectFromRegistry {
+		return
+	}
+	output.Step(presentation.StepInfo, "Configuration", fmt.Sprintf(
+		"held in grat's registry for %s, with no %s in the project",
+		resolved.Root, project.ConfigFileName,
+	))
 }
 
 // reportPortsOutsideTheirRange says which services hold a port their role does

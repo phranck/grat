@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/phranck/grat/internal/presentation"
+	"github.com/phranck/grat/internal/settings"
 )
 
 func TestCollectProjectInterviewAcceptsEditsAndAdditionalServices(t *testing.T) {
@@ -73,6 +74,14 @@ func TestCollectProjectInterviewAcceptsSuppliedProjectName(t *testing.T) {
 	}
 }
 
+// storeForDiscoverTest gives the command a settings store of its own, so a test
+// never reads or writes the configuration directory of whoever runs it.
+func storeForDiscoverTest(t *testing.T) settings.Store {
+	t.Helper()
+	store, _ := newCLITestStore(t)
+	return store
+}
+
 func TestDiscoverHereRequiresExplicitNameWhenNotInteractive(t *testing.T) {
 	err := discoverHere(
 		context.Background(),
@@ -82,7 +91,9 @@ func TestDiscoverHereRequiresExplicitNameWhenNotInteractive(t *testing.T) {
 		nil,
 		"",
 		false,
+		false,
 		[]string{"frontend=pnpm dev"},
+		environmentForTest(storeForDiscoverTest(t)),
 		presentation.New(io.Discard, presentation.ColorNever),
 	)
 	if err == nil || !strings.Contains(err.Error(), "--name") {

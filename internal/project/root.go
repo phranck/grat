@@ -20,6 +20,26 @@ var ErrConfigNotFound = errors.New("grat.config not found")
 // FindRoot walks from start toward the filesystem root and returns the nearest
 // directory that contains a regular grat.config file.
 func FindRoot(start string) (string, error) {
+	return FindRootBy(start, func(directory string) (bool, error) {
+		configPath := filepath.Join(directory, ConfigFileName)
+		info, err := os.Stat(configPath)
+		if err == nil {
+			return info.Mode().IsRegular(), nil
+		}
+		if errors.Is(err, os.ErrNotExist) {
+			return false, nil
+		}
+		return false, fmt.Errorf("inspect %s: %w", configPath, err)
+	})
+}
+
+// FindRootBy walks from start toward the filesystem root and returns the nearest
+// directory that holds answers true for.
+//
+// The walk is shared rather than repeated, because the rule about where it stops
+// is the security-relevant part and a second copy of it would be a second answer
+// to which directories may become a project.
+func FindRootBy(start string, holds func(directory string) (bool, error)) (string, error) {
 	absStart, err := filepath.Abs(start)
 	if err != nil {
 		return "", fmt.Errorf("resolve current directory: %w", err)
@@ -44,11 +64,12 @@ func FindRoot(start string) (string, error) {
 			return "", ErrConfigNotFound
 		}
 
-		configPath := filepath.Join(directory, ConfigFileName)
-		if info, err := os.Stat(configPath); err == nil && info.Mode().IsRegular() {
+		found, err := holds(directory)
+		if err != nil {
+			return "", err
+		}
+		if found {
 			return directory, nil
-		} else if err != nil && !errors.Is(err, os.ErrNotExist) {
-			return "", fmt.Errorf("inspect %s: %w", configPath, err)
 		}
 
 		parent := filepath.Dir(directory)

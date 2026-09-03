@@ -34,6 +34,11 @@ type installation struct {
 type uninstallArtifacts struct {
 	stateDirectories []string
 	configFiles      []string
+	// heldConfigs are the configurations grat keeps on behalf of projects that
+	// carry no file, by project directory. Such a project is invisible to the
+	// scan below the registered directories, and without it here an uninstall
+	// would refuse to run wherever one of them has managed state.
+	heldConfigs map[string]config.Config
 }
 
 type artifactScanLimits struct {
@@ -68,7 +73,7 @@ func (service Service) uninstallLocked(ctx context.Context, store settings.Store
 	if err != nil {
 		return Result{}, err
 	}
-	artifacts, err := discoverUninstallArtifacts(roots)
+	artifacts, err := discoverUninstallArtifacts(roots, store)
 	if err != nil {
 		return Result{}, err
 	}
@@ -85,9 +90,10 @@ func (service Service) uninstallLocked(ctx context.Context, store settings.Store
 	if err != nil {
 		return Result{}, err
 	}
-	// A grat.config is the user's own work and survives a reinstall, so it is
-	// kept unless it is asked for explicitly.
-	deleteConfigs, err := confirm(output, input, "Delete all grat.config files? [y/N]: ", false)
+	// A configuration is the user's own work and survives a reinstall, so it is
+	// kept unless it is asked for explicitly. One question covers both places it
+	// can live, because it is one decision: whether the setup goes with grat.
+	deleteConfigs, err := confirm(output, input, deleteConfigurationsQuestion(artifacts), false)
 	if err != nil {
 		return Result{}, err
 	}
@@ -99,6 +105,11 @@ func (service Service) uninstallLocked(ctx context.Context, store settings.Store
 	if deleteConfigs {
 		if err := removeArtifacts(roots, artifacts.configFiles); err != nil {
 			return Result{}, err
+		}
+		for projectRoot := range artifacts.heldConfigs {
+			if _, err := store.ReleaseProject(projectRoot); err != nil {
+				return Result{}, fmt.Errorf("remove the configuration held for %s: %w", projectRoot, err)
+			}
 		}
 	}
 	if err := service.removeGlobalSettings(store); err != nil {
@@ -117,8 +128,20 @@ func (service Service) operationLock(ctx context.Context, callback func() error)
 	return operations.WithLock(ctx, callback)
 }
 
-func discoverUninstallArtifacts(roots []string) (uninstallArtifacts, error) {
-	return discoverUninstallArtifactsWithLimits(roots, defaultArtifactScanLimits)
+func discoverUninstallArtifacts(roots []string, store settings.Store) (uninstallArtifacts, error) {
+	artifacts, err := discoverUninstallArtifactsWithLimits(roots, defaultArtifactScanLimits)
+	if err != nil {
+		return uninstallArtifacts{}, err
+	}
+	held, _, err := store.HeldProjects()
+	if err != nil {
+		return uninstallArtifacts{}, err
+	}
+	artifacts.heldConfigs = make(map[string]config.Config, len(held))
+	for _, entry := range held {
+		artifacts.heldConfigs[projectKey(entry.Root)] = entry.Config
+	}
+	return artifacts, nil
 }
 
 func discoverUninstallArtifactsWithLimits(roots []string, limits artifactScanLimits) (uninstallArtifacts, error) {
@@ -195,23 +218,31 @@ func discoverUninstallArtifactsWithLimits(roots []string, limits artifactScanLim
 // yes. When the answer is no it says so and the uninstall ends, because deciding
 // against it is not a failure.
 func (service Service) settleActiveServices(ctx context.Context, artifacts uninstallArtifacts, input io.Reader, output io.Writer) (bool, error) {
+	// Every key is the resolved path, because the directory scan reaches a
+	// project through whatever spelling the registered root used whilst a held
+	// configuration is keyed on the canonical one. Two spellings of one project
+	// would otherwise read as a project with state and no configuration, which
+	// is the one shape that stops an uninstall.
 	stateByProject := make(map[string]struct{}, len(artifacts.stateDirectories))
 	for _, stateDirectory := range artifacts.stateDirectories {
-		stateByProject[filepath.Dir(stateDirectory)] = struct{}{}
+		stateByProject[projectKey(filepath.Dir(stateDirectory))] = struct{}{}
 	}
-	configByProject := make(map[string]string, len(artifacts.configFiles))
+	configured := make(map[string]struct{}, len(artifacts.configFiles)+len(artifacts.heldConfigs))
 	for _, configPath := range artifacts.configFiles {
-		configByProject[filepath.Dir(configPath)] = configPath
+		configured[projectKey(filepath.Dir(configPath))] = struct{}{}
+	}
+	for projectRoot := range artifacts.heldConfigs {
+		configured[projectKey(projectRoot)] = struct{}{}
 	}
 	for projectRoot := range stateByProject {
-		if _, exists := configByProject[projectRoot]; !exists {
+		if _, exists := configured[projectRoot]; !exists {
 			// Without the configuration grat cannot read what those processes
 			// are, so it can neither describe them nor stop them.
-			return false, fmt.Errorf("cannot inspect managed state in %s because grat.config is missing", projectRoot)
+			return false, fmt.Errorf("cannot inspect managed state in %s because no configuration for it exists, in the project or in grat's registry", projectRoot)
 		}
 	}
 
-	active, err := service.activeProjects(ctx, stateByProject, configByProject)
+	active, err := service.activeProjects(ctx, stateByProject, configured, artifacts.heldConfigs)
 	if err != nil {
 		return false, err
 	}
@@ -234,14 +265,14 @@ func (service Service) settleActiveServices(ctx context.Context, artifacts unins
 	}
 
 	for _, found := range active {
-		if err := service.stopProject(ctx, found.Root); err != nil {
+		if err := service.stopProject(ctx, found.Root, artifacts.heldConfigs); err != nil {
 			return false, fmt.Errorf("stop services in %s: %w", found.Root, err)
 		}
 	}
 
 	// Read back rather than trust the stop. A service that survived it would
 	// otherwise be left running by a machine that no longer has grat to stop it.
-	remaining, err := service.activeProjects(ctx, stateByProject, configByProject)
+	remaining, err := service.activeProjects(ctx, stateByProject, configured, artifacts.heldConfigs)
 	if err != nil {
 		return false, err
 	}
@@ -259,13 +290,13 @@ type activeProject struct {
 
 // activeProjects lists every project that still has something running, in a
 // stable order so two runs read the same.
-func (service Service) activeProjects(ctx context.Context, stateByProject map[string]struct{}, configByProject map[string]string) ([]activeProject, error) {
+func (service Service) activeProjects(ctx context.Context, stateByProject map[string]struct{}, configured map[string]struct{}, held map[string]config.Config) ([]activeProject, error) {
 	active := []activeProject{}
-	for projectRoot := range configByProject {
+	for projectRoot := range configured {
 		if _, hasState := stateByProject[projectRoot]; !hasState {
 			continue
 		}
-		running, err := service.inspectProject(ctx, projectRoot)
+		running, err := service.inspectProject(ctx, projectRoot, held)
 		if err != nil {
 			return nil, fmt.Errorf("inspect managed state in %s: %w", projectRoot, err)
 		}
@@ -359,12 +390,34 @@ func readConfirmation(input io.Reader) (string, error) {
 	}
 }
 
+// deleteConfigurationsQuestion names both places a configuration can live, and
+// names the second one only where there is one, so the usual run reads the way
+// it always has.
+func deleteConfigurationsQuestion(artifacts uninstallArtifacts) string {
+	if len(artifacts.heldConfigs) == 0 {
+		return "Delete all grat.config files? [y/N]: "
+	}
+	return fmt.Sprintf(
+		"Delete all grat.config files, and the configurations grat holds for %d project(s)? [y/N]: ",
+		len(artifacts.heldConfigs),
+	)
+}
+
 func (service Service) removeGlobalSettings(store settings.Store) error {
 	settingsPath, err := store.Path()
 	if err != nil {
 		return err
 	}
 	configDirectory := filepath.Dir(settingsPath)
+	// Removed only when nothing is left in it. A configuration somebody chose to
+	// keep lives here, and this is the step that would otherwise take it.
+	projectsDirectory, err := store.ProjectsDirectory()
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(projectsDirectory); err != nil && !errors.Is(err, os.ErrNotExist) && !errors.Is(err, syscall.ENOTEMPTY) {
+		return fmt.Errorf("remove empty held project directory: %w", err)
+	}
 	for _, path := range []string{settingsPath, filepath.Join(configDirectory, "ports.lock")} {
 		if err := service.remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("remove global grat file %s: %w", path, err)
@@ -427,11 +480,11 @@ func (service Service) removeInstallation(ctx context.Context, owner installatio
 	}
 }
 
-func (service Service) inspectProject(ctx context.Context, root string) ([]string, error) {
+func (service Service) inspectProject(ctx context.Context, root string, held map[string]config.Config) ([]string, error) {
 	if service.InspectProject != nil {
 		return service.InspectProject(ctx, root)
 	}
-	value, err := config.Load(filepath.Join(root, project.ConfigFileName))
+	value, err := projectConfiguration(root, held)
 	if err != nil {
 		return nil, err
 	}
@@ -449,15 +502,33 @@ func (service Service) inspectProject(ctx context.Context, root string) ([]strin
 }
 
 // stopProject stops everything grat manages in one project.
-func (service Service) stopProject(ctx context.Context, root string) error {
+func (service Service) stopProject(ctx context.Context, root string, held map[string]config.Config) error {
 	if service.StopProject != nil {
 		return service.StopProject(ctx, root)
 	}
-	value, err := config.Load(filepath.Join(root, project.ConfigFileName))
+	value, err := projectConfiguration(root, held)
 	if err != nil {
 		return err
 	}
 	return (gratruntime.Manager{Root: root, Config: value}).Stop(ctx, nil)
+}
+
+// projectConfiguration answers with a project's configuration from whichever
+// place holds it, so the two callers above do not each decide that separately.
+func projectConfiguration(root string, held map[string]config.Config) (config.Config, error) {
+	if value, exists := held[projectKey(root)]; exists {
+		return value, nil
+	}
+	return config.Load(filepath.Join(root, project.ConfigFileName))
+}
+
+// projectKey is the one spelling of a project directory these maps agree on.
+func projectKey(root string) string {
+	key, err := settings.CanonicalProjectRoot(root)
+	if err != nil {
+		return filepath.Clean(root)
+	}
+	return key
 }
 
 func (service Service) remove(path string) error {

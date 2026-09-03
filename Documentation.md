@@ -111,6 +111,8 @@ Ports are allocated in a single pass over every project you marked, so projects 
 
 Where there is no terminal to ask in, the command lists what it found and writes nothing.
 
+Without --registry the result is a grat.config in the project. With it the same result is kept in grat's own registry instead, and nothing is written into the directory. The manual page grat.config explains which to choose.
+
 **`--name NAME`**
 
 The project name to write. Required without a terminal, and refused together with a path, which names many projects rather than one.
@@ -126,6 +128,10 @@ Replace a grat.config that already exists. Without it an existing file is left a
 **`--write`**
 
 Take every project found below a path without asking. This is the form for a script, since a run with no terminal otherwise writes nothing.
+
+**`--registry`**
+
+Keep the configuration in grat's own registry instead of writing a file into the project, for a repository you cannot write into. Refused together with a path, because that is a decision about one repository.
 
 ### grat start [name...]
 
@@ -175,6 +181,8 @@ Reports what the current project runs. The table carries the service, its state,
 
 A service is stopped when no live managed process exists for it, running when it passes the checks its role calls for, and unhealthy when the process is alive whilst its identity, its listener ownership or its health check fails. An unhealthy service also prints the reason.
 
+Where the configuration is one grat holds rather than a file in the directory, the command says so before the table. Nothing in the project would otherwise tell somebody standing in it why it starts at all.
+
 The command exits with status 1 where any service is unhealthy, and 0 where every service is either running or stopped.
 
 ### grat logs [--follow] NAME
@@ -192,6 +200,8 @@ Keep printing as the service writes, rather than stopping at the end of the file
 Find configured port collisions and live listeners.
 
 Reads every grat.config below the registered directories and reports two things: services configured on the same port, and ports already held by something listening on this machine. It changes nothing.
+
+Configurations grat holds in its own registry take part as well, since their ports are reserved like any other. Where one names a directory that is no longer there, the command says so, because such an entry goes on reserving ports for a project that has moved.
 
 ### grat ports assign [name...]
 
@@ -243,7 +253,7 @@ Removes grat from this machine. It asks for your password, because some of what 
 
 Where services are still running, it lists them and offers to stop them, since nothing can be uninstalled whilst they run. Declining ends the command and changes nothing.
 
-It then asks about each kind of artefact. The .grat directories hold grat's own state and go by default. A grat.config is your work and survives a reinstall, so it is kept unless you ask for it to go.
+It then asks about each kind of artefact. The .grat directories hold grat's own state and go by default. A configuration is your work and survives a reinstall, so it is kept unless you ask for it to go, and one question covers both the grat.config files and the configurations grat holds in its registry, because it is one decision.
 
 ### grat version, --version
 
@@ -496,6 +506,7 @@ the declarative description of a project's services.
 
 - [Name](#name)
 - [Description](#description)
+- [Where a configuration lives](#where-a-configuration-lives)
 - [Example](#example)
 - [Top level](#top-level)
 - [The project table](#the-project-table)
@@ -516,6 +527,16 @@ grat.config sits in the root of a project and says what that project runs. It is
 Every service in it is one long-running command. grat starts it, gives it a port, waits until it genuinely answers, and stops it again together with everything it spawned. A command that puts itself in the background leaves grat nothing to watch, so a service has to stay in the foreground.
 
 The file is read as data. Only the command of a service is ever executed, and it runs through /bin/sh from the project root.
+
+## Where a configuration lives
+
+A configuration lives in one of two places, and the file in the project is the default.
+
+A file describes the project rather than the machine. It travels with a clone, so somebody else types grat start and it works. It travels with a branch, which matters where one project has several worktrees whose services differ. A change to how the project starts is then a diff in a pull request rather than state on one laptop. And losing grat's registry costs the list of scanned directories rather than the setup of every project.
+
+grat discover --registry keeps the same configuration in grat's own configuration directory instead, under the project's path, and writes nothing into the directory. That is for a repository you do not want to write into, or are not allowed to. Everything else behaves as it does otherwise: the same commands find the project, its ports are reserved against every other project on the machine, and grat status says where the configuration came from.
+
+Where both exist the file wins, because it is the one a person standing in the directory can see. The path is the key, so a project that moves leaves its held configuration behind; grat reports that rather than guessing which directory was meant.
 
 ## Example
 

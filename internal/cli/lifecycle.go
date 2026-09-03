@@ -18,7 +18,7 @@ func runLifecycle(ctx context.Context, command string, names []string, cwd strin
 }
 
 func runLifecycleLocked(ctx context.Context, command string, names []string, cwd string, environment environment, output presentation.Renderer) error {
-	manager, err := loadManager(cwd)
+	manager, err := loadManager(cwd, environment.settings)
 	if err != nil {
 		return err
 	}

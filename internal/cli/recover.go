@@ -20,7 +20,7 @@ func runRecover(ctx context.Context, args []string, cwd string, environment envi
 		return err
 	}
 
-	manager, err := loadManager(cwd)
+	manager, err := loadManager(cwd, environment.settings)
 	if err != nil {
 		return err
 	}

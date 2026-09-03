@@ -15,6 +15,32 @@ The file is read as data. Only the command of a service is ever executed, and it
 runs through /bin/sh from the project root.
 `
 
+// configLocation says where a configuration lives, and why the file is the
+// default rather than merely one of two options.
+const configLocation = `
+A configuration lives in one of two places, and the file in the project is the
+default.
+
+A file describes the project rather than the machine. It travels with a clone,
+so somebody else types grat start and it works. It travels with a branch, which
+matters where one project has several worktrees whose services differ. A change
+to how the project starts is then a diff in a pull request rather than state on
+one laptop. And losing grat's registry costs the list of scanned directories
+rather than the setup of every project.
+
+grat discover --registry keeps the same configuration in grat's own
+configuration directory instead, under the project's path, and writes nothing
+into the directory. That is for a repository you do not want to write into, or
+are not allowed to. Everything else behaves as it does otherwise: the same
+commands find the project, its ports are reserved against every other project on
+the machine, and grat status says where the configuration came from.
+
+Where both exist the file wins, because it is the one a person standing in the
+directory can see. The path is the key, so a project that moves leaves its held
+configuration behind; grat reports that rather than guessing which directory was
+meant.
+`
+
 // configExample is a complete file showing every table.
 const configExample = `
 version = 1

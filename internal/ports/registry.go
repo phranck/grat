@@ -58,6 +58,11 @@ type Reservation struct {
 type ProjectConfig struct {
 	Root   string
 	Config config.Config
+	// Held is true where the configuration lives in grat's own registry rather
+	// than in a file below Root. Anything that writes a configuration back has
+	// to put it where it came from, because writing a file into such a project
+	// is the one thing it was set up to avoid.
+	Held bool
 }
 
 // Problem records a config that could not be inspected without preventing
@@ -118,10 +123,48 @@ func scanWithLimits(roots []string, limits scanLimits) (Report, error) {
 		}
 	}
 
+	report.SortProjects()
+	return report, nil
+}
+
+// AddProject records one project and the ports its services reserve.
+//
+// It is exported because a configuration grat holds in its own registry is not
+// below any scanned directory and would otherwise take part in nothing: its
+// ports would look free to every other project on the machine, and the audit
+// would not mention it. Recording it here rather than in a second place is what
+// keeps one answer to what a reservation is.
+func (report *Report) AddProject(root string, value config.Config) {
+	report.addProject(root, value, false)
+}
+
+// AddHeldProject records a project whose configuration grat keeps in its own
+// registry, so a writer can put it back where it came from.
+func (report *Report) AddHeldProject(root string, value config.Config) {
+	report.addProject(root, value, true)
+}
+
+func (report *Report) addProject(root string, value config.Config, held bool) {
+	report.Projects = append(report.Projects, ProjectConfig{Root: root, Config: value, Held: held})
+	for _, service := range value.Services {
+		if service.Port == 0 {
+			continue
+		}
+		report.Reservations[service.Port] = append(report.Reservations[service.Port], Reservation{
+			Source:      SourceConfig,
+			ProjectRoot: root,
+			ProjectName: value.Project.Name,
+			ServiceName: service.Name,
+		})
+	}
+}
+
+// SortProjects orders the projects by directory, so a report built from more
+// than one source still reads the same way every run.
+func (report *Report) SortProjects() {
 	sort.Slice(report.Projects, func(left, right int) bool {
 		return report.Projects[left].Root < report.Projects[right].Root
 	})
-	return report, nil
 }
 
 // AddListeners augments configured reservations with active listeners on every
@@ -192,19 +235,7 @@ func scanRoot(root string, report *Report, limits scanLimits, counters *scanCoun
 			return fmt.Errorf("registry scan exceeds maximum service count of %d", limits.MaxServices)
 		}
 		counters.services += len(value.Services)
-		projectRoot := filepath.Dir(path)
-		report.Projects = append(report.Projects, ProjectConfig{Root: projectRoot, Config: value})
-		for _, service := range value.Services {
-			if service.Port == 0 {
-				continue
-			}
-			report.Reservations[service.Port] = append(report.Reservations[service.Port], Reservation{
-				Source:      SourceConfig,
-				ProjectRoot: projectRoot,
-				ProjectName: value.Project.Name,
-				ServiceName: service.Name,
-			})
-		}
+		report.AddProject(filepath.Dir(path), value)
 		return nil
 	})
 	counters.entries += walked
