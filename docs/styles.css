@@ -143,10 +143,15 @@
   --card-text-inset: calc(var(--card-radius) / 2);
 
   /* --- Measure and rhythm ------------------------------------------------- */
+  /* The golden section, used where a figure is genuinely a proportion between
+     two things rather than a step in a series. */
+  --golden: 1.618;
+
   --measure: 76rem;
-  /* A page is 76rem wide; running prose is not. This is the width a column of
-     text is held to, and the section head already used it. */
-  --measure-text: 46rem;
+  /* A page is 76rem wide; running prose is not. The column of text is the page
+     divided by the golden section, which is where it already sat by eye: 46rem
+     against the 46.97rem the division gives. */
+  --measure-text: calc(var(--measure) / var(--golden));
   --gutter: 1.5rem;
 
   /* How far the range pill sits inside its lane. The pill and the lane are both
@@ -177,20 +182,30 @@
   --font-display: "Barlow Condensed", "Barlow", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Fira Code", ui-monospace, "SF Mono", Menlo, monospace;
 
+  /* The reading sizes are steps on one scale rather than ten separate numbers.
+     The step is the fifth root of the golden section, so five sizes span
+     exactly phi, and each size is derived from its neighbour instead of stated.
+
+     Phi itself is far too coarse to step with: from 1.25rem it would go to
+     2.02rem and then 3.27rem, leaving nothing in between to set a lead or a
+     caption in. Taken across five steps it is a proportion a reader can feel
+     rather than a jump. */
+  --scale-step: 1.1010;
+
   --size-display: clamp(2.5rem, 6.5vw, 4.5rem);
   --size-section: clamp(1.6rem, 3.2vw, 2.25rem);
-  --size-lead: 1.3rem;
+  --size-lead: calc(var(--size-body) * var(--scale-step));
 
   /* A heading below section level, such as the one on a card. It has to sit
      above the body it introduces, which the condensed cut narrows rather than
      shrinks. */
-  --size-heading: 1.6875rem;
+  --size-heading: calc(var(--size-lead) * var(--scale-step) * var(--scale-step));
   --size-body: 1.25rem;
-  --size-small: 1.125rem;
+  --size-small: calc(var(--size-body) / var(--scale-step));
 
   /* Text that is subordinate to the page rather than part of it, such as the
      line in the footer. */
-  --size-fine: 1rem;
+  --size-fine: calc(var(--size-small) / var(--scale-step));
   /* One size for the monospaced family standing on its own, whether that is a
      transcript, a label or a table head. It stays put when the reading sizes
      grow, because code is read at the size it is written at. */
@@ -198,20 +213,20 @@
 
   /* An identifier inside a sentence is a different case. It is read against the
      prose around it, so at the transcript size it would look shrunken. */
-  --size-code-inline: 1.125rem;
+  --size-code-inline: var(--size-small);
 
   /* The number and name above a section, such as 01. Install. It is a signpost
      rather than code, read at a glance from a distance, so it does not take the
      transcript size the terminal windows are set at. */
-  --size-section-number: 0.9375rem;
+  --size-section-number: calc(var(--size-fine) / var(--scale-step));
 
   /* A command shown to be copied and typed. Above a transcript, because it is
      the one line on the page a reader is meant to act on. */
-  --size-command: 0.9375rem;
+  --size-command: var(--size-section-number);
 
   /* A value a reader takes off the page: a port range, a mark on the scale under
      it, a command in a table. Read closely rather than skimmed, but not typed. */
-  --size-figure: 0.875rem;
+  --size-figure: var(--size-section-number);
 
   --leading-display: 1.02;
   --leading-body: 1.55;
