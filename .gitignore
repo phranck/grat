@@ -13,3 +13,7 @@ Papers
 # nor a font licence to render any of it. Kept out for now because the directory
 # layout is about to change.
 Graphics
+
+# Playwright MCP writes its snapshots and console logs here whilst a page is
+# being measured. They belong to one run and never to the repository.
+.playwright-mcp/
