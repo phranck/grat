@@ -144,6 +144,9 @@
 
   /* --- Measure and rhythm ------------------------------------------------- */
   --measure: 76rem;
+  /* A page is 76rem wide; running prose is not. This is the width a column of
+     text is held to, and the section head already used it. */
+  --measure-text: 46rem;
   --gutter: 1.5rem;
 
   /* How far the range pill sits inside its lane. The pill and the lane are both
@@ -669,7 +672,7 @@ main {
 }
 
 .section__head {
-  max-width: 46rem;
+  max-width: var(--measure-text);
   margin-bottom: var(--space-10);
 }
 
@@ -784,23 +787,6 @@ main {
   display: grid;
   gap: var(--space-4);
   grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-}
-
-/* A heading that introduces a card, standing above it rather than inside it.
-   The inset is what section 2 of the design rules asks for: the heading begins
-   where the card's curve below it gives way to its straight edge, so it is
-   derived from the radius rather than chosen. */
-.card-heading {
-  margin: var(--space-8) 0 var(--space-3);
-  padding-inline-start: var(--card-text-inset);
-  font-family: var(--font-display);
-  font-size: var(--size-heading);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.card-heading:first-child {
-  margin-top: 0;
 }
 
 /* --- Terminal window -------------------------------------------------------
@@ -1208,6 +1194,23 @@ td code {
 }
 
 /* --- Prose ------------------------------------------------------------------- */
+
+.prose--column {
+  max-width: var(--measure-text);
+}
+
+.prose h3 {
+  margin: var(--space-8) 0 var(--space-3);
+  font-family: var(--font-display);
+  font-size: var(--size-heading);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.prose h3:first-child {
+  margin-top: 0;
+}
 
 .prose p {
   margin: 0 0 var(--space-4);
