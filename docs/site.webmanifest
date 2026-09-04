@@ -1,7 +1,7 @@
 {
   "name": "grat",
   "short_name": "grat",
-  "description": "grat replaces the terminal tabs used to run a local development stack. Declare your commands once, then manage them together.",
+  "description": "grat replaces the terminal tabs used to run a local development stack. Declare your commands once, manage them together, and publish one path to the internet when a webhook has to reach you.",
   "start_url": "/",
   "scope": "/",
   "display": "browser",
