@@ -15,6 +15,7 @@ import (
 	"github.com/phranck/grat/internal/presentation"
 	gratruntime "github.com/phranck/grat/internal/runtime"
 	"github.com/phranck/grat/internal/settings"
+	"github.com/phranck/grat/internal/tailscale"
 	"github.com/phranck/grat/internal/version"
 )
 
@@ -31,11 +32,21 @@ type environment struct {
 	operationLock func(context.Context, func() error) error
 	maintenance   updateService
 	uninstaller   uninstallService
+	tailscale     tailscaleProvider
+	// tailscaleReady returns a client only where Tailscale is already set up,
+	// and never installs or signs in. It is what a command that merely reports
+	// asks with, since grat status must not change the machine, and it is a seam
+	// so a test can answer it without a tailnet.
+	tailscaleReady readyTailscaleProvider
 	// latestRelease answers with the newest published version. It is a seam so a
 	// test can answer without a network, and so the notice can be given a source
 	// that never installs or changes anything.
 	latestRelease func(context.Context) (string, error)
 }
+
+// readyTailscaleProvider answers with a client where the machine is on a tailnet
+// already, and with false where it is not.
+type readyTailscaleProvider func(context.Context) (tailscale.Client, bool)
 
 type updateService interface {
 	Update(context.Context) (maintenance.Result, error)
@@ -47,13 +58,15 @@ type uninstallService interface {
 
 func defaultEnvironment() environment {
 	return environment{
-		input:         os.Stdin,
-		interactive:   term.IsTerminal(os.Stdin.Fd()),
-		settings:      settings.Store{},
-		operationLock: operations.WithLock,
-		maintenance:   maintenance.DefaultService(),
-		uninstaller:   maintenance.DefaultService(),
-		latestRelease: maintenance.DefaultService().LatestVersion,
+		input:          os.Stdin,
+		interactive:    term.IsTerminal(os.Stdin.Fd()),
+		settings:       settings.Store{},
+		operationLock:  operations.WithLock,
+		maintenance:    maintenance.DefaultService(),
+		uninstaller:    maintenance.DefaultService(),
+		tailscale:      prepareTailscale,
+		tailscaleReady: readyTailscale,
+		latestRelease:  maintenance.DefaultService().LatestVersion,
 	}
 }
 
@@ -99,11 +112,19 @@ func runWithEnvironment(ctx context.Context, args []string, cwd string, out io.W
 		}
 	case "status":
 		if _, err = configuredRoots(cwd, environment, output); err == nil {
-			err = runStatus(ctx, cwd, environment.settings, output)
+			err = runStatus(ctx, cwd, environment.settings, environment.tailscaleReady, output)
 		}
 	case "logs":
 		if _, err = configuredRoots(cwd, environment, output); err == nil {
 			err = runLogs(ctx, args[1:], cwd, environment.settings, output)
+		}
+	case "expose":
+		if _, err = configuredRoots(cwd, environment, output); err == nil {
+			err = runExpose(ctx, args[1:], cwd, environment, output)
+		}
+	case "hide":
+		if _, err = configuredRoots(cwd, environment, output); err == nil {
+			err = runHide(ctx, args[1:], cwd, environment, output)
 		}
 	case "ports":
 		roots, rootErr := configuredRoots(cwd, environment, output)

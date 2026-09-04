@@ -32,8 +32,9 @@ func TestEveryConfiguredKeyIsDescribed(t *testing.T) {
 	page := configPage(t)
 	for _, key := range []string{
 		"version", "project", "runtime", "services",
-		"name", "command", "role", "port", "host", "health_path", "inherit_env",
+		"name", "command", "role", "port", "host", "health_path", "inherit_env", "expose",
 		"start_timeout", "probe_interval", "health_timeout", "shutdown_timeout", "log_tail_lines",
+		"path", "public_port",
 	} {
 		if !strings.Contains(page, ".B "+key) {
 			t.Fatalf("the page does not describe the key %q", key)
@@ -56,13 +57,18 @@ func TestTheDefaultsComeFromTheConfiguration(t *testing.T) {
 	}
 }
 
-func TestTheRangesComeFromTheConfiguration(t *testing.T) {
+func TestTheRangesAndPortsComeFromTheConfiguration(t *testing.T) {
 	t.Parallel()
 
 	page := configPage(t)
 	for _, role := range config.Roles() {
 		if !strings.Contains(page, ".B "+string(role)) {
 			t.Fatalf("the page does not name the role %q", role)
+		}
+	}
+	for _, port := range config.FunnelPublicPorts() {
+		if !strings.Contains(page, strconv.Itoa(port)) {
+			t.Fatalf("the page does not name the funnel port %d", port)
 		}
 	}
 	frontend, _ := config.RoleFrontend.PortRange()

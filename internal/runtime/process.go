@@ -81,6 +81,23 @@ func InheritedEnvironment() []string {
 	return slices.Clone(inheritedEnvironment)
 }
 
+// viteAllowedHostsVariable is how Vite takes further hostnames its development
+// server may answer to, comma separated.
+//
+// Vite answers only to localhost and to IP addresses unless told otherwise,
+// which stops a malicious page from reaching a development server through DNS
+// rebinding. A request arriving through a Tailscale funnel carries this
+// machine's tailnet name instead, so without this the server refuses everything
+// that was published and grat reports success over an error page.
+//
+// It names the one host rather than switching the check off, because Vite's own
+// documentation says that allowing every host lets any website read the source.
+const viteAllowedHostsVariable = "__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS"
+
+// TailnetHostVariable is the name grat sets a machine's tailnet host under, so
+// documentation naming it is built from the same constant the runtime uses.
+func TailnetHostVariable() string { return viteAllowedHostsVariable }
+
 func (manager Manager) commandEnvironment(service config.Service) []string {
 	names := append(slices.Clone(inheritedEnvironment), service.InheritEnv...)
 	environment := make([]string, 0, len(names)+3)
@@ -102,6 +119,11 @@ func (manager Manager) commandEnvironment(service config.Service) []string {
 	if backendURL, exists := manager.backendURLFor(service); exists {
 		if _, overridden := present["BACKEND_URL"]; !overridden {
 			environment = append(environment, "BACKEND_URL="+backendURL)
+		}
+	}
+	if manager.TailnetHost != "" {
+		if _, overridden := present[viteAllowedHostsVariable]; !overridden {
+			environment = append(environment, viteAllowedHostsVariable+"="+manager.TailnetHost)
 		}
 	}
 	if service.Port > 0 {

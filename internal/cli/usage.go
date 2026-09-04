@@ -29,6 +29,14 @@ func helpCommandGroups() []presentation.CommandGroup {
 			},
 		},
 		{
+			Title: "Public access",
+			Commands: []presentation.Command{
+				{Usage: "expose [--path P] [--always] NAME...", Description: "Publish services to the internet at a path you name"},
+				{Usage: "expose status [name...]", Description: "Show what is published, with the public address"},
+				{Usage: "hide [--path P] [--always] NAME...", Description: "Withdraw published services, and their stored paths"},
+			},
+		},
+		{
 			Title: "Ports",
 			Commands: []presentation.Command{
 				{Usage: "ports audit", Description: "Find configured port collisions and live listeners"},
@@ -48,7 +56,7 @@ func helpCommandGroups() []presentation.CommandGroup {
 			Title: "Maintenance",
 			Commands: []presentation.Command{
 				{Usage: "update", Description: "Update grat according to its installation method"},
-				{Usage: "uninstall", Description: "Remove grat from this machine; asks for your password"},
+				{Usage: "uninstall", Description: "Remove grat, and Tailscale where grat installed it; asks for your password"},
 			},
 		},
 		{
