@@ -74,6 +74,13 @@ jobs:
       - name: Documentation
         if: matrix.name == 'Linux Intel'
         run: sh scripts/check-docs.sh
+      # The shell of the site lives once, on the front page, and is written into
+      # the other pages from there. Without this a change to the header reaches
+      # main whilst those pages still carry the previous one, which is how the
+      # navigation went missing from them.
+      - name: Site shell
+        if: matrix.name == 'Linux Intel'
+        run: python3 scripts/build-site.py --check
       # A Release-note trailer git will not read whole is silent: the commit
       # looks right and the release page carries the subject instead. Catching
       # it here is catching it before the merge rather than after the tag.

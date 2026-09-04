@@ -81,6 +81,13 @@ done
 step "Documentation"
 sh scripts/check-docs.sh
 
+# The header, the footer, the sprite and the navigation script live once, on the
+# front page, and are written into the other pages from there. This is what stops
+# a change to any of them reaching main whilst those pages still carry the
+# previous one, which is how the navigation went missing from them before.
+step "Site shell"
+python3 scripts/build-site.py --check
+
 # Before the commit rather than at publish time, when the tag already exists and
 # the release page is the first place anybody sees the note went missing.
 step "Release notes"
