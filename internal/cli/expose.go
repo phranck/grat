@@ -14,6 +14,7 @@ import (
 	"github.com/phranck/grat/internal/presentation"
 	"github.com/phranck/grat/internal/project"
 	"github.com/phranck/grat/internal/publish"
+	"github.com/phranck/grat/internal/settings"
 	"github.com/phranck/grat/internal/tailscale"
 )
 
@@ -46,7 +47,7 @@ func runExpose(ctx context.Context, args []string, cwd string, environment envir
 	if err != nil {
 		return err
 	}
-	root, value := resolved.Root, resolved.Config
+	value := resolved.Config
 	selection, err := publish.Select(value, arguments.Names, arguments.Path)
 	if err != nil {
 		return err
@@ -91,12 +92,12 @@ func runExpose(ctx context.Context, args []string, cwd string, environment envir
 		// After the funnel opened, never before. A run that failed to publish
 		// must not leave a configuration saying it succeeded.
 		if arguments.Always {
-			if err := storeExposePath(root, value, service, funnel); err != nil {
+			if err := storeExposePath(resolved, value, service, funnel, environment.settings); err != nil {
 				output.Step(presentation.StepFailure, service.Name, "the path was published but not kept: "+err.Error())
 				continue
 			}
 			output.Step(presentation.StepSuccess, service.Name,
-				"grat.config now says "+funnel.Path+", so grat expose "+service.Name+" needs no flag")
+				configurationName(resolved)+" now says "+funnel.Path+", so grat expose "+service.Name+" needs no flag")
 		}
 	}
 	if len(published) == 0 {
@@ -140,7 +141,7 @@ func runHide(ctx context.Context, args []string, cwd string, environment environ
 	if err != nil {
 		return err
 	}
-	root, value := resolved.Root, resolved.Config
+	value := resolved.Config
 	services, err := publish.Named(value, arguments.Names)
 	if err != nil {
 		return err
@@ -156,7 +157,7 @@ func runHide(ctx context.Context, args []string, cwd string, environment environ
 	// Somebody who wants a service to stop being publishable should not need a
 	// working Tailscale to say so.
 	if arguments.Always {
-		if err := forgetExposePaths(root, value, services, output); err != nil {
+		if err := forgetExposePaths(resolved, value, services, environment.settings, output); err != nil {
 			return err
 		}
 	}
@@ -201,13 +202,13 @@ func runHide(ctx context.Context, args []string, cwd string, environment environ
 //
 // config.Write validates the whole configuration before it replaces anything, so
 // a path that the file could not have held is refused here rather than written.
-func storeExposePath(root string, value config.Config, service config.Service, funnel tailscale.Funnel) error {
+func storeExposePath(resolved resolvedProject, value config.Config, service config.Service, funnel tailscale.Funnel, store settings.Store) error {
 	for index := range value.Services {
 		if value.Services[index].Name != service.Name {
 			continue
 		}
 		value.Services[index].Expose = &config.Expose{Path: funnel.Path, PublicPort: funnel.PublicPort}
-		return config.Write(filepath.Join(root, project.ConfigFileName), value)
+		return writeResolvedConfig(resolved, value, store)
 	}
 	return fmt.Errorf("unknown service %q", service.Name)
 }
@@ -217,7 +218,7 @@ func storeExposePath(root string, value config.Config, service config.Service, f
 //
 // A setting somebody can create and not remove is half a setting, and the only
 // other way back would be the text editor this exists to avoid.
-func forgetExposePaths(root string, value config.Config, services []config.Service, output presentation.Renderer) error {
+func forgetExposePaths(resolved resolvedProject, value config.Config, services []config.Service, store settings.Store, output presentation.Renderer) error {
 	forgotten := make([]string, 0, len(services))
 	for _, service := range services {
 		for index := range value.Services {
@@ -229,17 +230,17 @@ func forgetExposePaths(root string, value config.Config, services []config.Servi
 		}
 	}
 	if len(forgotten) == 0 {
-		output.Step(presentation.StepInfo, "Public access", "no service named here had a path in grat.config")
+		output.Step(presentation.StepInfo, "Public access", "no service named here had a path in "+configurationName(resolved))
 		return nil
 	}
 	// One write for all of them, so a failure leaves the file as it was rather
 	// than partly changed.
-	if err := config.Write(filepath.Join(root, project.ConfigFileName), value); err != nil {
+	if err := writeResolvedConfig(resolved, value, store); err != nil {
 		return err
 	}
 	for _, name := range forgotten {
 		output.Step(presentation.StepSuccess, name,
-			"grat.config no longer names a path, so it is published only with --path")
+			configurationName(resolved)+" no longer names a path, so it is published only with --path")
 	}
 	return nil
 }
@@ -358,7 +359,7 @@ func parseExposeArguments(name string, args []string) (exposeArguments, error) {
 	flags := flag.NewFlagSet(name, flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	path := flags.String("path", "", "publish this path of the service, where / is all of it")
-	always := flags.Bool("always", false, "keep this decision in grat.config, so the next run needs no flag")
+	always := flags.Bool("always", false, "keep this decision in the project's configuration, so the next run needs no flag")
 	if err := flags.Parse(args); err != nil {
 		return exposeArguments{}, err
 	}
@@ -436,4 +437,27 @@ func recordTailscaleInstall(environment environment) error {
 	value.InstalledTailscale = true
 	_ = environment.settings.Save(value)
 	return nil
+}
+
+// writeResolvedConfig writes a changed configuration back to wherever it was
+// read from, which is the project's own file or grat's registry.
+//
+// A project managed through the registry has no file to open, so a path stored
+// there has to go back into the registry entry. Writing the file regardless
+// would put a grat.config into a repository whose whole point was not having
+// one, and the next run would then read the file rather than the entry.
+func writeResolvedConfig(resolved resolvedProject, value config.Config, store settings.Store) error {
+	if resolved.Source == projectFromRegistry {
+		return store.HoldProject(resolved.Root, value)
+	}
+	return config.Write(filepath.Join(resolved.Root, project.ConfigFileName), value)
+}
+
+// configurationName is what a message calls the place the configuration lives,
+// so somebody told their path was kept knows where to go and look for it.
+func configurationName(resolved resolvedProject) string {
+	if resolved.Source == projectFromRegistry {
+		return "grat's registry"
+	}
+	return project.ConfigFileName
 }

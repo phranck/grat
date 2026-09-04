@@ -210,7 +210,7 @@ Publish services to the internet at a path you name.
 
 Publishes services to the internet through Tailscale Funnel, at a name that stays the same between runs. This is what a webhook from another server needs, since a service on your machine cannot otherwise be reached from outside.
 
-A service is published only where a path says so. Use --path for one run, or --always beside it to keep that path in grat.config, so the next run of this command needs no flag at all. A path written in the configuration is what always applies, and the one on the command line wins over it. A service that names neither is refused, because publishing all of a development server is a decision worth making on purpose: a request through a funnel reaches the service from the machine itself, so a debug toolbar or an interactive traceback treats the internet as local. Writing --path / or path = "/" publishes all of it, and grat says so in the line it reports.
+A service is published only where a path says so. Use --path for one run, or --always beside it to keep that path in the project's configuration, so the next run of this command needs no flag at all. That configuration is the grat.config in the project, or grat's registry where the project has no file of its own, and grat says which one it wrote to. A path written in the configuration is what always applies, and the one on the command line wins over it. A service that names neither is refused, because publishing all of a development server is a decision worth making on purpose: a request through a funnel reaches the service from the machine itself, so a debug toolbar or an interactive traceback treats the internet as local. Writing --path / or path = "/" publishes all of it, and grat says so in the line it reports.
 
 Several services can be named at once, and the word all takes every service that names a path. It names the ones it passed over, so a success never reads as more than it was. A process-only service has no address at all; all passes over it too, and naming it on its own is still an error, because the name says what you meant. A path names one path, so it goes with one service and is refused beside several.
 
@@ -230,7 +230,7 @@ Publish this path for this run. It wins over a path in the configuration. Withou
 
 **`--always`**
 
-Keep the path --path names in grat.config, after it has been published, so the next run needs no flag. It goes with --path and with one service.
+Keep the path --path names in the project's configuration, after it has been published, so the next run needs no flag. It goes with --path and with one service.
 
 ### grat expose status [name...]
 
@@ -246,7 +246,7 @@ Withdraw published services, and their stored paths.
 
 Withdraws published services, so their addresses stop answering. It closes what Tailscale reports for those services and leaves every other funnel standing, including one you set up yourself.
 
-Several services can be named at once, and the word all takes every service of this project that has an address. Which funnels belong to them is read from Tailscale rather than assumed, so an address opened with --path is closed as well. Naming a path closes exactly that one, which is the way to withdraw an address grat cannot see in the configuration. Naming --always additionally takes the stored path out of grat.config, so the service goes back to being publishable only with --path. That happens whether or not Tailscale answers, because a setting in a file has nothing to do with what is published right now.
+Several services can be named at once, and the word all takes every service of this project that has an address. Which funnels belong to them is read from Tailscale rather than assumed, so an address opened with --path is closed as well. Naming a path closes exactly that one, which is the way to withdraw an address grat cannot see in the configuration. Naming --always additionally takes the stored path out of the project's configuration, so the service goes back to being publishable only with --path. That happens whether or not Tailscale answers, because a stored path has nothing to do with what is published right now.
 
 It changes nothing on the machine either. Where Tailscale is missing, stopped or signed out, nothing of this project is published, so hide says that and stops.
 
@@ -256,7 +256,7 @@ Withdraw exactly this path, rather than everything Tailscale reports for the ser
 
 **`--always`**
 
-Also remove the path grat.config holds for the service, so it is published only with --path again.
+Also remove the path the project's configuration holds for the service, so it is published only with --path again.
 
 ### grat ports audit
 

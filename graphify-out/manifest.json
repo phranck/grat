@@ -1059,11 +1059,6 @@
     "ast_hash": "e8f5e5efad62841d40f3c6f7a5807c51",
     "semantic_hash": "e8f5e5efad62841d40f3c6f7a5807c51"
   },
-  "/Users/phranck/Developer/Projects/cli/grat/internal/cli/fixture_test.go": {
-    "mtime": 1788400987.1485345,
-    "ast_hash": "4856e0d70d346300de924501bd17b24c",
-    "semantic_hash": "4856e0d70d346300de924501bd17b24c"
-  },
   "/Users/phranck/Developer/Projects/cli/grat/internal/detect/identifier.go": {
     "mtime": 1788435919.639587,
     "ast_hash": "9081a7326d91caeaf230d459944fa574",
@@ -1245,8 +1240,8 @@
     "semantic_hash": ""
   },
   "internal/cli/expose.go": {
-    "mtime": 1788540436.6500442,
-    "ast_hash": "da1a1c1e6290edd496930e34b8927db1",
+    "mtime": 1788541211.4109676,
+    "ast_hash": "e922000f2d62bc71eab98de79554e4f9",
     "semantic_hash": ""
   },
   "internal/cli/expose_always_test.go": {
@@ -1580,8 +1575,8 @@
     "semantic_hash": ""
   },
   "internal/manual/commandtext.go": {
-    "mtime": 1788540426.6049912,
-    "ast_hash": "dbed10eff494c154628645a2b2175f59",
+    "mtime": 1788541286.137039,
+    "ast_hash": "f7938a2ffc710e1846a0fa31c30cd50a",
     "semantic_hash": ""
   },
   "internal/manual/config.go": {
@@ -1880,8 +1875,8 @@
     "semantic_hash": ""
   },
   "Documentation.md": {
-    "mtime": 1788540426.5517964,
-    "ast_hash": "406456eb6fe218f35d4ad9d86db3cbe1",
+    "mtime": 1788541296.3486977,
+    "ast_hash": "1bf18f93bad17c47b32ff6b2ecca9624",
     "semantic_hash": ""
   },
   "docs/index.html": {
@@ -1897,6 +1892,11 @@
   "docs/robots.txt": {
     "mtime": 1788536330.8172152,
     "ast_hash": "e8f5e5efad62841d40f3c6f7a5807c51",
+    "semantic_hash": ""
+  },
+  "internal/cli/expose_held_test.go": {
+    "mtime": 1788541232.5908904,
+    "ast_hash": "aedcd04a0a281f1735b18808f10d1eb9",
     "semantic_hash": ""
   }
 }
