@@ -72,6 +72,10 @@ host = "127.0.0.1"
 port = 4000
 health_path = "/up"
 
+  [services.expose]
+  path = "/api/webhooks/creem"
+  public_port = 443
+
 [[services]]
 name = "queue"
 command = "php artisan queue:work"
@@ -115,7 +119,18 @@ var serviceFields = []field{
 	{name: "host", required: "Optional.", meaning: "The host the health check addresses. The default is localhost. It is ignored for a worker."},
 	{name: "health_path", required: "Required for an HTTP service.", meaning: "An absolute path beginning with a slash. A worker leaves it out."},
 	{name: "inherit_env", required: "Optional.", meaning: "Names of further parent variables this service may receive, beyond the baseline below. PORT cannot be listed, because grat owns it."},
+	{name: "expose", required: "Optional.", meaning: "A table naming the single path grat expose publishes. Without it, the service is published only where a command gives it a path."},
 }
+
+// exposeIntro introduces the expose table.
+const exposeIntro = `
+This says what of a service reaches the internet, and a service without it
+reaches the internet only where a command names a path for one run. Naming one
+here is worth it for a service whose only business out there is a callback,
+because everything else it serves then stays on the machine, including whatever a
+development setup leaves more open than production would. A path of "/" publishes
+all of it, which is a decision written down rather than one grat makes for you.
+`
 
 // rolesIntro introduces the range table.
 const rolesIntro = `
@@ -140,6 +155,19 @@ be named in inherit_env, and no value is ever stored in grat.config.
 On top of that, an HTTP service receives PORT. Where exactly one service carries
 the backend role, every other service also receives BACKEND_URL, which is that
 backend's own origin without a trailing slash.
+`
+
+// environmentTailnetHost explains the one variable grat sets that answers to
+// another program's rule rather than to grat's own.
+const environmentTailnetHost = `
+A started service also receives %s, set to this machine's name inside the
+tailnet, where the machine belongs to one. A Vite development server answers only
+to localhost and to IP addresses unless it is told otherwise, which stops a
+malicious page reaching it through DNS rebinding, and a request arriving through
+a funnel carries the tailnet name instead. Without this, everything published
+with grat expose would answer with an error page. grat names that one host rather
+than allowing every host, and a service that lists the variable in inherit_env
+keeps the value it inherits.
 `
 
 // configSeeAlso points back to the command page.

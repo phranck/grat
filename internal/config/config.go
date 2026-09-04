@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -31,7 +32,23 @@ const (
 	maxRuntimeValueBytes             = 64
 	maxInheritedEnvironmentVariables = 64
 	maxEnvironmentNameBytes          = 128
+	maxExposePathBytes               = 2 << 10
 )
+
+// DefaultPublicPort is the port a funnel uses when nothing names another one. It
+// is exported because the command that publishes a service without an expose
+// section needs the same value.
+const DefaultPublicPort = 443
+
+// DefaultExposePath is the path that means the whole of a service. Writing it
+// down is how a service is published in full, and leaving the path out publishes
+// nothing at all.
+const DefaultExposePath = "/"
+
+// funnelPublicPorts lists the ports a public funnel can listen on. Tailscale
+// accepts no others, so a config naming a different port is rejected on load
+// rather than when the funnel fails to open.
+var funnelPublicPorts = []int{443, 8443, 10000}
 
 // Role classifies a service for port allocation and lifecycle validation.
 type Role string
@@ -89,7 +106,23 @@ type Durations struct {
 	LogTailLines    int
 }
 
-// Service defines one command managed from the project root.
+// Expose publishes one path of a service to the public internet.
+//
+// Path is required and is the only address that leaves the machine. Everything
+// else the service offers stays inside, including whatever a development setup
+// deliberately leaves open. Setting it to DefaultExposePath publishes all of the
+// service, which is a decision written down rather than one grat makes for
+// somebody. PublicPort defaults to 443 and accepts only the ports in
+// funnelPublicPorts.
+type Expose struct {
+	Path       string `toml:"path"`
+	PublicPort int    `toml:"public_port,omitempty"`
+}
+
+// Service defines one command managed from the project root. A service without
+// an Expose section names no path, so it is published only where a command gives
+// it one for that single run. Which of a service reaches the internet is a
+// decision somebody writes down, in the configuration or on the command line.
 type Service struct {
 	Name       string   `toml:"name"`
 	Command    string   `toml:"command"`
@@ -98,6 +131,7 @@ type Service struct {
 	Host       string   `toml:"host"`
 	HealthPath string   `toml:"health_path"`
 	InheritEnv []string `toml:"inherit_env,omitempty"`
+	Expose     *Expose  `toml:"expose,omitempty"`
 }
 
 // URL returns the browser-facing root URL for an HTTP service. Process-only
@@ -107,6 +141,21 @@ func (service Service) URL() string {
 		return ""
 	}
 	return "http://" + net.JoinHostPort(service.Host, strconv.Itoa(service.Port)) + "/"
+}
+
+// Exposure returns the path a service publishes and the port it publishes on.
+//
+// A service without an expose table names no path, so the path comes back empty
+// and whoever asked has to be given one before anything can be published. It
+// lives here rather than at each caller because the rule is one rule, and two
+// places working it out separately would eventually disagree about which funnel
+// belongs to which service, whilst closing a funnel needs exactly the one that
+// was opened.
+func (service Service) Exposure() (path string, publicPort int) {
+	if service.Expose != nil {
+		return service.Expose.Path, service.Expose.PublicPort
+	}
+	return "", DefaultPublicPort
 }
 
 // Config is the complete, declarative contents of a grat.config file.
@@ -368,6 +417,10 @@ func (value Config) Validate() error {
 		if service.Port < 0 || service.Port > 65535 {
 			return fmt.Errorf("%s.port must be between 0 and 65535", prefix)
 		}
+		if err := validateExpose(prefix, service); err != nil {
+			return err
+		}
+
 		if service.Role == RoleWorker {
 			if service.Port != 0 {
 				return fmt.Errorf("%s worker role requires port = 0", prefix)
@@ -518,6 +571,15 @@ func Roles() []Role {
 	}
 }
 
+// FunnelPublicPorts lists the ports a public funnel can listen on.
+//
+// It exists so that documentation naming them is built from the list the
+// validator checks against, rather than repeating it. A second list would go on
+// naming a port after one was added or removed here.
+func FunnelPublicPorts() []int {
+	return slices.Clone(funnelPublicPorts)
+}
+
 // PortOutsideRange is one service whose port does not sit in the range its role
 // allocates from.
 type PortOutsideRange struct {
@@ -607,7 +669,48 @@ func (value *Config) applyDefaults() {
 		if value.Services[index].Host == "" {
 			value.Services[index].Host = "localhost"
 		}
+		if value.Services[index].Expose != nil && value.Services[index].Expose.PublicPort == 0 {
+			value.Services[index].Expose.PublicPort = DefaultPublicPort
+		}
 	}
+}
+
+// validateExpose checks the optional expose section of one service. A service
+// without the section is valid and simply cannot be published.
+func validateExpose(prefix string, service Service) error {
+	if service.Expose == nil {
+		return nil
+	}
+	if service.Role == RoleWorker {
+		return fmt.Errorf("%s process-only service has no address to expose", prefix)
+	}
+	path := service.Expose.Path
+	if len(path) > maxExposePathBytes {
+		return fmt.Errorf("%s.expose.path exceeds maximum length of %d bytes", prefix, maxExposePathBytes)
+	}
+	if textsafe.ContainsUnsafe(path) {
+		return fmt.Errorf("%s.expose.path must not contain control or Unicode format characters", prefix)
+	}
+	if strings.TrimSpace(path) == "" {
+		return fmt.Errorf("%s.expose.path is required; a funnel publishes one path, not a whole service", prefix)
+	}
+	if !strings.HasPrefix(path, "/") {
+		return fmt.Errorf("%s.expose.path must be an absolute path", prefix)
+	}
+	if !slices.Contains(funnelPublicPorts, service.Expose.PublicPort) {
+		return fmt.Errorf("%s.expose.public_port %d must be one of %s", prefix, service.Expose.PublicPort, publicPortList())
+	}
+	return nil
+}
+
+// publicPortList renders the allowed ports for an error message, so the rule and
+// the message it produces read from the same list.
+func publicPortList() string {
+	values := make([]string, len(funnelPublicPorts))
+	for index, port := range funnelPublicPorts {
+		values[index] = strconv.Itoa(port)
+	}
+	return strings.Join(values, ", ")
 }
 
 func safeServiceName(name string) bool {

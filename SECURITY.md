@@ -37,14 +37,16 @@ a result, and the value is not written into `grat.config`.
 
 Platform inspection helpers are invoked through fixed absolute system paths, so
 a project-controlled `PATH` entry cannot stand in for one. Those are `/bin/ps`,
-`/usr/sbin/lsof`, and `/usr/bin/tail`.
+`/usr/sbin/lsof`, `/usr/bin/tail`, and `/usr/bin/open` on macOS.
 
-Two helpers are resolved through `PATH`, because their location differs between
-systems and installations: `brew` and `gh`. Every argument grat passes to either
-is one of grat's own literals; nothing from a project configuration reaches them.
-`gh` is the one that matters most, since it is what verifies an update's
-provenance, so a `PATH` you do not control is a `PATH` that decides what that
-verification is.
+Five helpers are resolved through `PATH`, because their location differs between
+systems and installations: `tailscale`, `brew`, `sudo`, `xdg-open` on Linux, and
+`gh`. On Linux the Tailscale install path additionally runs the vendor's install
+script through `/bin/sh`, which fetches it with `curl`. Every argument grat
+passes to any of them is one of grat's own literals or a path grat resolved
+itself; nothing from a project configuration reaches them. `gh` is the one that
+matters most, since it is what verifies an update's provenance, so a `PATH` you
+do not control is a `PATH` that decides what that verification is.
 
 Release workflow binaries receive GitHub artifact attestations backed by
 Sigstore. Direct update and direct-install ownership checks are fail-closed:

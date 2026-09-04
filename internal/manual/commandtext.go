@@ -95,6 +95,15 @@ The signal goes to the whole process group, which is what takes the descendants
 with it, such as the Vapor application under swift run or a reload process under
 Vite. SIGTERM comes first, then SIGKILL after shutdown_timeout if the recorded
 process is still there.
+
+Where a service is still published, the command closes its public address and
+says so, with the line that opens it again. A funnel outlives the service behind
+it, so one left standing forwards to a local port that nothing holds any more,
+and whatever binds that port next is what answers the internet. No question is
+put, because it could only be put where there is a terminal, and a stop inside a
+script is exactly where the address would be left open. Nothing is lost by this:
+a funnel's address is the tailnet name and the path, so reopening one gives back
+the address it had.
 `,
 	},
 	{
@@ -124,7 +133,8 @@ nobody made.
 		usage: "status",
 		detail: `
 Reports what the current project runs. The table carries the service, its state,
-its port, the process id and the local endpoint.
+its port, the process id, the local endpoint, and the public address of anything
+currently published.
 
 A service is stopped when no live managed process exists for it, running when it
 passes the checks its role calls for, and unhealthy when the process is alive
@@ -150,6 +160,95 @@ standard output and the error output of the command go there.
 		},
 	},
 	{
+		usage: "expose [--path P] [--always] NAME...",
+		detail: `
+Publishes services to the internet through Tailscale Funnel, at a name that
+stays the same between runs. This is what a webhook from another server needs,
+since a service on your machine cannot otherwise be reached from outside.
+
+A service is published only where a path says so. Use --path for one run, or
+--always beside it to keep that path in grat.config, so the next run of this
+command needs no flag at all. A path written in the configuration is what
+always applies, and the one on the command line wins over it. A service that names neither is refused, because publishing
+all of a development server is a decision worth making on purpose: a request
+through a funnel reaches the service from the machine itself, so a debug toolbar
+or an interactive traceback treats the internet as local. Writing --path / or
+path = "/" publishes all of it, and grat says so in the line it reports.
+
+Several services can be named at once, and the word all takes every service that
+names a path. It names the ones it passed over, so a success never reads as more
+than it was. A process-only service has no address at all; all passes over it
+too, and naming it on its own is still an error, because the name says what you
+meant. A path names one path, so it goes with one service and is refused beside
+several.
+
+A funnel is its public port and its path rather than the service behind it, so
+two services asking for the same path cannot both be public. grat refuses that
+before publishing anything, rather than letting the second replace the first, and
+says which two collide. Giving one of them its own path is what lets both go out.
+
+Each service says what became of it. One that cannot be published does not undo
+the ones already published.
+
+Where Tailscale is missing, grat asks before it changes anything. It says in two
+sentences what Tailscale is, prints the exact command it would run, and waits for
+a yes; the answer is No unless you type otherwise. Saying no ends the command and
+leaves the machine alone, and the next grat expose asks again. Where there is no
+terminal to answer in, nothing is agreed to and the commands are printed so you
+can run them yourself. Everything else in grat works without Tailscale.
+
+Once you have agreed, grat installs it, starts its background service and signs
+the machine in, reporting each step. Two of them cannot be taken for you: the
+background service starts with administrator rights, so the system asks for your
+password, and the sign-in happens in the browser, which grat opens. An existing
+Tailscale is never upgraded, reconfigured or removed.
+
+Where the tailnet has not enabled Funnel, grat says so and opens the page that
+grants it, which only the owner of that tailnet can do.
+`,
+		options: []commandOption{
+			{flag: "--path PATH", meaning: "Publish this path for this run. It wins over a path in the configuration. Without either, nothing is published. A path of / is all of the service."},
+			{flag: "--always", meaning: "Keep the path --path names in grat.config, after it has been published, so the next run needs no flag. It goes with --path and with one service."},
+		},
+	},
+	{
+		usage: "expose status [name...]",
+		detail: `
+Reports what is currently published and at which address, for the named services
+or for all of them. A funnel is recognised by the local address it forwards to,
+so one opened with --path is listed as well, even though no path in the
+configuration matches it.
+
+It changes nothing on the machine. Where Tailscale is missing, stopped or signed
+out, it says so in one line and reports nothing published, because a question
+about what is public must not install anything to answer itself.
+`,
+	},
+	{
+		usage: "hide [--path P] [--always] NAME...",
+		detail: `
+Withdraws published services, so their addresses stop answering. It closes what
+Tailscale reports for those services and leaves every other funnel standing,
+including one you set up yourself.
+
+Several services can be named at once, and the word all takes every service of
+this project that has an address. Which funnels belong to them is read from
+Tailscale rather than assumed, so an address opened with --path is closed as well.
+Naming a path closes exactly that one, which is the way to withdraw an address
+grat cannot see in the configuration. Naming --always additionally takes the
+stored path out of grat.config, so the service goes back to being publishable
+only with --path. That happens whether or not Tailscale answers, because a
+setting in a file has nothing to do with what is published right now.
+
+It changes nothing on the machine either. Where Tailscale is missing, stopped or
+signed out, nothing of this project is published, so hide says that and stops.
+`,
+		options: []commandOption{
+			{flag: "--path PATH", meaning: "Withdraw exactly this path, rather than everything Tailscale reports for the service."},
+			{flag: "--always", meaning: "Also remove the path grat.config holds for the service, so it is published only with --path again."},
+		},
+	},
+	{
 		usage: "ports audit",
 		detail: `
 Reads every grat.config below the registered directories and reports two things:
@@ -168,6 +267,11 @@ project that has moved.
 Gives the named services of the current project a free port from their role's
 range, or every service when no name is given. Ports reserved by another
 configuration and ports held by a live listener are left alone.
+
+A service whose port changes has its public address closed before the new
+configuration is written, because a funnel forwards to a port rather than to a
+service and would go on pointing at the number the service is leaving. The line
+that opens the address again is printed with it.
 `,
 	},
 	{
@@ -180,6 +284,11 @@ leaves the services stopped so their next start uses the new numbers.
 This is the command for a machine whose ranges have drifted apart, and it holds a
 lock across the scan, the allocation and the writes, so no other grat command can
 allocate against a registry that is being rewritten.
+
+Every service whose port changes has its public address closed first, with the
+line that opens it again. Here that matters most: the numbers move across
+projects, so an address left standing would very likely end up forwarding to
+somebody else's service.
 `,
 	},
 	{
@@ -229,13 +338,23 @@ it removes is owned by root.
 
 Where services are still running, it lists them and offers to stop them, since
 nothing can be uninstalled whilst they run. Declining ends the command and
-changes nothing.
+changes nothing. It then withdraws every funnel grat published, so no address is
+left answering once the tool that could close it is gone.
 
 It then asks about each kind of artefact. The .grat directories hold grat's own
 state and go by default. A configuration is your work and survives a reinstall,
 so it is kept unless you ask for it to go, and one question covers both the
 grat.config files and the configurations grat holds in its registry, because it
 is one decision.
+
+Where grat installed Tailscale itself, it offers to remove that as well, which
+means signing the machine out, stopping the background service and removing the
+package. A Tailscale you installed yourself is never touched.
+
+Two things it cannot do, and says so: signing out expires the machine's login
+without removing its entry, so the machine stays listed in the tailnet until you
+remove it in the admin console, and deleting the tailnet is possible only there
+too.
 `,
 	},
 	{
