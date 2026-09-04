@@ -1,0 +1,37 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link "grat" [ref=e4] [cursor=pointer]:
+      - /url: ../
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - generic [ref=e18]: Imprint
+        - heading "Who runs this site" [level=2] [ref=e19]
+        - paragraph [ref=e20]: grat is written and published from Austria, so the details below are the ones Austrian law asks for.
+      - generic [ref=e21]:
+        - article [ref=e22]:
+          - heading "Angaben gemäß § 5 ECG" [level=3] [ref=e23]
+          - paragraph [ref=e24]: Frank Gregor Landstrasse 21c 6900 Bregenz Austria
+          - paragraph [ref=e25]:
+            - text: "Email:"
+            - link "hallo@layered.work" [ref=e26] [cursor=pointer]:
+              - /url: mailto:hallo@layered.work
+        - article [ref=e27]:
+          - heading "Medieninhaber gemäß § 25 MedienG" [level=3] [ref=e28]
+          - paragraph [ref=e29]: As above.
+        - article [ref=e30]:
+          - heading "Grundlegende Richtung" [level=3] [ref=e31]
+          - paragraph [ref=e32]: grat is a free and open source command line tool for running the development services of a project, published under the MIT licence. This site presents the tool, its documentation and its releases. It is privately run, pursues no commercial purpose and sells nothing.
+  - contentinfo [ref=e33]:
+    - generic [ref=e34]:
+      - generic [ref=e35]:
+        - link "Releases" [ref=e36] [cursor=pointer]:
+          - /url: https://github.com/phranck/grat/releases
+        - link "Issues" [ref=e37] [cursor=pointer]:
+          - /url: https://github.com/phranck/grat/issues
+        - link "Imprint" [ref=e38] [cursor=pointer]:
+          - /url: ./
+      - generic [ref=e39]:
+        - text: made by
+        - link "LAYERED" [ref=e40] [cursor=pointer]:
+          - /url: https://layered.work

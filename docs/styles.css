@@ -249,6 +249,13 @@ html {
 
 body {
   margin: 0;
+  /* The page fills the window even where its content does not, so the footer
+     closes it at the bottom edge instead of floating wherever the text ended.
+     The sprite is display:none and becomes no flex item, so the children that
+     lay out here are the header, the main region and the footer. */
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
   color: var(--ink);
   background-color: var(--paper);
   font-family: var(--font-body);
@@ -264,6 +271,12 @@ body {
   hyphens: none;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+main {
+  /* Takes whatever is left between the two bars. This is the half of the
+     sticky footer that body cannot do on its own. */
+  flex: 1;
 }
 
 /* --- One measure for the page --------------------------------------------- */
