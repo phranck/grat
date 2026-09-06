@@ -118,4 +118,4 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [CODE_OF_CO
 
 ## License
 
-grat is licensed under the [MIT License](https://layered.mit-license.org).
+This repository has been published under the [MIT](https://layered.mit-license.org) license.
