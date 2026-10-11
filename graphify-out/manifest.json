@@ -120,18 +120,18 @@
     "semantic_hash": "74e6de43b289da511d60912855b6a6e9"
   },
   "internal/runtime/manager.go": {
-    "mtime": 1791741599.5601273,
-    "ast_hash": "f9465730c12eb51b8b51af1376c1305c",
+    "mtime": 1791741777.6305773,
+    "ast_hash": "c41666310e34e8e7279b20d90ef2fcc3",
     "semantic_hash": ""
   },
   "internal/runtime/manager_test.go": {
-    "mtime": 1791741599.5600338,
-    "ast_hash": "c146cf1dc8b78f317ac9934051938907",
-    "semantic_hash": "c146cf1dc8b78f317ac9934051938907"
+    "mtime": 1791741777.6308725,
+    "ast_hash": "d6b23651e2102af93138194dd3294929",
+    "semantic_hash": ""
   },
   "internal/runtime/process.go": {
-    "mtime": 1791741599.5598989,
-    "ast_hash": "734cb211c38c836c9ea9997cef577a7b",
+    "mtime": 1791741788.4935067,
+    "ast_hash": "4d2ad71925c87230437f95b9335f6f13",
     "semantic_hash": ""
   },
   "internal/runtime/progress.go": {
@@ -190,12 +190,12 @@
     "semantic_hash": "05df213f9c44b87831b94b754f4016b0"
   },
   "CONTRIBUTING.md": {
-    "mtime": 1791741631.8416784,
+    "mtime": 1791742058.6253386,
     "ast_hash": "7a98fd876d89c5263c6fbd7f34d5f908",
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1791741631.8414576,
+    "mtime": 1791742058.6255755,
     "ast_hash": "18e6a4347cb47d3229cb6941f202ea44",
     "semantic_hash": ""
   },
@@ -675,7 +675,7 @@
     "semantic_hash": ""
   },
   "scripts/check-docs.sh": {
-    "mtime": 1791741631.841143,
+    "mtime": 1791742058.6363337,
     "ast_hash": "ff6294ec6a737d695bfd161cdcfb75d2",
     "semantic_hash": ""
   },

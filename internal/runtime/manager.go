@@ -347,7 +347,7 @@ func (manager Manager) Status(ctx context.Context) ([]Status, error) {
 		if err != nil {
 			return nil, err
 		}
-		if !exists || !processAlive(state.State.PID) {
+		if !exists || !recordedProcessLive(state.State) {
 			statuses = append(statuses, status)
 			continue
 		}
@@ -391,7 +391,7 @@ func (manager Manager) startOne(ctx context.Context, service config.Service) err
 		manager.report(service, ProgressFailed, err.Error())
 		return err
 	}
-	if exists && processAlive(state.State.PID) {
+	if exists && recordedProcessLive(state.State) {
 		if err := validateManagedState(state.State); err != nil {
 			manager.report(service, ProgressFailed, err.Error())
 			return fmt.Errorf("%s has an unsafe recorded process: %w", service.Name, err)
