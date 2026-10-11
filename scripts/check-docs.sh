@@ -28,6 +28,15 @@ require_doc() {
 	require_in Documentation.md "$1"
 }
 
+# The Go version grat builds with, read from go.mod the way scripts/gates.sh reads
+# it. The README and CONTRIBUTING state it as the minimum, and both sentences are
+# checked against this value, so a toolchain bump is one edit to go.mod.
+go_version=$(sed -n 's/^go \([0-9.]*\)$/\1/p' go.mod)
+if [ -z "$go_version" ]; then
+	echo "no Go version found in go.mod" >&2
+	exit 1
+fi
+
 # The badges open the README and every one of them reads its value at the moment
 # somebody looks, so none of them can go stale. A hand-written figure at the top
 # of a README is read as current and is the first thing to stop being true.
@@ -67,7 +76,7 @@ done
 for text in \
 	'brew install phranck/grat/grat' \
 	'go install github.com/phranck/grat/cmd/grat@latest' \
-	'Go 1.25.13 or newer' \
+	"Go $go_version or newer" \
 	'man grat' \
 	'Documentation.md' \
 	'grat.layered.work' \
@@ -90,7 +99,7 @@ done
 # holds, and keeping the two in step is what nobody does.
 generated=$(mktemp)
 trap 'rm -f "$generated"' EXIT
-if ! GOTOOLCHAIN=go1.25.13 go run ./cmd/grat manual --markdown > "$generated" 2>/dev/null; then
+if ! GOTOOLCHAIN="go$go_version" go run ./cmd/grat manual --markdown > "$generated" 2>/dev/null; then
 	echo "could not render the manual as Markdown" >&2
 	exit 1
 fi
@@ -113,7 +122,7 @@ for page in grat.1 grat.config.7; do
 	rendered=$(mktemp)
 	mv "$rendered" "$rendered.$section"
 	rendered="$rendered.$section"
-	if ! GOTOOLCHAIN=go1.25.13 go run ./cmd/grat manual "$name" > "$rendered" 2>/dev/null; then
+	if ! GOTOOLCHAIN="go$go_version" go run ./cmd/grat manual "$name" > "$rendered" 2>/dev/null; then
 		echo "could not render the manual page $name" >&2
 		rm -f "$rendered"
 		exit 1
@@ -129,13 +138,12 @@ for page in grat.1 grat.config.7; do
 	rm -f "$rendered"
 done
 
-require_in go.mod 'go 1.25.13'
 require_in go.mod 'module github.com/phranck/grat'
 # The pinned tools, named without the tool keyword because go.mod writes one
 # directive per line and a block once there is more than one.
 require_in go.mod 'golang.org/x/vuln/cmd/govulncheck'
 require_in go.mod 'honnef.co/go/tools/cmd/staticcheck'
-require_in README.md 'Go 1.25.13 or newer'
+require_in README.md "Go $go_version or newer"
 
 # The site states the released version in its badge. The version to compare it
 # against is read from the newest tag rather than written here, because a literal
@@ -162,7 +170,7 @@ if [ -n "$released_version" ]; then
 else
 	echo "no release tag found, so the site badge could not be checked" >&2
 fi
-require_in CONTRIBUTING.md 'Go 1.25.13 or newer'
+require_in CONTRIBUTING.md "Go $go_version or newer"
 require_in SECURITY.md '`BACKEND_URL`'
 # The one application file grat reads, and the helpers it resolves through PATH.
 # SECURITY.md said grat read neither, whilst detection was reading a .env for one
