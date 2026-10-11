@@ -231,6 +231,90 @@ func TestStatusIgnoresLegacyPIDFiles(t *testing.T) {
 	}
 }
 
+// startUnrelatedProcess starts a process grat did not launch, standing in for
+// whatever the system handed a recorded PID to after the recorded process ended.
+func startUnrelatedProcess(t *testing.T) *exec.Cmd {
+	t.Helper()
+	unrelated := exec.Command("sleep", "30")
+	unrelated.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	if err := unrelated.Start(); err != nil {
+		t.Fatalf("start unrelated process: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = unrelated.Process.Kill()
+		_, _ = unrelated.Process.Wait()
+	})
+	return unrelated
+}
+
+// writeStaleRecord records pid for service under an identity from an earlier
+// boot, the shape a state file has once its process is gone and the PID reused.
+func writeStaleRecord(t *testing.T, manager Manager, service config.Service, pid int) {
+	t.Helper()
+	stale := processState{
+		Version:       processStateVersion,
+		PID:           pid,
+		ProcessGroup:  pid,
+		StartIdentity: "darwin:an-earlier-boot-session:" + strconv.Itoa(pid) + ":1:0",
+		Command:       service.Command,
+		StartedAt:     time.Now().UTC(),
+	}
+	if err := manager.writeState(service.Name, stale); err != nil {
+		t.Fatalf("write stale record: %v", err)
+	}
+}
+
+// The identity carries the boot session and the start time, so one that differs
+// from the live process at the recorded PID proves the recorded process is gone.
+// The record is stale rather than unsafe: status reports the service stopped,
+// start replaces the record, and the process now holding the PID is left alone.
+func TestReusedPIDIsAStaleRecordThatStartReplaces(t *testing.T) {
+	t.Setenv(runtimeHelperEnvironment, "1")
+	manager, service := newFixtureManager(t, http.StatusOK)
+	unrelated := startUnrelatedProcess(t)
+	writeStaleRecord(t, manager, service, unrelated.Process.Pid)
+
+	statuses, err := manager.Status(context.Background())
+	if err != nil {
+		t.Fatalf("Status() error = %v", err)
+	}
+	if statuses[0].State != StateStopped {
+		t.Fatalf("Status() = %#v, want a stale record reported as stopped", statuses[0])
+	}
+
+	if err := manager.Start(context.Background(), nil); err != nil {
+		t.Fatalf("Start() error = %v, want the stale record replaced", err)
+	}
+	t.Cleanup(func() { _ = manager.Stop(context.Background(), nil) })
+
+	statuses, err = manager.Status(context.Background())
+	if err != nil {
+		t.Fatalf("Status() after start error = %v", err)
+	}
+	if statuses[0].State != StateRunning || statuses[0].PID == unrelated.Process.Pid {
+		t.Fatalf("Status() after start = %#v, want the newly launched service running", statuses[0])
+	}
+	if !processAlive(unrelated.Process.Pid) {
+		t.Fatal("Start() signaled the process holding the reused PID")
+	}
+}
+
+func TestStopRemovesAStaleRecordWithoutSignalingTheReusedPID(t *testing.T) {
+	manager, service := newFixtureManager(t, http.StatusOK)
+	unrelated := startUnrelatedProcess(t)
+	writeStaleRecord(t, manager, service, unrelated.Process.Pid)
+
+	if err := manager.Stop(context.Background(), nil); err != nil {
+		t.Fatalf("Stop() error = %v, want a stale record removed", err)
+	}
+	if !processAlive(unrelated.Process.Pid) {
+		t.Fatal("Stop() signaled the process holding the reused PID")
+	}
+	if _, exists, err := manager.readState(service.Name); err != nil || exists {
+		t.Fatalf("readState() exists = %v, error = %v, want the stale record removed", exists, err)
+	}
+}
+
 func TestLogTailReadsOnlyTheFinalWindow(t *testing.T) {
 	root := t.TempDir()
 	service := fixtureService(4000, "sleep 30")

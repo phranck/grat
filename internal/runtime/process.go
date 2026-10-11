@@ -167,7 +167,7 @@ func (manager Manager) stopState(ctx context.Context, state loadedState) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	if !processAlive(state.State.PID) {
+	if !recordedProcessLive(state.State) {
 		return nil
 	}
 
@@ -196,6 +196,28 @@ func (manager Manager) stopState(ctx context.Context, state loadedState) error {
 		return nil
 	}
 	return fmt.Errorf("managed process %d did not exit", state.State.PID)
+}
+
+// recordedProcessLive reports whether the process a state file records is still
+// running.
+//
+// A live PID is not enough. Once the recorded process ends, the system hands its
+// number to something else, and after a reboot that is almost certain. The
+// identity carries the boot session and the start time, so an identity that
+// differs from the live process at that PID proves the recorded process is gone.
+// The record is then stale, and the process now holding the PID is none of
+// grat's business. A legacy record has no such identity, so its PID alone decides, and
+// `grat recover` deals with it. Where the identity cannot be read, the process is
+// taken as live, so validateManagedState gets to refuse it.
+func recordedProcessLive(state processState) bool {
+	if !processAlive(state.PID) {
+		return false
+	}
+	if state.Version != processStateVersion {
+		return true
+	}
+	identity, err := processIdentity(state.PID)
+	return err != nil || identity == state.StartIdentity
 }
 
 func validateManagedState(state processState) error {
