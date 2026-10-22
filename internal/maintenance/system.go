@@ -32,9 +32,10 @@ type Service struct {
 	Executable   func() (string, error)
 	EvalSymlinks func(string) (string, error)
 	Command      func(context.Context, string, ...string) ([]byte, error)
-	// BuildInfo answers how the running grat was built. It is left unset in
-	// production, where the answer is read from the running executable through
-	// Executable and EvalSymlinks; a test sets it to answer without a binary.
+	// BuildInfo answers which module the running grat was built from and the
+	// checksum the go command recorded for it. It is left unset in production,
+	// where the answer is read from the running executable through Executable
+	// and EvalSymlinks; a test sets it to answer without a binary.
 	BuildInfo               func() (string, string, bool)
 	CurrentVersion          func() string
 	ReleaseAPI              string
@@ -92,7 +93,13 @@ func runCommand(ctx context.Context, name string, arguments ...string) ([]byte, 
 	return output, nil
 }
 
-// runningBuildInfo reads the Go build information out of the binary at path.
+// runningBuildInfo reads which module the binary at path was built from, and the
+// checksum the go command recorded for that module.
+//
+// The module is the main module's path and not the main package's, which is
+// .../cmd/grat. The checksum is what tells go install apart from every other
+// build: only a module the go command downloaded carries one, whilst a release
+// binary and a build from a checkout record the same module path without it.
 //
 // The path has to be the running executable, resolved through its symlinks, and
 // never os.Args[0]. That first argument is whatever the shell was given, so a
@@ -105,5 +112,5 @@ func runningBuildInfo(path string) (string, string, bool) {
 	if err != nil || info == nil {
 		return "", "", false
 	}
-	return info.Path, info.Main.Version, true
+	return info.Main.Path, info.Main.Sum, true
 }

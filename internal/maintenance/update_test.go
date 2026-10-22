@@ -68,7 +68,9 @@ func TestUpdateDoesNotDelegateToHomebrewForAnotherExecutable(t *testing.T) {
 		EvalSymlinks:   filepath.EvalSymlinks,
 		Command:        commands.Run,
 		CurrentVersion: func() string { return "v1.0.0" },
-		BuildInfo:      func() (string, string, bool) { return ModulePath, "v1.0.0", true },
+		BuildInfo: func() (string, string, bool) {
+			return ModulePath, "h1:1AHXpAbQynSfdYzUxj+VIDI3Hi0XbnJbbpcS5sEHdDA=", true
+		},
 	}
 
 	result, err := service.Update(context.Background())

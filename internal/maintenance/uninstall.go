@@ -454,7 +454,7 @@ func (service Service) detectInstallation(ctx context.Context) (installation, er
 	} else if owned {
 		return installation{kind: installationHomebrew, executable: executable}, nil
 	}
-	if module, buildVersion, ok := service.buildInfo(); ok && module == ModulePath && buildVersion != "" && buildVersion != "(devel)" {
+	if service.installedWithGo() {
 		return installation{kind: installationGo, executable: executable}, nil
 	}
 	if err := service.verifyDirectRelease(ctx, executable, service.currentVersion()); err != nil {
