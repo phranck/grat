@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/phranck/grat/internal/config"
-	"github.com/phranck/grat/internal/runtime"
+	"github.com/phranck/grat/v2/internal/config"
+	"github.com/phranck/grat/v2/internal/runtime"
 )
 
 // ConfigPage renders the configuration manual as a man page for section 7,

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/phranck/grat/internal/presentation"
-	"github.com/phranck/grat/internal/version"
+	"github.com/phranck/grat/v2/internal/presentation"
+	"github.com/phranck/grat/v2/internal/version"
 )
 
 const (

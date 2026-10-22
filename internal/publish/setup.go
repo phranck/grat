@@ -7,7 +7,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/phranck/grat/internal/tailscale"
+	"github.com/phranck/grat/v2/internal/tailscale"
 )
 
 // readinessInterval is how often the machine is asked whether it has finished

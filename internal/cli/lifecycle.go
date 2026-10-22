@@ -6,11 +6,11 @@ import (
 	"os"
 
 	"github.com/charmbracelet/x/term"
-	"github.com/phranck/grat/internal/config"
-	"github.com/phranck/grat/internal/presentation"
-	"github.com/phranck/grat/internal/publish"
-	gratruntime "github.com/phranck/grat/internal/runtime"
-	"github.com/phranck/grat/internal/tailscale"
+	"github.com/phranck/grat/v2/internal/config"
+	"github.com/phranck/grat/v2/internal/presentation"
+	"github.com/phranck/grat/v2/internal/publish"
+	gratruntime "github.com/phranck/grat/v2/internal/runtime"
+	"github.com/phranck/grat/v2/internal/tailscale"
 )
 
 func runLifecycle(ctx context.Context, command string, names []string, cwd string, lock func(context.Context, func() error) error, environment environment, output presentation.Renderer) error {

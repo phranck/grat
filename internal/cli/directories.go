@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/phranck/grat/internal/presentation"
+	"github.com/phranck/grat/v2/internal/presentation"
 )
 
 func runDirectories(args []string, cwd string, environment environment, output presentation.Renderer) error {

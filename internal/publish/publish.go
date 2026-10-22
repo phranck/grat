@@ -14,9 +14,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/phranck/grat/internal/config"
-	"github.com/phranck/grat/internal/tailscale"
-	"github.com/phranck/grat/internal/textsafe"
+	"github.com/phranck/grat/v2/internal/config"
+	"github.com/phranck/grat/v2/internal/tailscale"
+	"github.com/phranck/grat/v2/internal/textsafe"
 )
 
 // AllServices is the word that stands where a service name stands and selects

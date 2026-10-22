@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phranck/grat/internal/settings"
+	"github.com/phranck/grat/v2/internal/settings"
 )
 
 // runDiscoverWithStore runs one command against a settings store the caller

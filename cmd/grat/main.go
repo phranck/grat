@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/phranck/grat/internal/cli"
+	"github.com/phranck/grat/v2/internal/cli"
 )
 
 func main() {

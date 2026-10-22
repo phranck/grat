@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/phranck/grat/internal/config"
-	"github.com/phranck/grat/internal/ports"
-	"github.com/phranck/grat/internal/project"
-	"github.com/phranck/grat/internal/settings"
+	"github.com/phranck/grat/v2/internal/config"
+	"github.com/phranck/grat/v2/internal/ports"
+	"github.com/phranck/grat/v2/internal/project"
+	"github.com/phranck/grat/v2/internal/settings"
 )
 
 // projectSource says where a project's configuration was read from.

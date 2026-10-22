@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phranck/grat/internal/tailscale"
+	"github.com/phranck/grat/v2/internal/tailscale"
 )
 
 // answeringApprover answers every question the same way and records what it was

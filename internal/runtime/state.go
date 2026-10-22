@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/phranck/grat/internal/config"
+	"github.com/phranck/grat/v2/internal/config"
 )
 
 const (

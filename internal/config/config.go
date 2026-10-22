@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/pelletier/go-toml/v2"
-	"github.com/phranck/grat/internal/project"
-	"github.com/phranck/grat/internal/textsafe"
+	"github.com/phranck/grat/v2/internal/project"
+	"github.com/phranck/grat/v2/internal/textsafe"
 )
 
 const (

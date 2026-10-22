@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/phranck/grat/internal/config"
+	"github.com/phranck/grat/v2/internal/config"
 )
 
 func (manager Manager) launch(service config.Service) (processState, error) {

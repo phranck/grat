@@ -5,8 +5,8 @@ import (
 	"io"
 	"time"
 
-	"github.com/phranck/grat/internal/manual"
-	"github.com/phranck/grat/internal/version"
+	"github.com/phranck/grat/v2/internal/manual"
+	"github.com/phranck/grat/v2/internal/version"
 )
 
 // manualDocuments are the pages grat can render, by the name they are installed

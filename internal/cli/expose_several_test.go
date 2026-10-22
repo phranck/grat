@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phranck/grat/internal/tailscale"
-	"github.com/phranck/grat/internal/tailscale/tailscaletest"
+	"github.com/phranck/grat/v2/internal/tailscale"
+	"github.com/phranck/grat/v2/internal/tailscale/tailscaletest"
 )
 
 // TestExposeTakesSeveralServices is what phranck asked for: three services, one

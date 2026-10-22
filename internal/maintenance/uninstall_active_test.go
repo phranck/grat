@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phranck/grat/internal/settings"
+	"github.com/phranck/grat/v2/internal/settings"
 )
 
 // runningProject sets up one project whose services are still running, and

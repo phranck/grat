@@ -9,12 +9,12 @@ import (
 	"sort"
 
 	"github.com/charmbracelet/x/term"
-	"github.com/phranck/grat/internal/config"
-	"github.com/phranck/grat/internal/ports"
-	"github.com/phranck/grat/internal/presentation"
-	"github.com/phranck/grat/internal/project"
-	gratruntime "github.com/phranck/grat/internal/runtime"
-	"github.com/phranck/grat/internal/settings"
+	"github.com/phranck/grat/v2/internal/config"
+	"github.com/phranck/grat/v2/internal/ports"
+	"github.com/phranck/grat/v2/internal/presentation"
+	"github.com/phranck/grat/v2/internal/project"
+	gratruntime "github.com/phranck/grat/v2/internal/runtime"
+	"github.com/phranck/grat/v2/internal/settings"
 )
 
 func runPorts(ctx context.Context, args []string, cwd string, roots []string, environment environment, output presentation.Renderer) error {

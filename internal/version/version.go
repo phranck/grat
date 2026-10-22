@@ -2,7 +2,7 @@
 package version
 
 // buildVersion is intentionally a variable so release builds can set it with:
-// -ldflags "-X github.com/phranck/grat/internal/version.buildVersion=vX.Y.Z".
+// -ldflags "-X github.com/phranck/grat/v2/internal/version.buildVersion=vX.Y.Z".
 var buildVersion = "v1.3.2"
 
 // Current returns a normalized semantic version suitable for user-facing

@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/phranck/grat/internal/config"
+	"github.com/phranck/grat/v2/internal/config"
 )
 
 // Service is one thing grat could manage, derived from what a directory holds.

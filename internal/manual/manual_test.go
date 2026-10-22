@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phranck/grat/internal/config"
-	"github.com/phranck/grat/internal/presentation"
+	"github.com/phranck/grat/v2/internal/config"
+	"github.com/phranck/grat/v2/internal/presentation"
 )
 
 func groups() []presentation.CommandGroup {

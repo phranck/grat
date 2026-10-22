@@ -8,8 +8,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/phranck/grat/internal/presentation"
-	gratruntime "github.com/phranck/grat/internal/runtime"
+	"github.com/phranck/grat/v2/internal/presentation"
+	gratruntime "github.com/phranck/grat/v2/internal/runtime"
 )
 
 func runRecover(ctx context.Context, args []string, cwd string, environment environment, output presentation.Renderer) error {

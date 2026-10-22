@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phranck/grat/internal/config"
-	"github.com/phranck/grat/internal/maintenance"
-	"github.com/phranck/grat/internal/settings"
-	"github.com/phranck/grat/internal/tailscale"
+	"github.com/phranck/grat/v2/internal/config"
+	"github.com/phranck/grat/v2/internal/maintenance"
+	"github.com/phranck/grat/v2/internal/settings"
+	"github.com/phranck/grat/v2/internal/tailscale"
 )
 
 func TestDirectoriesCommandsPersistAndListConfiguredRoots(t *testing.T) {

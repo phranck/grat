@@ -30,7 +30,7 @@ The tag is the version. The release workflow writes it into the binary, so a rel
 2. **Tag and push**: `git tag -a vX.Y.Z -m "grat vX.Y.Z" && git push origin vX.Y.Z`.
 3. **Wait for the Release workflow.** It builds four binaries, generates both manual pages, packages four Homebrew bottles, writes the grouped notes and publishes.
 4. **Fetch the checksums** from `checksums.txt` of the new release, and the SHA256 of the source tarball.
-5. **Update the tap** at `../homebrew-grat`, on its own `release/vX.Y.Z` branch: seven values in `Formula/grat.rb`, being the source URL, the source checksum, the bottle root URL and four bottle checksums. Run `ruby test/formula_binary_test.rb`.
+5. **Update the tap** at `../homebrew-grat`, on its own `release/vX.Y.Z` branch: seven values in `Formula/grat.rb`, being the source URL, the source checksum, the bottle root URL and four bottle checksums. The formula's `go build` line names the same `-X` path as `write_formula` in `scripts/build-homebrew-bottles.sh`, and where the two differ the tap takes the script's, because the linker ignores a path that names no variable and the formula's test then fails on the version. Run `ruby test/formula_binary_test.rb`.
 6. **Open the tap pull request and wait for all three checks.** They install the formula for real, which is the only thing that proves the bottles are reachable and their digests right.
 7. **Merge, then `brew upgrade grat`** and check `grat version`.
 

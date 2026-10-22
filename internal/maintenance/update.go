@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/phranck/grat/internal/version"
+	"github.com/phranck/grat/v2/internal/version"
 )
 
 const (
@@ -60,7 +60,7 @@ func (service Service) Update(ctx context.Context) (Result, error) {
 		return Result{Message: updateMessage(installed, upgraded, "with Homebrew")}, nil
 	}
 	if module, buildVersion, ok := service.buildInfo(); ok && module == ModulePath && buildVersion != "" && buildVersion != "(devel)" {
-		return Result{Message: "Run: go install github.com/phranck/grat/cmd/grat@latest"}, nil
+		return Result{Message: "Run: go install " + goInstallTarget}, nil
 	}
 	return service.updateDirectRelease(ctx, executable)
 }

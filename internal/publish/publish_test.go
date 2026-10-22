@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phranck/grat/internal/config"
-	"github.com/phranck/grat/internal/tailscale"
+	"github.com/phranck/grat/v2/internal/config"
+	"github.com/phranck/grat/v2/internal/tailscale"
 )
 
 // project is the shape that matters: one service that names its own path, one

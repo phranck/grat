@@ -11,13 +11,13 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/phranck/grat/internal/config"
-	"github.com/phranck/grat/internal/operations"
-	"github.com/phranck/grat/internal/project"
-	"github.com/phranck/grat/internal/publish"
-	gratruntime "github.com/phranck/grat/internal/runtime"
-	"github.com/phranck/grat/internal/settings"
-	"github.com/phranck/grat/internal/tailscale"
+	"github.com/phranck/grat/v2/internal/config"
+	"github.com/phranck/grat/v2/internal/operations"
+	"github.com/phranck/grat/v2/internal/project"
+	"github.com/phranck/grat/v2/internal/publish"
+	gratruntime "github.com/phranck/grat/v2/internal/runtime"
+	"github.com/phranck/grat/v2/internal/settings"
+	"github.com/phranck/grat/v2/internal/tailscale"
 )
 
 type installationKind int

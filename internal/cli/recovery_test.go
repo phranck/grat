@@ -15,8 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/phranck/grat/internal/config"
-	"github.com/phranck/grat/internal/settings"
+	"github.com/phranck/grat/v2/internal/config"
+	"github.com/phranck/grat/v2/internal/settings"
 )
 
 func TestRecoverRequiresConfirmationOrYes(t *testing.T) {

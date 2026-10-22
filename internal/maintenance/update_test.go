@@ -75,7 +75,7 @@ func TestUpdateDoesNotDelegateToHomebrewForAnotherExecutable(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Update() error = %v", err)
 	}
-	if got, want := result.Message, "Run: go install github.com/phranck/grat/cmd/grat@latest"; got != want {
+	if got, want := result.Message, "Run: go install github.com/phranck/grat/v2/cmd/grat@latest"; got != want {
 		t.Fatalf("Update() message = %q, want %q", got, want)
 	}
 	if commands.called(commandKey("brew", "upgrade", HomebrewFormula)) {

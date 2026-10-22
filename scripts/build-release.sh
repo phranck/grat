@@ -19,7 +19,7 @@ for target in darwin/amd64 darwin/arm64 linux/amd64 linux/arm64; do
 	goarch=${target#*/}
 	asset="$output_directory/grat_${version}_${goos}_${goarch}"
 	GOOS="$goos" GOARCH="$goarch" go build -trimpath \
-		-ldflags "-s -w -X github.com/phranck/grat/internal/version.buildVersion=$version" \
+		-ldflags "-s -w -X github.com/phranck/grat/v2/internal/version.buildVersion=$version" \
 		-o "$asset" ./cmd/grat
 done
 

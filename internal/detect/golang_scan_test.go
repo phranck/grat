@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phranck/grat/internal/project"
+	"github.com/phranck/grat/v2/internal/project"
 )
 
 const readsPort = `package config

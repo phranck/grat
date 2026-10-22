@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phranck/grat/internal/config"
+	"github.com/phranck/grat/v2/internal/config"
 )
 
 // TestAHealthProbeDoesNotFollowARedirectOffTheService is the fault this guards.

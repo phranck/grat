@@ -10,13 +10,13 @@ import (
 	"time"
 
 	"github.com/charmbracelet/x/term"
-	"github.com/phranck/grat/internal/maintenance"
-	"github.com/phranck/grat/internal/operations"
-	"github.com/phranck/grat/internal/presentation"
-	gratruntime "github.com/phranck/grat/internal/runtime"
-	"github.com/phranck/grat/internal/settings"
-	"github.com/phranck/grat/internal/tailscale"
-	"github.com/phranck/grat/internal/version"
+	"github.com/phranck/grat/v2/internal/maintenance"
+	"github.com/phranck/grat/v2/internal/operations"
+	"github.com/phranck/grat/v2/internal/presentation"
+	gratruntime "github.com/phranck/grat/v2/internal/runtime"
+	"github.com/phranck/grat/v2/internal/settings"
+	"github.com/phranck/grat/v2/internal/tailscale"
+	"github.com/phranck/grat/v2/internal/version"
 )
 
 // Run executes one service command from cwd and returns a shell-compatible exit

@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phranck/grat/internal/config"
-	"github.com/phranck/grat/internal/presentation"
-	"github.com/phranck/grat/internal/project"
-	"github.com/phranck/grat/internal/settings"
+	"github.com/phranck/grat/v2/internal/config"
+	"github.com/phranck/grat/v2/internal/presentation"
+	"github.com/phranck/grat/v2/internal/project"
+	"github.com/phranck/grat/v2/internal/settings"
 )
 
 // resolveTestProject makes a project directory below a private configuration

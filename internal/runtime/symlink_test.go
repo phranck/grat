@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phranck/grat/internal/config"
+	"github.com/phranck/grat/v2/internal/config"
 )
 
 // TestALinkedLogIsRefusedRatherThanFollowed is the defect this guards. .grat

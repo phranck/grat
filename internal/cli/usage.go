@@ -1,8 +1,8 @@
 package cli
 
 import (
-	"github.com/phranck/grat/internal/presentation"
-	"github.com/phranck/grat/internal/version"
+	"github.com/phranck/grat/v2/internal/presentation"
+	"github.com/phranck/grat/v2/internal/version"
 )
 
 func printUsage(output presentation.Renderer) {

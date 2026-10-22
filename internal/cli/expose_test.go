@@ -3,18 +3,18 @@ package cli
 import (
 	"bytes"
 	"context"
-	"github.com/phranck/grat/internal/project"
+	"github.com/phranck/grat/v2/internal/project"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/phranck/grat/internal/config"
-	"github.com/phranck/grat/internal/presentation"
-	"github.com/phranck/grat/internal/publish"
-	"github.com/phranck/grat/internal/settings"
-	"github.com/phranck/grat/internal/tailscale"
-	"github.com/phranck/grat/internal/tailscale/tailscaletest"
+	"github.com/phranck/grat/v2/internal/config"
+	"github.com/phranck/grat/v2/internal/presentation"
+	"github.com/phranck/grat/v2/internal/publish"
+	"github.com/phranck/grat/v2/internal/settings"
+	"github.com/phranck/grat/v2/internal/tailscale"
+	"github.com/phranck/grat/v2/internal/tailscale/tailscaletest"
 )
 
 // exposeProject writes a project with the four cases that matter: a backend and

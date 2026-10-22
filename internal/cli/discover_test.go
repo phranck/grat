@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phranck/grat/internal/config"
-	"github.com/phranck/grat/internal/project"
+	"github.com/phranck/grat/v2/internal/config"
+	"github.com/phranck/grat/v2/internal/project"
 )
 
 // developmentFolder writes a folder of projects the way one actually looks, so a

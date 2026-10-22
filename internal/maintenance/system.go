@@ -12,13 +12,15 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/phranck/grat/internal/operations"
-	"github.com/phranck/grat/internal/version"
+	"github.com/phranck/grat/v2/internal/operations"
+	"github.com/phranck/grat/v2/internal/version"
 )
 
 const (
 	// ModulePath is grat's canonical Go module path.
-	ModulePath = "github.com/phranck/grat"
+	ModulePath = "github.com/phranck/grat/v2"
+	// goInstallTarget is what go install takes to put the newest release in place.
+	goInstallTarget = ModulePath + "/cmd/grat@latest"
 	// HomebrewFormula is the dedicated Homebrew formula reference.
 	HomebrewFormula   = "phranck/grat/grat"
 	defaultReleaseAPI = "https://api.github.com"
