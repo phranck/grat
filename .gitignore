@@ -7,11 +7,8 @@
 # Working documents for the operator, synchronised outside this repository.
 Papers
 
-# The sources the marks are built from: the font the wordmark is drawn with, the
-# SVG built beside it, and Phosphor's icon files. What ships is the SVG in docs,
-# whose letters and icons are outlines, so the repository needs neither a font
-# nor a font licence to render any of it. Kept out for now because the directory
-# layout is about to change.
+# The design sources of the banner: the font the wordmark is drawn with and
+# Phosphor's icon files. The repository ships only the rendered docs/banner.png.
 Graphics
 
 # Playwright MCP writes its snapshots and console logs here whilst a page is

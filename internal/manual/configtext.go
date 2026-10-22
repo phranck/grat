@@ -173,6 +173,5 @@ keeps the value it inherits.
 // configSeeAlso points back to the command page.
 const configSeeAlso = `
 grat(1) describes the commands that read this file. The full documentation is in
-Documentation.md in the project repository at https://github.com/phranck/grat,
-and the overview is at https://grat.layered.work.
+Documentation.md in the project repository at https://github.com/phranck/grat.
 `

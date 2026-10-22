@@ -3,8 +3,8 @@ set -eu
 
 # The documentation contract.
 #
-# Every string below is a statement the README, Documentation.md or the site
-# makes about what the code does. Checking them here is what makes a change to
+# Every string below is a statement the README or Documentation.md makes about
+# what the code does. Checking them here is what makes a change to
 # the code that leaves a document behind fail loudly, rather than silently
 # leaving a claim in place that is no longer true.
 
@@ -79,7 +79,6 @@ for text in \
 	"Go $go_version or newer" \
 	'man grat' \
 	'Documentation.md' \
-	'grat.layered.work' \
 	'macOS' \
 	'Linux' \
 	'foreground' \
@@ -144,32 +143,6 @@ require_in go.mod 'module github.com/phranck/grat'
 require_in go.mod 'golang.org/x/vuln/cmd/govulncheck'
 require_in go.mod 'honnef.co/go/tools/cmd/staticcheck'
 require_in README.md "Go $go_version or newer"
-
-# The site states the released version in its badge. The version to compare it
-# against is read from the newest tag rather than written here, because a literal
-# in this file is a second copy of the same number: both have to be edited by
-# hand, and a bump that forgets one forgets the other just as easily.
-released_version="$(git describe --tags --abbrev=0 2>/dev/null || true)"
-site_version="$(sed -n 's/.*badge__dot"><\/span> \(v[0-9.]*\) .*/\1/p' docs/index.html | head -1)"
-if [ -z "$site_version" ]; then
-	echo "docs/index.html carries no version in its badge" >&2
-	exit 1
-fi
-if [ -n "$released_version" ]; then
-	# This value is what the site shows, so the check is the only thing standing
-	# between a forgotten bump and a page naming last month's version. It may name
-	# the release being prepared, since the badge is raised in the commit the tag
-	# will point at and the tag does not exist whilst that commit is in review.
-	# What it may not do is name an older one, which is the case this check exists
-	# for: the badge said v1.5.0 whilst v1.5.1 was out.
-	oldest="$(printf '%s\n%s\n' "$released_version" "$site_version" | sort -V | head -1)"
-	if [ "$oldest" != "$released_version" ]; then
-		echo "docs/index.html says $site_version, which is older than the release $released_version" >&2
-		exit 1
-	fi
-else
-	echo "no release tag found, so the site badge could not be checked" >&2
-fi
 require_in CONTRIBUTING.md "Go $go_version or newer"
 require_in SECURITY.md '`BACKEND_URL`'
 # The one application file grat reads, and the helpers it resolves through PATH.

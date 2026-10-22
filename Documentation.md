@@ -586,7 +586,7 @@ The command was cancelled with Ctrl+C.
 
 grat.config(7) describes every option the configuration file takes.
 
-The overview is at https://grat.layered.work, and the project is at https://github.com/phranck/grat. Documentation.md in the repository is this same manual rendered as Markdown.
+The project is at https://github.com/phranck/grat. Documentation.md in the repository is this same manual rendered as Markdown.
 
 grat help prints the command reference without the detail this page carries.
 
@@ -801,4 +801,4 @@ A started service also receives __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS, set to t
 
 ## See also
 
-grat(1) describes the commands that read this file. The full documentation is in Documentation.md in the project repository at https://github.com/phranck/grat, and the overview is at https://grat.layered.work.
+grat(1) describes the commands that read this file. The full documentation is in Documentation.md in the project repository at https://github.com/phranck/grat.
