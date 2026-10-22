@@ -15,9 +15,9 @@ set -eu
 #   Docs  becomes Changed
 #   Fix   becomes Bugfixes
 #
-# Chore, Test and Refactor appear nowhere. They are work on the repository, its
-# website and its tooling, and none of it changes anything for somebody using
-# grat: a badge row, a font weight or a repinned action is not a release note.
+# Chore, Test and Refactor appear nowhere. They are work on the repository and
+# its tooling, and none of it changes anything for somebody using grat: a badge
+# row or a repinned action is not a release note.
 # Docs stays, because the manual is something a user reads.
 #
 # A reader wants to know what they can now do, what reads differently and what
@@ -63,18 +63,14 @@ fi
 git log --no-merges --reverse --format='%s%x1f%(trailers:key=Release-note,valueonly,separator=%x20)%x1e' "$range" | awk '
   BEGIN { RS = "\036"; FS = "\037" }
 
-  # The version bump is the commit that made this release, so it says nothing
-  # about what is in it.
   { subject = $1; gsub(/^[ \t\n]+|[ \t\n]+$/, "", subject) }
 
   # git writes a record separator after the last commit too, so the stream ends
   # with an empty record that is not a commit.
   subject == "" { next }
 
-  subject ~ /^Chore: prepare v/ { next }
-
-  # Work on the repository, its website and its tooling, which a release is not
-  # the place to report. A Release-note trailer overrules that, because writing
+  # Work on the repository and its tooling, which a release is not the place to
+  # report. A Release-note trailer overrules that, because writing
   # one is somebody saying this particular change is for the reader: the prefix
   # answers what kind of work it was, and the trailer answers whether it needs
   # telling. Without this, a removal has no prefix that both describes it and
