@@ -18,6 +18,7 @@ import (
 	"github.com/phranck/grat/v2/internal/ports"
 	"github.com/phranck/grat/v2/internal/presentation"
 	"github.com/phranck/grat/v2/internal/settings"
+	"github.com/phranck/grat/v2/internal/version"
 )
 
 const (
@@ -29,6 +30,7 @@ const (
 func TestVersionCommandsRenderTheToolVersion(t *testing.T) {
 	t.Parallel()
 
+	want := version.Current()
 	for _, arguments := range [][]string{{"version"}, {"--version"}} {
 		var stdout bytes.Buffer
 		var stderr bytes.Buffer
@@ -36,8 +38,8 @@ func TestVersionCommandsRenderTheToolVersion(t *testing.T) {
 		if code != 0 || stderr.Len() != 0 {
 			t.Fatalf("Run(%v) = (%d, %q), want successful version output", arguments, code, stderr.String())
 		}
-		if !strings.Contains(stdout.String(), "v1.3.2") {
-			t.Fatalf("Run(%v) output = %q, want v1.3.2", arguments, stdout.String())
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("Run(%v) output = %q, want %s", arguments, stdout.String(), want)
 		}
 	}
 }

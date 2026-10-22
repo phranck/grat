@@ -12,7 +12,6 @@ import (
 
 	"github.com/phranck/grat/v2/internal/presentation"
 	"github.com/phranck/grat/v2/internal/settings"
-	"github.com/phranck/grat/v2/internal/version"
 )
 
 // noticeEnvironment answers the release question with whatever a test says,
@@ -41,7 +40,7 @@ func TestANewerVersionIsReported(t *testing.T) {
 	value, _ := noticeEnvironment(t, func(context.Context) (string, error) { return "v99.0.0", nil })
 
 	printed := notice(t, value, "status")
-	for _, wanted := range []string{"v99.0.0", version.Current(), "grat update"} {
+	for _, wanted := range []string{"v99.0.0", installedForTest, "grat update"} {
 		if !strings.Contains(printed, wanted) {
 			t.Fatalf("the notice does not carry %q:\n%s", wanted, printed)
 		}
@@ -49,10 +48,29 @@ func TestANewerVersionIsReported(t *testing.T) {
 }
 
 func TestTheInstalledVersionIsNotReported(t *testing.T) {
-	value, _ := noticeEnvironment(t, func(context.Context) (string, error) { return version.Current(), nil })
+	value, _ := noticeEnvironment(t, func(context.Context) (string, error) { return installedForTest, nil })
 
 	if printed := notice(t, value, "status"); printed != "" {
 		t.Fatalf("the version already installed was announced:\n%s", printed)
+	}
+}
+
+// TestABuildWithoutAVersionHearsNothing covers a build that names no version.
+// Every release orders above "(devel)", so without this each one was announced
+// to such a build as an update, and the build asked for it on every interval.
+func TestABuildWithoutAVersionHearsNothing(t *testing.T) {
+	asked := 0
+	value, _ := noticeEnvironment(t, func(context.Context) (string, error) {
+		asked++
+		return "v0.0.1", nil
+	})
+	value.installedVersion = func() string { return "(devel)" }
+
+	if printed := notice(t, value, "status"); printed != "" {
+		t.Fatalf("a build without a version was told about one:\n%s", printed)
+	}
+	if asked != 0 {
+		t.Fatalf("a build without a version asked for the latest release")
 	}
 }
 

@@ -61,7 +61,16 @@ func reportNewerVersion(ctx context.Context, command string, environment environ
 		return
 	}
 
-	installed := version.Current()
+	// A build that names no version, such as one from a source tree without
+	// version control, cannot be compared with a release, so it hears nothing and
+	// costs no request.
+	if environment.installedVersion == nil {
+		return
+	}
+	installed := environment.installedVersion()
+	if !version.Valid(installed) {
+		return
+	}
 	latest, err := latestKnownVersion(ctx, environment)
 	// Only a newer release is worth a line. Comparing the two for difference
 	// alone nagged about an older release for as long as GitHub carried one
