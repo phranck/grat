@@ -1,15 +1,16 @@
-# Graph Report - .  (2026-10-23)
+# Graph Report - grat  (2026-10-23)
 
 ## Corpus Check
-- cluster-only mode — file stats not available
+- 197 files · ~144,114 words
+- Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2279 nodes · 5537 edges · 128 communities (102 shown, 26 thin omitted)
-- Extraction: 76% EXTRACTED · 24% INFERRED · 0% AMBIGUOUS · INFERRED: 1351 edges (avg confidence: 0.8)
+- 2286 nodes · 5536 edges · 139 communities (113 shown, 26 thin omitted)
+- Extraction: 76% EXTRACTED · 24% INFERRED · 0% AMBIGUOUS · INFERRED: 1356 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `9e584a74`
+- Built from commit: `81fd40ae`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -92,24 +93,34 @@
 - [[_COMMUNITY_Community 77|Community 77]]
 - [[_COMMUNITY_Homebrew Bottle Build|Homebrew Bottle Build]]
 - [[_COMMUNITY_Homebrew Bottle Tests|Homebrew Bottle Tests]]
+- [[_COMMUNITY_Community 80|Community 80]]
 - [[_COMMUNITY_Flask Detector|Flask Detector]]
+- [[_COMMUNITY_Community 82|Community 82]]
 - [[_COMMUNITY_Readiness Documented|Readiness Documented]]
 - [[_COMMUNITY_Version Reporting|Version Reporting]]
 - [[_COMMUNITY_Scan Directories Command|Scan Directories Command]]
 - [[_COMMUNITY_Community 86|Community 86]]
 - [[_COMMUNITY_Port Range Tests|Port Range Tests]]
+- [[_COMMUNITY_Community 88|Community 88]]
 - [[_COMMUNITY_Homebrew Bottle Verification|Homebrew Bottle Verification]]
 - [[_COMMUNITY_Agent Rules|Agent Rules]]
+- [[_COMMUNITY_Community 91|Community 91]]
+- [[_COMMUNITY_Community 92|Community 92]]
 - [[_COMMUNITY_Manual Entry Tests|Manual Entry Tests]]
 - [[_COMMUNITY_Local Gate Script|Local Gate Script]]
 - [[_COMMUNITY_Trailer Check Tests|Trailer Check Tests]]
 - [[_COMMUNITY_Support Policy|Support Policy]]
+- [[_COMMUNITY_Community 97|Community 97]]
 - [[_COMMUNITY_macOS Listener Lookup|macOS Listener Lookup]]
 - [[_COMMUNITY_macOS Listener Tests|macOS Listener Tests]]
 - [[_COMMUNITY_Readiness Inspection Tests|Readiness Inspection Tests]]
 - [[_COMMUNITY_Listener Lookup Interface|Listener Lookup Interface]]
+- [[_COMMUNITY_Community 102|Community 102]]
+- [[_COMMUNITY_Community 103|Community 103]]
+- [[_COMMUNITY_Community 105|Community 105]]
 - [[_COMMUNITY_Release Build Script|Release Build Script]]
 - [[_COMMUNITY_Trailer Check Script|Trailer Check Script]]
+- [[_COMMUNITY_Community 108|Community 108]]
 - [[_COMMUNITY_Bottle Verification Tests|Bottle Verification Tests]]
 - [[_COMMUNITY_Config Compatibility Promise|Config Compatibility Promise]]
 - [[_COMMUNITY_Colour Options|Colour Options]]
@@ -117,6 +128,7 @@
 - [[_COMMUNITY_Community 113|Community 113]]
 - [[_COMMUNITY_Terminal Styles|Terminal Styles]]
 - [[_COMMUNITY_Community 115|Community 115]]
+- [[_COMMUNITY_Community 116|Community 116]]
 - [[_COMMUNITY_Community 117|Community 117]]
 - [[_COMMUNITY_Community 118|Community 118]]
 - [[_COMMUNITY_Community 119|Community 119]]
@@ -149,7 +161,7 @@
 7. `writeProject()` - 58 edges
 8. `exposeEnvironment()` - 43 edges
 9. `exposeProject()` - 35 edges
-10. `Config` - 32 edges
+10. `Service` - 32 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Local Development Gate` --semantically_similar_to--> `Verify Job`  [INFERRED] [semantically similar]
@@ -171,7 +183,7 @@
 - **Machine-wide port allocation across registered projects** — documentation_roles_and_ports, documentation_port_allocation, documentation_ports_audit, documentation_ports_assign, documentation_ports_reassign, documentation_scan_directories [EXTRACTED 1.00]
 - **Detection refuses rather than guesses a port** — documentation_grat_discover, documentation_port_decision_question, documentation_source_port_reading, documentation_eleventy_refusal, documentation_deno_bun_detection, documentation_phoenix_runtime_exs [EXTRACTED 1.00]
 
-## Communities (128 total, 26 thin omitted)
+## Communities (139 total, 26 thin omitted)
 
 ### Community 0 - "Companion Detector Tests"
 Cohesion: 0.06
@@ -186,20 +198,20 @@ Cohesion: 0.16
 Nodes (36): T, NewLifecycleModel(), New(), columnOf(), displayColumn(), stripANSI(), TestHelpRendersBorderlessGroupsWithGloballyAlignedDescriptions(), TestLifecycleModelAlignsHeadersWithDataColumns() (+28 more)
 
 ### Community 3 - "Ports Command and Reassignment"
-Cohesion: 0.06
-Nodes (70): TestListenerOwnerLabelHandlesUnknownPID(), TestLogFollowUsesTrustedExecutable(), portReassignment, assignReassignedPorts(), copyReservations(), ensureValidRegistry(), hasConfiguredCollision(), listenerOwnerLabel() (+62 more)
+Cohesion: 0.09
+Nodes (55): TestListenerOwnerLabelHandlesUnknownPID(), TestLogFollowUsesTrustedExecutable(), portReassignment, assignReassignedPorts(), copyReservations(), ensureValidRegistry(), hasConfiguredCollision(), listenerOwnerLabel() (+47 more)
 
 ### Community 4 - "Config Types and Loading"
-Cohesion: 0.06
-Nodes (68): Config, configDecodeError(), DefaultRuntime(), FunnelPublicPorts(), InferRole(), Load(), prepareWrite(), publicPortList() (+60 more)
+Cohesion: 0.11
+Nodes (31): Config, configDecodeError(), Load(), prepareWrite(), publicPortList(), readConfigFile(), replaceFile(), rollbackWrites() (+23 more)
 
 ### Community 5 - "Update Service and Assets"
-Cohesion: 0.12
-Nodes (17): asset, Client, Context, Service, Result, asset, release, checksumForAsset() (+9 more)
+Cohesion: 0.09
+Nodes (24): asset, installation, Client, Context, Service, Client, Context, Service (+16 more)
 
 ### Community 6 - "Discover Candidate Selection"
-Cohesion: 0.06
-Nodes (62): candidate, candidate, absoluteUnder(), allocateServices(), candidateDetail(), chooseCandidates(), discoverBelow(), discoverCandidates() (+54 more)
+Cohesion: 0.08
+Nodes (44): candidate, candidate, absoluteUnder(), allocateServices(), candidateDetail(), chooseCandidates(), discoverBelow(), discoverCandidates() (+36 more)
 
 ### Community 7 - "CLI Integration Tests"
 Cohesion: 0.12
@@ -214,16 +226,16 @@ Cohesion: 0.09
 Nodes (39): T, Config, Context, Service, Reader, Result, Store, Writer (+31 more)
 
 ### Community 10 - "Listener Lookup Tests"
-Cohesion: 0.13
-Nodes (18): defaultEnvironment(), exitCode(), loadManager(), Run(), environment, readyTailscaleProvider, uninstallService, updateService (+10 more)
+Cohesion: 0.16
+Nodes (19): Context, Duration, loadedState, processState, Manager, Service, T, TestProcessIdentitySeparatesRapidProcessStarts() (+11 more)
 
 ### Community 11 - "Presentation Renderer"
 Cohesion: 0.15
 Nodes (17): Renderer, Style, Writer, ColorMode, DividerLine(), formatProjectRows(), fprint(), fprintf() (+9 more)
 
 ### Community 12 - "Discover in Place"
-Cohesion: 0.13
-Nodes (27): detectServices(), discoverHere(), refuseExistingConfiguration(), serviceSuggestions(), collectProjectInterview(), parseServiceDefinition(), promptDefault(), promptRequired() (+19 more)
+Cohesion: 0.12
+Nodes (30): detectServices(), discoverHere(), refuseExistingConfiguration(), serviceSuggestions(), collectProjectInterview(), parseServiceDefinition(), promptDefault(), promptRequired() (+22 more)
 
 ### Community 13 - "Go Program Detector"
 Cohesion: 0.16
@@ -234,8 +246,8 @@ Cohesion: 0.26
 Nodes (5): Store, Settings, canonicalExistingDirectory(), canonicalExistingPath(), ConfigDirectory()
 
 ### Community 15 - "Process and Progress State"
-Cohesion: 0.06
-Nodes (62): main(), mustGetwd(), Client, Config, Context, ListenerLookup, loadedState, processState (+54 more)
+Cohesion: 0.15
+Nodes (16): Client, Config, Context, ListenerLookup, loadedState, processState, ProgressObserver, RecoveryCandidate (+8 more)
 
 ### Community 16 - "Manual Reference Sections"
 Cohesion: 0.05
@@ -258,8 +270,8 @@ Cohesion: 0.14
 Nodes (11): T, NewSelectionModel(), rows(), TestALongListSaysWhatIsOutOfSight(), TestARowThatCannotBeChosenNeverIs(), TestCancellingChoosesNothing(), TestOnlyMarkedRowsComeBack(), TestTheCursorStopsAtBothEndsRatherThanWrapping() (+3 more)
 
 ### Community 21 - "Manager Cancellation"
-Cohesion: 0.09
-Nodes (49): Cmd, Config, Listener, Manager, Service, T, T, Manager (+41 more)
+Cohesion: 0.20
+Nodes (28): Cmd, Config, Listener, Manager, Service, T, fixtureConfig(), fixtureService() (+20 more)
 
 ### Community 22 - "Manager Status and State"
 Cohesion: 0.09
@@ -283,7 +295,7 @@ Nodes (8): configuredQueueFallback(), detectLaravel(), environmentAssignment(), 
 
 ### Community 27 - "Manual Rendering Command"
 Cohesion: 0.06
-Nodes (52): commandDocument(), runManual(), plainManual(), TestBothManualPagesAreReachable(), TestEveryCommandOfTheReferenceHasAManualEntry(), TestTheManualCarriesEveryCommandOfTheReference(), TestTheManualSaysWhyAProjectCanBeRefused(), writeMarkdownManual() (+44 more)
+Nodes (58): BuildInfo, commandDocument(), runManual(), plainManual(), TestBothManualPagesAreReachable(), TestEveryCommandOfTheReferenceHasAManualEntry(), TestTheManualCarriesEveryCommandOfTheReference(), TestTheManualSaysWhyAProjectCanBeRefused() (+50 more)
 
 ### Community 28 - "CLI Test Fixtures"
 Cohesion: 0.57
@@ -294,32 +306,32 @@ Cohesion: 0.11
 Nodes (19): Contents, Description, Exit status, Files, grat(1), How grat decides what a project runs, Installation, Maintenance (+11 more)
 
 ### Community 30 - "Update Notice Fixtures"
-Cohesion: 0.09
-Nodes (52): configurationName(), configuredPath(), containsName(), forgetExposePaths(), funnelsToClose(), parseExposeArguments(), reachableAt(), readyTailscale() (+44 more)
+Cohesion: 0.06
+Nodes (63): configurationName(), configuredPath(), containsName(), forgetExposePaths(), funnelsToClose(), parseExposeArguments(), reachableAt(), readyTailscale() (+55 more)
 
 ### Community 31 - "Managed State Directories"
-Cohesion: 0.25
-Nodes (6): join(), Manager, T, T, TestAddKeepsTheDirectoriesAlreadyThere(), TestTheTailscaleNoteSurvivesADirectoryChange()
+Cohesion: 0.16
+Nodes (12): join(), Manager, Service, Time, T, T, loadedState, processState (+4 more)
 
 ### Community 32 - "Settings Store Tests"
 Cohesion: 0.31
 Nodes (17): Store, T, canonicalPath(), equalStrings(), newTestStore(), TestContainsAcceptsRegularFileBelowRoot(), TestContainsRejectsPathsOutsideRootAndThroughSymlinks(), TestStoreAddCanonicalizesAndDeduplicatesDirectories() (+9 more)
 
 ### Community 33 - "Listener Ownership Boundary"
-Cohesion: 0.43
-Nodes (6): detectJavaScriptFramework(), frameworkEvidence(), jsFramework, manifest, Service, Unresolved
+Cohesion: 0.18
+Nodes (21): DefaultRuntime(), TestLoadRejectsDeprecatedAppsTable(), TestLoadRejectsLegacyShellConfig(), TestLoadRejectsOversizedConfigBeforeParsing(), TestLoadRejectsRemovedGitHubWorkerConfiguration(), TestLoadRejectsUnknownFieldsWithStrictDecoder(), TestValidateRejectsBoundedCollectionAndStringInputs(), TestValidateRejectsControlCharactersInProjectName() (+13 more)
 
 ### Community 34 - "Recovery of Legacy State"
 Cohesion: 0.18
-Nodes (11): prepareTailscale(), tailscaleSetupApprover, tailscaleSetupReporter, Approval, Client, Context, environment, MachineChange (+3 more)
+Nodes (18): ErrTooManyEntries, DirEntry, T, T, ErrTooManyEntries, DeeperThanScan(), SkipsScanning(), TestTheScanSkipsWhatCannotHoldAProject() (+10 more)
 
 ### Community 35 - "Bun Detector"
 Cohesion: 0.19
 Nodes (15): bunLockfile(), bunStartScript(), detectBun(), hasExtension(), servesWithBun(), sourceMatches(), detectNodeServer(), readsPortFromEnvironment() (+7 more)
 
 ### Community 36 - "Detector Registry"
-Cohesion: 0.16
-Nodes (8): fileExists(), manifest, detectRails(), detectSpringBoot(), Service, Unresolved, Service, Unresolved
+Cohesion: 0.15
+Nodes (13): fileExists(), detectJavaScriptFramework(), frameworkEvidence(), jsFramework, detectRails(), detectSpringBoot(), manifest, Service (+5 more)
 
 ### Community 37 - "Release Note Generation"
 Cohesion: 0.17
@@ -331,11 +343,11 @@ Nodes (3): truncate(), truncateStyled(), LifecycleModel
 
 ### Community 39 - "Manual Document Model"
 Cohesion: 0.05
-Nodes (119): runWithEnvironment(), canonicalCLITestPath(), environmentForTest(), newCLITestStore(), sameStringSlices(), TestDirectoriesAddDoesNotPromptForInitialSetup(), TestDirectoriesCommandsPersistAndListConfiguredRoots(), TestFirstUseAcceptsExistingSitesDefault() (+111 more)
+Nodes (123): defaultEnvironment(), exitCode(), Run(), runWithEnvironment(), canonicalCLITestPath(), environmentForTest(), newCLITestStore(), sameStringSlices() (+115 more)
 
 ### Community 40 - "Markdown Rendering"
-Cohesion: 0.05
-Nodes (64): Block, Document, Block, Item, Section, Table, Block, CommandGroup (+56 more)
+Cohesion: 0.21
+Nodes (10): Block, Document, Item, Table, flatten(), paragraphsOf(), anchor(), Markdown() (+2 more)
 
 ### Community 41 - "Document Builder"
 Cohesion: 0.17
@@ -437,13 +449,17 @@ Nodes (9): A Pages deployment from a tag is accepted, marked active and never se
 Cohesion: 0.67
 Nodes (3): T, TestEveryStepMarkerOccupiesTheSameWidth(), TestStepsLineUpWhateverTheirLabel()
 
+### Community 71 - "Community 71"
+Cohesion: 0.67
+Nodes (3): T, TestBuildInfoIgnoresAFileNamedLikeTheCommand(), TestInstalledWithGoNeedsTheModuleAndItsChecksum()
+
 ### Community 73 - "Deno Detector"
-Cohesion: 0.31
-Nodes (12): publicAddresses(), renderStatus(), reportConfigurationSource(), reportPortsOutsideTheirRange(), runStatus(), Config, Context, Manager (+4 more)
+Cohesion: 0.30
+Nodes (19): Cmd, Manager, Service, T, legacyProcessIdentity(), parentProcessID(), processAlive(), psField() (+11 more)
 
 ### Community 75 - "Node Detector"
-Cohesion: 0.39
-Nodes (8): readManifest(), detectNode(), detectSingleService(), namedServices(), Unresolved, manifest, Service, Unresolved
+Cohesion: 0.57
+Nodes (6): detectNode(), detectSingleService(), namedServices(), manifest, Service, Unresolved
 
 ### Community 76 - "Linux Process Identity"
 Cohesion: 0.43
@@ -457,33 +473,53 @@ Nodes (5): package(), usage(), write_formula(), write_manual(), build-homebrew-b
 Cohesion: 0.52
 Nodes (6): assert_archive_contains(), assert_binary(), assert_file(), assert_manual(), assert_mode(), test-homebrew-bottles.sh script
 
+### Community 80 - "Community 80"
+Cohesion: 0.20
+Nodes (15): FileInfo, T, T, ownedBy(), OwnedByCurrentUser(), RefuseUnsafeConfig(), asAnotherAccount(), TestAConfigurationOfAnotherAccountIsRefused() (+7 more)
+
 ### Community 81 - "Flask Detector"
 Cohesion: 0.32
 Nodes (8): Badge and Tag Cannot Both Be First, Homebrew Tap Formula Update, grat Release Process, Why the Tap Pull Request Waits for All Three Checks, Why a newer badge is allowed and an older one is not, Site badge compared against the newest tag, refusing an older one, Homebrew Bottle Packaging and Verification, Manual Pages Generated by the Built Binary
+
+### Community 82 - "Community 82"
+Cohesion: 0.27
+Nodes (16): T, T, containsEnvironmentEntry(), containsEnvironmentName(), TestCommandEnvironmentDerivesBackendURLForConsumer(), TestCommandEnvironmentExcludesUnapprovedParentVariables(), TestCommandEnvironmentFallsBackWhenApprovedBackendURLIsAbsent(), TestCommandEnvironmentOmitsBackendURLForProviderAndAmbiguousTopology() (+8 more)
 
 ### Community 83 - "Readiness Documented"
 Cohesion: 0.36
 Nodes (11): T, stageFor(), TestAFailedStatusCallMeansTheServiceIsNotRunning(), TestARunningBackendIsReady(), TestAStartingBackendIsNotYetReady(), TestAStatusWithoutATailnetMeansSignedOut(), TestEveryStateThatSigningInFixesReportsTheSameStage(), TestStartingTheServiceAnnouncesThatItNeedsAPassword() (+3 more)
 
 ### Community 84 - "Version Reporting"
-Cohesion: 0.21
-Nodes (12): readPromptLine(), confirmRecovery(), hasLiveRecoveryCandidate(), renderRecoveryPreview(), runRecover(), Reader, Context, environment (+4 more)
+Cohesion: 0.07
+Nodes (37): loadManager(), outputLog(), runLogs(), TestOutputLogStreamsBeforeInputReachesEOF(), notifyingWriter, readPromptLine(), confirmRecovery(), hasLiveRecoveryCandidate() (+29 more)
 
 ### Community 85 - "Scan Directories Command"
 Cohesion: 0.70
 Nodes (4): configuredRoots(), runDirectories(), environment, Renderer
 
 ### Community 86 - "Community 86"
-Cohesion: 0.21
-Nodes (10): outputLog(), runLogs(), TestOutputLogStreamsBeforeInputReachesEOF(), notifyingWriter, writerAdapter, Context, Renderer, Store (+2 more)
+Cohesion: 0.26
+Nodes (9): Block, Document, Item, Table, builder, escape(), quote(), Roff() (+1 more)
 
 ### Community 87 - "Port Range Tests"
 Cohesion: 0.60
 Nodes (4): TestAWorkerOwnsNoRange(), TestEveryRoleOwnsARangeOfTheStatedWidth(), TestRolesWithDifferentRangesDoNotOverlap(), T
 
+### Community 88 - "Community 88"
+Cohesion: 0.27
+Nodes (14): Block, CommandGroup, Document, Role, Section, Definitions(), CommandDocument(), commandSection() (+6 more)
+
 ### Community 89 - "Homebrew Bottle Verification"
 Cohesion: 0.60
 Nodes (3): usage(), verify_bottle(), verify-homebrew-bottles.sh script
+
+### Community 91 - "Community 91"
+Cohesion: 0.26
+Nodes (13): Block, Item, Section, Table, Block, Document, Literal(), Prose() (+5 more)
+
+### Community 92 - "Community 92"
+Cohesion: 0.35
+Nodes (10): FunnelPublicPorts(), Block, Document, ConfigDocument(), ConfigPage(), exposeFields(), fieldList(), roleRanges() (+2 more)
 
 ### Community 93 - "Manual Entry Tests"
 Cohesion: 0.67
@@ -497,17 +533,37 @@ Nodes (3): GOTOOLCHAIN, step(), gates.sh script
 Cohesion: 0.83
 Nodes (3): commit(), expect(), test-check-trailers.sh script
 
+### Community 97 - "Community 97"
+Cohesion: 0.42
+Nodes (9): Roles(), T, configPage(), TestEveryConfiguredKeyIsDescribed(), TestTheConfigPageOpensInSectionSeven(), TestTheDefaultsComeFromTheConfiguration(), TestTheInheritedEnvironmentComesFromTheRuntime(), TestTheRangesAndPortsComeFromTheConfiguration() (+1 more)
+
+### Community 102 - "Community 102"
+Cohesion: 0.47
+Nodes (9): CommandGroup, T, Page(), groups(), TestEveryCommandOfTheReferenceReachesThePage(), TestNoGeneratedLineRunsLong(), TestTextThatWouldBeReadAsARequestIsNeutralised(), TestThePageOpensWithAParsableHeader() (+1 more)
+
+### Community 103 - "Community 103"
+Cohesion: 0.44
+Nodes (8): Service, Store, T, runningProject(), TestAFailingStopIsReportedRatherThanIgnored(), TestAServiceThatSurvivesTheStopBlocksTheUninstall(), TestDecliningLeavesEverythingAlone(), TestRunningServicesAreListedAndStoppedWhenAsked()
+
+### Community 105 - "Community 105"
+Cohesion: 0.36
+Nodes (3): manifest, readManifest(), Unresolved
+
 ### Community 106 - "Release Build Script"
 Cohesion: 0.13
 Nodes (20): CommandClient, Context, Duration, Reader, CommandClient, Writer, Locate(), ErrNoInstallPath (+12 more)
 
+### Community 108 - "Community 108"
+Cohesion: 0.36
+Nodes (5): Manager, Service, ProgressEvent, ProgressObserver, ProgressStage
+
 ### Community 112 - "Community 112"
-Cohesion: 0.29
-Nodes (7): installation, Client, Context, Service, Result, runCommand(), runningBuildInfo()
+Cohesion: 0.36
+Nodes (6): Context, processState, Manager, Service, readiness, isInProcessTree()
 
 ### Community 113 - "Community 113"
-Cohesion: 0.33
-Nodes (6): Service, Time, loadedState, processState, RecoveryCandidate, refuseLinkedDirectory()
+Cohesion: 0.60
+Nodes (5): Client, T, probeClient(), TestAHealthProbeDoesNotFollowARedirectOffTheService(), TestAHealthProbeFollowsARedirectOnTheSameService()
 
 ### Community 114 - "Terminal Styles"
 Cohesion: 0.17
@@ -538,8 +594,8 @@ Cohesion: 0.20
 Nodes (4): Client, ErrCommandFailed, ErrNotInstalled, Funnel
 
 ### Community 123 - "Community 123"
-Cohesion: 0.36
-Nodes (6): service(), detector, Finding, Service, Unresolved, Role
+Cohesion: 0.33
+Nodes (7): InferRole(), service(), detector, Finding, Service, Unresolved, Role
 
 ### Community 125 - "Community 125"
 Cohesion: 0.39
@@ -566,19 +622,19 @@ Cohesion: 0.67
 Nodes (3): T, TestAFunnelIsItselfAndNothingElse(), TestOneFunnelBelongsToOneService()
 
 ## Knowledge Gaps
-- **354 isolated node(s):** `skills`, `Reader`, `updateService`, `uninstallService`, `tailscaleProvider` (+349 more)
+- **355 isolated node(s):** `skills`, `Reader`, `updateService`, `uninstallService`, `tailscaleProvider` (+350 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **26 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `join()` connect `Managed State Directories` to `Companion Detector Tests`, `Runtime Manager Internals`, `Ports Command and Reassignment`, `Config Types and Loading`, `Update Service and Assets`, `Discover Candidate Selection`, `CLI Integration Tests`, `Lifecycle Operations`, `Store Reader and Writer`, `Presentation Renderer`, `Discover in Place`, `Go Program Detector`, `Held Project Store`, `Process and Progress State`, `Landing Page Hero`, `Selection List Model`, `Manager Cancellation`, `Django Phoenix PHP Detectors`, `Bounded Directory Walk`, `CLI Entry and Dispatch`, `Manual Rendering Command`, `Update Notice Fixtures`, `Settings Store Tests`, `Listener Ownership Boundary`, `Bun Detector`, `Detector Registry`, `Lifecycle Text Layout`, `Manual Document Model`, `Markdown Rendering`, `Held Project Store Tests`, `Dotnet and Rust Detectors`, `Community 48`, `Service Log Files`, `Static Site Detectors`, `Help Screen Rendering`, `Companion Detectors`, `Held Project Uninstall Tests`, `Manual Block Types`, `Community 71`, `Node Detector`, `Community 86`, `Release Build Script`, `Community 117`, `Community 118`, `Community 121`, `Community 123`, `Community 125`, `Community 126`?**
-  _High betweenness centrality (0.449) - this node is a cross-community bridge._
-- **Why does `Contains()` connect `Manual Document Model` to `Companion Detector Tests`, `Runtime Manager Internals`, `Discover Interview Tests`, `Ports Command and Reassignment`, `Config Types and Loading`, `Discover Candidate Selection`, `CLI Integration Tests`, `Lifecycle Operations`, `Store Reader and Writer`, `Community 135`, `Discover in Place`, `Go Program Detector`, `Held Project Store`, `Process and Progress State`, `Selection List Model`, `Manager Cancellation`, `Django Phoenix PHP Detectors`, `Bounded Directory Walk`, `Manual Rendering Command`, `CLI Test Fixtures`, `Update Notice Fixtures`, `Settings Store Tests`, `Detector Registry`, `Markdown Rendering`, `Community 48`, `Service Log Files`, `Manual Coverage Tests`, `Companion Detectors`, `Held Project Uninstall Tests`, `Manual Block Types`, `Community 66`, `Readiness Documented`, `Community 115`, `Community 119`?**
-  _High betweenness centrality (0.145) - this node is a cross-community bridge._
-- **Why does `New()` connect `Discover Interview Tests` to `Runtime Manager Internals`, `Ports Command and Reassignment`, `Update Service and Assets`, `CLI Integration Tests`, `Lifecycle Operations`, `Store Reader and Writer`, `Presentation Renderer`, `Held Project Store`, `Process and Progress State`, `Manual Rendering Command`, `CLI Test Fixtures`, `Update Notice Fixtures`, `Settings Store Tests`, `Manual Document Model`, `Document Builder`, `Held Project Store Tests`, `Manual Coverage Tests`, `Companion Detectors`, `Community 70`, `Readiness Documented`, `Version Reporting`, `Scan Directories Command`, `Community 119`?**
-  _High betweenness centrality (0.123) - this node is a cross-community bridge._
+- **Why does `join()` connect `Managed State Directories` to `Companion Detector Tests`, `Runtime Manager Internals`, `Ports Command and Reassignment`, `Config Types and Loading`, `Update Service and Assets`, `Discover Candidate Selection`, `CLI Integration Tests`, `Lifecycle Operations`, `Store Reader and Writer`, `Listener Lookup Tests`, `Presentation Renderer`, `Discover in Place`, `Go Program Detector`, `Held Project Store`, `Process and Progress State`, `Landing Page Hero`, `Selection List Model`, `Manager Cancellation`, `Django Phoenix PHP Detectors`, `Bounded Directory Walk`, `CLI Entry and Dispatch`, `Manual Rendering Command`, `Update Notice Fixtures`, `Settings Store Tests`, `Listener Ownership Boundary`, `Recovery of Legacy State`, `Bun Detector`, `Detector Registry`, `Lifecycle Text Layout`, `Manual Document Model`, `Markdown Rendering`, `Held Project Store Tests`, `Dotnet and Rust Detectors`, `Community 48`, `Service Log Files`, `Static Site Detectors`, `Help Screen Rendering`, `Companion Detectors`, `Held Project Uninstall Tests`, `Manual Block Types`, `Community 71`, `Community 80`, `Community 82`, `Version Reporting`, `Community 86`, `Community 88`, `Community 92`, `Community 103`, `Community 105`, `Release Build Script`, `Community 117`, `Community 118`, `Community 121`, `Community 123`, `Community 125`, `Community 126`?**
+  _High betweenness centrality (0.455) - this node is a cross-community bridge._
+- **Why does `Contains()` connect `Manual Document Model` to `Companion Detector Tests`, `Runtime Manager Internals`, `Discover Interview Tests`, `Ports Command and Reassignment`, `Config Types and Loading`, `Discover Candidate Selection`, `CLI Integration Tests`, `Lifecycle Operations`, `Store Reader and Writer`, `Listener Lookup Tests`, `Community 135`, `Discover in Place`, `Go Program Detector`, `Held Project Store`, `Selection List Model`, `Manager Cancellation`, `Django Phoenix PHP Detectors`, `Bounded Directory Walk`, `Manual Rendering Command`, `CLI Test Fixtures`, `Update Notice Fixtures`, `Settings Store Tests`, `Listener Ownership Boundary`, `Detector Registry`, `Community 48`, `Service Log Files`, `Manual Coverage Tests`, `Companion Detectors`, `Held Project Uninstall Tests`, `Manual Block Types`, `Community 66`, `Community 80`, `Readiness Documented`, `Community 97`, `Community 102`, `Community 103`, `Community 113`, `Community 115`, `Community 119`?**
+  _High betweenness centrality (0.149) - this node is a cross-community bridge._
+- **Why does `New()` connect `Discover Interview Tests` to `Runtime Manager Internals`, `Ports Command and Reassignment`, `Update Service and Assets`, `CLI Integration Tests`, `Lifecycle Operations`, `Store Reader and Writer`, `Presentation Renderer`, `Discover in Place`, `Held Project Store`, `Process and Progress State`, `Manual Rendering Command`, `CLI Test Fixtures`, `Update Notice Fixtures`, `Settings Store Tests`, `Manual Document Model`, `Document Builder`, `Held Project Store Tests`, `Manual Coverage Tests`, `Companion Detectors`, `Community 70`, `Readiness Documented`, `Version Reporting`, `Scan Directories Command`, `Community 103`, `Community 119`?**
+  _High betweenness centrality (0.116) - this node is a cross-community bridge._
 - **Are the 253 inferred relationships involving `join()` (e.g. with `loadPortFixtureConfig()` and `TestDiscoverAllocatesPortsForExplicitServices()`) actually correct?**
   _`join()` has 253 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 183 inferred relationships involving `Contains()` (e.g. with `TestInitRejectsDeprecatedAppFlag()` and `TestInitRejectsInvalidGlobalRegistry()`) actually correct?**
