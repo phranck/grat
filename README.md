@@ -66,7 +66,7 @@ The verification runs before the install, because installing first and checking 
 
 The version is read from the newest release rather than written here, so this stays current. Use `linux_arm64` on ARM. macOS binaries are published the same way, as `darwin_amd64` and `darwin_arm64`. A binary installed this way carries no man pages; `grat.1` and `grat.config.7` sit beside it in the same release, and [Documentation.md](Documentation.md#installation) says where to put them.
 
-Or build it with Go 1.26.9 or newer:
+Or build it with Go 1.26.10 or newer:
 
 ```sh
 go install github.com/phranck/grat/cmd/grat@latest
