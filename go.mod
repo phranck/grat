@@ -1,4 +1,4 @@
-module github.com/phranck/grat
+module github.com/phranck/grat/v2
 
 go 1.26.10
 

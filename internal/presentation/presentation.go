@@ -10,7 +10,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/term"
-	"github.com/phranck/grat/internal/textsafe"
+	"github.com/phranck/grat/v2/internal/textsafe"
 )
 
 // ColorMode controls whether ANSI color sequences are emitted.

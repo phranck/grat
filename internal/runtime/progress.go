@@ -1,6 +1,6 @@
 package runtime
 
-import "github.com/phranck/grat/internal/config"
+import "github.com/phranck/grat/v2/internal/config"
 
 // ProgressStage identifies an actual lifecycle transition observed by a
 // Manager. Events are emitted once per stage, not on a timer.

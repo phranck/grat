@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/phranck/grat/internal/settings"
+	"github.com/phranck/grat/v2/internal/settings"
 )
 
 const operationLockFileName = "operations.lock"

@@ -3,8 +3,8 @@ package cli
 import (
 	"context"
 
-	"github.com/phranck/grat/internal/maintenance"
-	"github.com/phranck/grat/internal/presentation"
+	"github.com/phranck/grat/v2/internal/maintenance"
+	"github.com/phranck/grat/v2/internal/presentation"
 )
 
 func runUpdate(ctx context.Context, service updateService, output presentation.Renderer) error {

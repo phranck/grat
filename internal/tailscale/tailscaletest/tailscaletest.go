@@ -5,7 +5,7 @@ package tailscaletest
 import (
 	"context"
 
-	"github.com/phranck/grat/internal/tailscale"
+	"github.com/phranck/grat/v2/internal/tailscale"
 )
 
 // Client records every call and answers from fields the test sets. The zero value

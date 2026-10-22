@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phranck/grat/internal/settings"
+	"github.com/phranck/grat/v2/internal/settings"
 )
 
 // TestUninstallOnEnterKeepsTheConfigurations covers what a bare Enter means at

@@ -10,13 +10,13 @@ import (
 	"time"
 
 	"github.com/charmbracelet/x/term"
-	"github.com/phranck/grat/internal/maintenance"
-	"github.com/phranck/grat/internal/operations"
-	"github.com/phranck/grat/internal/presentation"
-	gratruntime "github.com/phranck/grat/internal/runtime"
-	"github.com/phranck/grat/internal/settings"
-	"github.com/phranck/grat/internal/tailscale"
-	"github.com/phranck/grat/internal/version"
+	"github.com/phranck/grat/v2/internal/maintenance"
+	"github.com/phranck/grat/v2/internal/operations"
+	"github.com/phranck/grat/v2/internal/presentation"
+	gratruntime "github.com/phranck/grat/v2/internal/runtime"
+	"github.com/phranck/grat/v2/internal/settings"
+	"github.com/phranck/grat/v2/internal/tailscale"
+	"github.com/phranck/grat/v2/internal/version"
 )
 
 // Run executes one service command from cwd and returns a shell-compatible exit
@@ -42,6 +42,10 @@ type environment struct {
 	// test can answer without a network, and so the notice can be given a source
 	// that never installs or changes anything.
 	latestRelease func(context.Context) (string, error)
+	// installedVersion answers with the version of the running grat. It is a
+	// seam so a test can stand in a release version, since a test binary names
+	// none of its own.
+	installedVersion func() string
 }
 
 // readyTailscaleProvider answers with a client where the machine is on a tailnet
@@ -58,15 +62,16 @@ type uninstallService interface {
 
 func defaultEnvironment() environment {
 	return environment{
-		input:          os.Stdin,
-		interactive:    term.IsTerminal(os.Stdin.Fd()),
-		settings:       settings.Store{},
-		operationLock:  operations.WithLock,
-		maintenance:    maintenance.DefaultService(),
-		uninstaller:    maintenance.DefaultService(),
-		tailscale:      prepareTailscale,
-		tailscaleReady: readyTailscale,
-		latestRelease:  maintenance.DefaultService().LatestVersion,
+		input:            os.Stdin,
+		interactive:      term.IsTerminal(os.Stdin.Fd()),
+		settings:         settings.Store{},
+		operationLock:    operations.WithLock,
+		maintenance:      maintenance.DefaultService(),
+		uninstaller:      maintenance.DefaultService(),
+		tailscale:        prepareTailscale,
+		tailscaleReady:   readyTailscale,
+		latestRelease:    maintenance.DefaultService().LatestVersion,
+		installedVersion: version.Current,
 	}
 }
 

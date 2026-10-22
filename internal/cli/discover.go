@@ -12,11 +12,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/phranck/grat/internal/config"
-	"github.com/phranck/grat/internal/detect"
-	"github.com/phranck/grat/internal/ports"
-	"github.com/phranck/grat/internal/presentation"
-	"github.com/phranck/grat/internal/project"
+	"github.com/phranck/grat/v2/internal/config"
+	"github.com/phranck/grat/v2/internal/detect"
+	"github.com/phranck/grat/v2/internal/ports"
+	"github.com/phranck/grat/v2/internal/presentation"
+	"github.com/phranck/grat/v2/internal/project"
 )
 
 // candidate is one directory a configuration could be written into.

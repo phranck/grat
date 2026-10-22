@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/phranck/grat/internal/project"
+	"github.com/phranck/grat/v2/internal/project"
 )
 
 // mainPackagePattern matches the package clause of a runnable program, allowing

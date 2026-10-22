@@ -69,7 +69,7 @@ The version is read from the newest release rather than written here, so this st
 Or build it with Go 1.26.10 or newer:
 
 ```sh
-go install github.com/phranck/grat/cmd/grat@latest
+go install github.com/phranck/grat/v2/cmd/grat@latest
 ```
 
 [Documentation.md](Documentation.md#installation) covers verifying a release binary against its checksums and its signed attestation.

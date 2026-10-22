@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phranck/grat/internal/project"
-	"github.com/phranck/grat/internal/tailscale/tailscaletest"
+	"github.com/phranck/grat/v2/internal/project"
+	"github.com/phranck/grat/v2/internal/tailscale/tailscaletest"
 )
 
 // projectWithTheSamePath is two HTTP services that each ask for the same path,

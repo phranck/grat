@@ -41,7 +41,7 @@ jobs:
         run: |
           mkdir -p dist
           go build -trimpath \
-            -ldflags "-s -w -X github.com/phranck/grat/internal/version.buildVersion=${VERSION}" \
+            -ldflags "-s -w -X github.com/phranck/grat/v2/internal/version.buildVersion=${VERSION}" \
             -o "dist/grat_${VERSION}_${GOOS}_${GOARCH}" ./cmd/grat
       - name: Attest release binary
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2

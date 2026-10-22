@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/phranck/grat/internal/presentation"
+	"github.com/phranck/grat/v2/internal/presentation"
 )
 
 func isHelp(argument string) bool {

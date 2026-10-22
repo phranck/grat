@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/phranck/grat/internal/ports/procnet"
+	"github.com/phranck/grat/v2/internal/ports/procnet"
 )
 
 func systemListener(port int) (Listener, error) {

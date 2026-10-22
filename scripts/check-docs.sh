@@ -75,7 +75,7 @@ done
 
 for text in \
 	'brew install phranck/grat/grat' \
-	'go install github.com/phranck/grat/cmd/grat@latest' \
+	'go install github.com/phranck/grat/v2/cmd/grat@latest' \
 	"Go $go_version or newer" \
 	'man grat' \
 	'Documentation.md' \
@@ -137,7 +137,7 @@ for page in grat.1 grat.config.7; do
 	rm -f "$rendered"
 done
 
-require_in go.mod 'module github.com/phranck/grat'
+require_in go.mod 'module github.com/phranck/grat/v2'
 # The pinned tools, named without the tool keyword because go.mod writes one
 # directive per line and a block once there is more than one.
 require_in go.mod 'golang.org/x/vuln/cmd/govulncheck'

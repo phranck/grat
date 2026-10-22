@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/phranck/grat/internal/config"
+	"github.com/phranck/grat/v2/internal/config"
 )
 
 func TestRecoverStopsValidatedLegacyProcess(t *testing.T) {

@@ -11,8 +11,8 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/phranck/grat/internal/config"
-	"github.com/phranck/grat/internal/ports"
+	"github.com/phranck/grat/v2/internal/config"
+	"github.com/phranck/grat/v2/internal/ports"
 )
 
 // State describes the observed lifecycle state of one configured service.

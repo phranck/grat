@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/phranck/grat/internal/manual"
+	"github.com/phranck/grat/v2/internal/manual"
 )
 
 // TestTheManualCarriesEveryCommandOfTheReference is what keeps the page and the

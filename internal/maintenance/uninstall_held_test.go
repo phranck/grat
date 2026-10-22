@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phranck/grat/internal/config"
-	"github.com/phranck/grat/internal/settings"
+	"github.com/phranck/grat/v2/internal/config"
+	"github.com/phranck/grat/v2/internal/settings"
 )
 
 // heldUninstallProject sets up a project managed from the registry, with the

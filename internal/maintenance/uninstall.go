@@ -11,13 +11,13 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/phranck/grat/internal/config"
-	"github.com/phranck/grat/internal/operations"
-	"github.com/phranck/grat/internal/project"
-	"github.com/phranck/grat/internal/publish"
-	gratruntime "github.com/phranck/grat/internal/runtime"
-	"github.com/phranck/grat/internal/settings"
-	"github.com/phranck/grat/internal/tailscale"
+	"github.com/phranck/grat/v2/internal/config"
+	"github.com/phranck/grat/v2/internal/operations"
+	"github.com/phranck/grat/v2/internal/project"
+	"github.com/phranck/grat/v2/internal/publish"
+	gratruntime "github.com/phranck/grat/v2/internal/runtime"
+	"github.com/phranck/grat/v2/internal/settings"
+	"github.com/phranck/grat/v2/internal/tailscale"
 )
 
 type installationKind int
@@ -454,7 +454,7 @@ func (service Service) detectInstallation(ctx context.Context) (installation, er
 	} else if owned {
 		return installation{kind: installationHomebrew, executable: executable}, nil
 	}
-	if module, buildVersion, ok := service.buildInfo(); ok && module == ModulePath && buildVersion != "" && buildVersion != "(devel)" {
+	if service.installedWithGo() {
 		return installation{kind: installationGo, executable: executable}, nil
 	}
 	if err := service.verifyDirectRelease(ctx, executable, service.currentVersion()); err != nil {

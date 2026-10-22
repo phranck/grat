@@ -10,8 +10,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/phranck/grat/internal/config"
-	"github.com/phranck/grat/internal/project"
+	"github.com/phranck/grat/v2/internal/config"
+	"github.com/phranck/grat/v2/internal/project"
 )
 
 // ProjectsDirectoryName is the directory below grat's own configuration

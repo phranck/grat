@@ -6,9 +6,9 @@ import (
 	"io"
 	"strings"
 
-	"github.com/phranck/grat/internal/presentation"
-	"github.com/phranck/grat/internal/publish"
-	"github.com/phranck/grat/internal/tailscale"
+	"github.com/phranck/grat/v2/internal/presentation"
+	"github.com/phranck/grat/v2/internal/publish"
+	"github.com/phranck/grat/v2/internal/tailscale"
 )
 
 // tailscaleExplanation says in two sentences what Tailscale is and why grat

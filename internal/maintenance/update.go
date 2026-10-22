@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/phranck/grat/internal/version"
+	"github.com/phranck/grat/v2/internal/version"
 )
 
 const (
@@ -59,8 +59,8 @@ func (service Service) Update(ctx context.Context) (Result, error) {
 		}
 		return Result{Message: updateMessage(installed, upgraded, "with Homebrew")}, nil
 	}
-	if module, buildVersion, ok := service.buildInfo(); ok && module == ModulePath && buildVersion != "" && buildVersion != "(devel)" {
-		return Result{Message: "Run: go install github.com/phranck/grat/cmd/grat@latest"}, nil
+	if service.installedWithGo() {
+		return Result{Message: "Run: go install " + goInstallTarget}, nil
 	}
 	return service.updateDirectRelease(ctx, executable)
 }
@@ -530,6 +530,18 @@ func (service Service) buildInfo() (string, string, bool) {
 		return "", "", false
 	}
 	return runningBuildInfo(resolved)
+}
+
+// installedWithGo reports whether the running grat was put in place by go
+// install, which grat update and grat uninstall leave to the go command.
+//
+// That holds where the build information names grat's module and carries the
+// checksum the go command records for a module it downloaded. A release binary
+// and a build from a checkout name the same module without a checksum, and both
+// go the release route.
+func (service Service) installedWithGo() bool {
+	module, sum, ok := service.buildInfo()
+	return ok && module == ModulePath && sum != ""
 }
 
 func (service Service) currentVersion() string {

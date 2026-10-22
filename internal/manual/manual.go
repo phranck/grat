@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/phranck/grat/internal/config"
-	"github.com/phranck/grat/internal/presentation"
-	"github.com/phranck/grat/internal/runtime"
+	"github.com/phranck/grat/v2/internal/config"
+	"github.com/phranck/grat/v2/internal/presentation"
+	"github.com/phranck/grat/v2/internal/runtime"
 )
 
 // Page renders the command manual as a man page.

@@ -3,8 +3,8 @@ package publish
 import (
 	"context"
 
-	"github.com/phranck/grat/internal/config"
-	"github.com/phranck/grat/internal/tailscale"
+	"github.com/phranck/grat/v2/internal/config"
+	"github.com/phranck/grat/v2/internal/tailscale"
 )
 
 // Withdrawal is one public address that has been taken back, or that could not

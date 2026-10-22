@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phranck/grat/internal/config"
-	"github.com/phranck/grat/internal/maintenance"
-	"github.com/phranck/grat/internal/settings"
-	"github.com/phranck/grat/internal/tailscale"
+	"github.com/phranck/grat/v2/internal/config"
+	"github.com/phranck/grat/v2/internal/maintenance"
+	"github.com/phranck/grat/v2/internal/settings"
+	"github.com/phranck/grat/v2/internal/tailscale"
 )
 
 func TestDirectoriesCommandsPersistAndListConfiguredRoots(t *testing.T) {
@@ -337,9 +337,15 @@ func environmentForTest(store settings.Store) environment {
 		operationLock: func(_ context.Context, callback func() error) error { return callback() },
 		// No tailnet by default, so no test reaches a real machine and every
 		// command that reports a public address reports none.
-		tailscaleReady: func(context.Context) (tailscale.Client, bool) { return nil, false },
+		tailscaleReady:   func(context.Context) (tailscale.Client, bool) { return nil, false },
+		installedVersion: func() string { return installedForTest },
 	}
 }
+
+// installedForTest is the release a test binary stands in for. A test binary
+// names no version of its own, and the update notice says nothing to a build
+// without one.
+const installedForTest = "v2.0.0"
 
 func canonicalCLITestPath(t *testing.T, path string) string {
 	t.Helper()
