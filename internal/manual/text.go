@@ -416,9 +416,8 @@ where there is no terminal to show the preview in.
 const seeAlso = `
 grat.config(7) describes every option the configuration file takes.
 
-The overview is at https://grat.layered.work, and the project is at
-https://github.com/phranck/grat. Documentation.md in the repository is this same
-manual rendered as Markdown.
+The project is at https://github.com/phranck/grat. Documentation.md in the
+repository is this same manual rendered as Markdown.
 
 grat help prints the command reference without the detail this page carries.
 `

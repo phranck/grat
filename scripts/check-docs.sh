@@ -79,7 +79,6 @@ for text in \
 	"Go $go_version or newer" \
 	'man grat' \
 	'Documentation.md' \
-	'grat.layered.work' \
 	'macOS' \
 	'Linux' \
 	'foreground' \
