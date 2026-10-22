@@ -55,6 +55,26 @@
   },
   "nodes": [
     {
+      "label": "settings.json",
+      "file_type": "code",
+      "source_file": ".pi/settings.json",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "pi_settings",
+      "community": 134,
+      "norm_label": "settings.json"
+    },
+    {
+      "label": "skills",
+      "file_type": "code",
+      "source_file": ".pi/settings.json",
+      "source_location": "L2",
+      "_origin": "ast",
+      "id": "pi_settings_skills",
+      "community": 134,
+      "norm_label": "skills"
+    },
+    {
       "label": "main.go",
       "file_type": "code",
       "source_file": "cmd/grat/main.go",
@@ -91,7 +111,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "users_phranck_developer_projects_cli_grat_expose_revert_internal_cli_cli_go",
-      "community": 39,
+      "community": 10,
       "norm_label": "cli.go"
     },
     {
@@ -101,7 +121,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "cli_cli_run",
-      "community": 39,
+      "community": 10,
       "norm_label": "run()"
     },
     {
@@ -111,7 +131,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "internal_cli_cli_go_context",
-      "community": 39,
+      "community": 10,
       "norm_label": "context"
     },
     {
@@ -121,7 +141,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "internal_cli_cli_go_writer",
-      "community": 39,
+      "community": 10,
       "norm_label": "writer"
     },
     {
@@ -131,7 +151,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "cli_environment",
-      "community": 39,
+      "community": 10,
       "norm_label": "environment"
     },
     {
@@ -141,7 +161,7 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "internal_cli_cli_go_reader",
-      "community": 39,
+      "community": 10,
       "norm_label": "reader"
     },
     {
@@ -151,7 +171,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "internal_cli_cli_go_store",
-      "community": 84,
+      "community": 128,
       "norm_label": "store"
     },
     {
@@ -161,7 +181,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "internal_cli_cli_go_updateservice",
-      "community": 39,
+      "community": 10,
       "norm_label": "updateservice"
     },
     {
@@ -171,7 +191,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "uninstallservice",
-      "community": 39,
+      "community": 10,
       "norm_label": "uninstallservice"
     },
     {
@@ -181,7 +201,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "tailscaleprovider",
-      "community": 39,
+      "community": 10,
       "norm_label": "tailscaleprovider"
     },
     {
@@ -191,7 +211,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "internal_cli_cli_go_readytailscaleprovider",
-      "community": 39,
+      "community": 10,
       "norm_label": "readytailscaleprovider"
     },
     {
@@ -201,7 +221,7 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "cli_readytailscaleprovider",
-      "community": 39,
+      "community": 10,
       "norm_label": "readytailscaleprovider"
     },
     {
@@ -211,7 +231,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "cli_updateservice",
-      "community": 39,
+      "community": 10,
       "norm_label": "updateservice"
     },
     {
@@ -221,7 +241,7 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "cli_uninstallservice",
-      "community": 39,
+      "community": 10,
       "norm_label": "uninstallservice"
     },
     {
@@ -231,7 +251,7 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "cli_cli_defaultenvironment",
-      "community": 5,
+      "community": 10,
       "norm_label": "defaultenvironment()"
     },
     {
@@ -251,7 +271,7 @@
       "source_location": "L177",
       "_origin": "ast",
       "id": "cli_cli_exitcode",
-      "community": 39,
+      "community": 10,
       "norm_label": "exitcode()"
     },
     {
@@ -261,7 +281,7 @@
       "source_location": "L184",
       "_origin": "ast",
       "id": "cli_cli_loadmanager",
-      "community": 84,
+      "community": 128,
       "norm_label": "loadmanager()"
     },
     {
@@ -271,7 +291,7 @@
       "source_location": "L184",
       "_origin": "ast",
       "id": "internal_cli_cli_go_manager",
-      "community": 84,
+      "community": 128,
       "norm_label": "manager"
     },
     {
@@ -3181,7 +3201,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "cli_logs",
-      "community": 84,
+      "community": 86,
       "norm_label": "logs.go"
     },
     {
@@ -3191,7 +3211,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "cli_logs_runlogs",
-      "community": 84,
+      "community": 86,
       "norm_label": "runlogs()"
     },
     {
@@ -3201,7 +3221,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "internal_cli_logs_go_context",
-      "community": 84,
+      "community": 86,
       "norm_label": "context"
     },
     {
@@ -3211,7 +3231,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "internal_cli_logs_go_store",
-      "community": 84,
+      "community": 86,
       "norm_label": "store"
     },
     {
@@ -3221,7 +3241,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "internal_cli_logs_go_renderer",
-      "community": 84,
+      "community": 86,
       "norm_label": "renderer"
     },
     {
@@ -3231,7 +3251,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "cli_writeradapter",
-      "community": 84,
+      "community": 86,
       "norm_label": "writeradapter"
     },
     {
@@ -3241,7 +3261,7 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "internal_cli_logs_go_writer",
-      "community": 84,
+      "community": 86,
       "norm_label": "writer"
     },
     {
@@ -3251,7 +3271,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "cli_logs_outputlog",
-      "community": 84,
+      "community": 86,
       "norm_label": "outputlog()"
     },
     {
@@ -3261,7 +3281,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "users_phranck_developer_tools_cli_grat_internal_cli_logs_test_go",
-      "community": 84,
+      "community": 116,
       "norm_label": "logs_test.go"
     },
     {
@@ -3271,7 +3291,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "cli_notifyingwriter",
-      "community": 84,
+      "community": 116,
       "norm_label": "notifyingwriter"
     },
     {
@@ -3281,7 +3301,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "cli_notifyingwriter_write",
-      "community": 84,
+      "community": 116,
       "norm_label": ".write()"
     },
     {
@@ -3291,7 +3311,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "cli_logs_test_testoutputlogstreamsbeforeinputreacheseof",
-      "community": 84,
+      "community": 116,
       "norm_label": "testoutputlogstreamsbeforeinputreacheseof()"
     },
     {
@@ -3301,7 +3321,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "internal_cli_logs_test_go_t",
-      "community": 84,
+      "community": 116,
       "norm_label": "t"
     },
     {
@@ -4521,7 +4541,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "users_phranck_developer_projects_cli_grat_expose_revert_internal_cli_status_go",
-      "community": 84,
+      "community": 73,
       "norm_label": "status.go"
     },
     {
@@ -4531,7 +4551,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "cli_status_runstatus",
-      "community": 84,
+      "community": 73,
       "norm_label": "runstatus()"
     },
     {
@@ -4541,7 +4561,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "internal_cli_status_go_context",
-      "community": 84,
+      "community": 73,
       "norm_label": "context"
     },
     {
@@ -4551,7 +4571,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "internal_cli_status_go_store",
-      "community": 84,
+      "community": 73,
       "norm_label": "store"
     },
     {
@@ -4561,7 +4581,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "internal_cli_status_go_readytailscaleprovider",
-      "community": 84,
+      "community": 73,
       "norm_label": "readytailscaleprovider"
     },
     {
@@ -4571,7 +4591,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "internal_cli_status_go_renderer",
-      "community": 84,
+      "community": 73,
       "norm_label": "renderer"
     },
     {
@@ -4581,7 +4601,7 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "cli_status_reportconfigurationsource",
-      "community": 84,
+      "community": 73,
       "norm_label": "reportconfigurationsource()"
     },
     {
@@ -4591,7 +4611,7 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "internal_cli_status_go_resolvedproject",
-      "community": 84,
+      "community": 73,
       "norm_label": "resolvedproject"
     },
     {
@@ -4601,7 +4621,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "cli_status_reportportsoutsidetheirrange",
-      "community": 84,
+      "community": 73,
       "norm_label": "reportportsoutsidetheirrange()"
     },
     {
@@ -4611,7 +4631,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "internal_cli_status_go_config",
-      "community": 84,
+      "community": 73,
       "norm_label": "config"
     },
     {
@@ -4621,7 +4641,7 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "cli_status_renderstatus",
-      "community": 84,
+      "community": 73,
       "norm_label": "renderstatus()"
     },
     {
@@ -4631,7 +4651,7 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "internal_cli_status_go_manager",
-      "community": 84,
+      "community": 73,
       "norm_label": "manager"
     },
     {
@@ -4641,7 +4661,7 @@
       "source_location": "L101",
       "_origin": "ast",
       "id": "cli_status_publicaddresses",
-      "community": 84,
+      "community": 73,
       "norm_label": "publicaddresses()"
     },
     {
@@ -4651,7 +4671,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "cli_tailscalesetup",
-      "community": 84,
+      "community": 30,
       "norm_label": "tailscalesetup.go"
     },
     {
@@ -4661,7 +4681,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "cli_tailscalesetup_preparetailscale",
-      "community": 84,
+      "community": 30,
       "norm_label": "preparetailscale()"
     },
     {
@@ -4671,7 +4691,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "internal_cli_tailscalesetup_go_context",
-      "community": 84,
+      "community": 30,
       "norm_label": "context"
     },
     {
@@ -4681,7 +4701,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "internal_cli_tailscalesetup_go_environment",
-      "community": 84,
+      "community": 30,
       "norm_label": "environment"
     },
     {
@@ -4691,7 +4711,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "internal_cli_tailscalesetup_go_renderer",
-      "community": 84,
+      "community": 30,
       "norm_label": "renderer"
     },
     {
@@ -4701,7 +4721,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "internal_cli_tailscalesetup_go_client",
-      "community": 84,
+      "community": 30,
       "norm_label": "client"
     },
     {
@@ -4711,7 +4731,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "cli_tailscalesetupapprover",
-      "community": 84,
+      "community": 30,
       "norm_label": "tailscalesetupapprover"
     },
     {
@@ -4721,7 +4741,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "internal_cli_tailscalesetup_go_reader",
-      "community": 84,
+      "community": 30,
       "norm_label": "reader"
     },
     {
@@ -4731,7 +4751,7 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "cli_tailscalesetupapprover_approvemachinechange",
-      "community": 84,
+      "community": 30,
       "norm_label": ".approvemachinechange()"
     },
     {
@@ -4741,7 +4761,7 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "internal_cli_tailscalesetup_go_machinechange",
-      "community": 84,
+      "community": 30,
       "norm_label": "machinechange"
     },
     {
@@ -4751,7 +4771,7 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "internal_cli_tailscalesetup_go_approval",
-      "community": 84,
+      "community": 30,
       "norm_label": "approval"
     },
     {
@@ -4761,7 +4781,7 @@
       "source_location": "L88",
       "_origin": "ast",
       "id": "cli_tailscalesetupapprover_question",
-      "community": 84,
+      "community": 30,
       "norm_label": ".question()"
     },
     {
@@ -4771,7 +4791,7 @@
       "source_location": "L100",
       "_origin": "ast",
       "id": "cli_tailscalesetupreporter",
-      "community": 84,
+      "community": 30,
       "norm_label": "tailscalesetupreporter"
     },
     {
@@ -8611,7 +8631,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "maintenance_buildinfo_test",
-      "community": 5,
+      "community": 10,
       "norm_label": "buildinfo_test.go"
     },
     {
@@ -8621,7 +8641,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "maintenance_buildinfo_test_testbuildinfoignoresafilenamedlikethecommand",
-      "community": 5,
+      "community": 10,
       "norm_label": "testbuildinfoignoresafilenamedlikethecommand()"
     },
     {
@@ -8631,7 +8651,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "internal_maintenance_buildinfo_test_go_t",
-      "community": 5,
+      "community": 10,
       "norm_label": "t"
     },
     {
@@ -8641,7 +8661,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "maintenance_system",
-      "community": 5,
+      "community": 112,
       "norm_label": "system.go"
     },
     {
@@ -8651,7 +8671,7 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "internal_maintenance_system_go_maintenance_service",
-      "community": 5,
+      "community": 112,
       "norm_label": "service"
     },
     {
@@ -8661,7 +8681,7 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "internal_maintenance_system_go_context",
-      "community": 5,
+      "community": 112,
       "norm_label": "context"
     },
     {
@@ -8671,7 +8691,7 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "internal_maintenance_system_go_client",
-      "community": 5,
+      "community": 112,
       "norm_label": "client"
     },
     {
@@ -8681,7 +8701,7 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "installation",
-      "community": 5,
+      "community": 112,
       "norm_label": "installation"
     },
     {
@@ -8691,7 +8711,7 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "maintenance_result",
-      "community": 5,
+      "community": 112,
       "norm_label": "result"
     },
     {
@@ -8701,7 +8721,7 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "maintenance_system_defaultservice",
-      "community": 5,
+      "community": 10,
       "norm_label": "defaultservice()"
     },
     {
@@ -8711,7 +8731,7 @@
       "source_location": "L83",
       "_origin": "ast",
       "id": "maintenance_system_runcommand",
-      "community": 5,
+      "community": 112,
       "norm_label": "runcommand()"
     },
     {
@@ -8721,7 +8741,7 @@
       "source_location": "L101",
       "_origin": "ast",
       "id": "maintenance_system_runningbuildinfo",
-      "community": 5,
+      "community": 112,
       "norm_label": "runningbuildinfo()"
     },
     {
@@ -9091,7 +9111,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "maintenance_uninstall_active_test",
-      "community": 73,
+      "community": 39,
       "norm_label": "uninstall_active_test.go"
     },
     {
@@ -9101,7 +9121,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "maintenance_uninstall_active_test_runningproject",
-      "community": 73,
+      "community": 39,
       "norm_label": "runningproject()"
     },
     {
@@ -9111,7 +9131,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "internal_maintenance_uninstall_active_test_go_t",
-      "community": 73,
+      "community": 39,
       "norm_label": "t"
     },
     {
@@ -9121,7 +9141,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "internal_maintenance_uninstall_active_test_go_service",
-      "community": 73,
+      "community": 39,
       "norm_label": "service"
     },
     {
@@ -9131,7 +9151,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "internal_maintenance_uninstall_active_test_go_store",
-      "community": 73,
+      "community": 39,
       "norm_label": "store"
     },
     {
@@ -9141,7 +9161,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "maintenance_uninstall_active_test_testrunningservicesarelistedandstoppedwhenasked",
-      "community": 73,
+      "community": 39,
       "norm_label": "testrunningservicesarelistedandstoppedwhenasked()"
     },
     {
@@ -9151,7 +9171,7 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "maintenance_uninstall_active_test_testdecliningleaveseverythingalone",
-      "community": 73,
+      "community": 39,
       "norm_label": "testdecliningleaveseverythingalone()"
     },
     {
@@ -9161,7 +9181,7 @@
       "source_location": "L109",
       "_origin": "ast",
       "id": "maintenance_uninstall_active_test_testaservicethatsurvivesthestopblockstheuninstall",
-      "community": 73,
+      "community": 39,
       "norm_label": "testaservicethatsurvivesthestopblockstheuninstall()"
     },
     {
@@ -9171,7 +9191,7 @@
       "source_location": "L127",
       "_origin": "ast",
       "id": "maintenance_uninstall_active_test_testafailingstopisreportedratherthanignored",
-      "community": 73,
+      "community": 39,
       "norm_label": "testafailingstopisreportedratherthanignored()"
     },
     {
@@ -10401,7 +10421,7 @@
       "source_location": "L401",
       "_origin": "ast",
       "id": "manual_commandtext_hascommandentry",
-      "community": 67,
+      "community": 27,
       "norm_label": "hascommandentry()"
     },
     {
@@ -10521,7 +10541,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "manual_config_test",
-      "community": 86,
+      "community": 4,
       "norm_label": "config_test.go"
     },
     {
@@ -10531,7 +10551,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "manual_config_test_configpage",
-      "community": 86,
+      "community": 4,
       "norm_label": "configpage()"
     },
     {
@@ -10541,7 +10561,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "internal_manual_config_test_go_t",
-      "community": 86,
+      "community": 4,
       "norm_label": "t"
     },
     {
@@ -10551,7 +10571,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "manual_config_test_testtheconfigpageopensinsectionseven",
-      "community": 86,
+      "community": 4,
       "norm_label": "testtheconfigpageopensinsectionseven()"
     },
     {
@@ -10561,7 +10581,7 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "manual_config_test_testeveryconfiguredkeyisdescribed",
-      "community": 86,
+      "community": 4,
       "norm_label": "testeveryconfiguredkeyisdescribed()"
     },
     {
@@ -10571,7 +10591,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "manual_config_test_testthedefaultscomefromtheconfiguration",
-      "community": 86,
+      "community": 4,
       "norm_label": "testthedefaultscomefromtheconfiguration()"
     },
     {
@@ -10581,7 +10601,7 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "manual_config_test_testtherangesandportscomefromtheconfiguration",
-      "community": 86,
+      "community": 4,
       "norm_label": "testtherangesandportscomefromtheconfiguration()"
     },
     {
@@ -10591,7 +10611,7 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "manual_config_test_testtheinheritedenvironmentcomesfromtheruntime",
-      "community": 86,
+      "community": 4,
       "norm_label": "testtheinheritedenvironmentcomesfromtheruntime()"
     },
     {
@@ -11771,7 +11791,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "ports_registry",
-      "community": 10,
+      "community": 3,
       "norm_label": "registry.go"
     },
     {
@@ -11781,7 +11801,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "ports_scanlimits",
-      "community": 10,
+      "community": 3,
       "norm_label": "scanlimits"
     },
     {
@@ -11791,7 +11811,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "ports_scancounters",
-      "community": 10,
+      "community": 3,
       "norm_label": "scancounters"
     },
     {
@@ -11801,7 +11821,7 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "ports_source",
-      "community": 10,
+      "community": 3,
       "norm_label": "source"
     },
     {
@@ -11811,7 +11831,7 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "ports_reservation",
-      "community": 10,
+      "community": 3,
       "norm_label": "reservation"
     },
     {
@@ -11821,7 +11841,7 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "ports_projectconfig",
-      "community": 10,
+      "community": 3,
       "norm_label": "projectconfig"
     },
     {
@@ -11831,7 +11851,7 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "internal_ports_registry_go_config",
-      "community": 10,
+      "community": 3,
       "norm_label": "config"
     },
     {
@@ -11841,7 +11861,7 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "ports_problem",
-      "community": 10,
+      "community": 3,
       "norm_label": "problem"
     },
     {
@@ -11851,7 +11871,7 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "ports_report",
-      "community": 10,
+      "community": 3,
       "norm_label": "report"
     },
     {
@@ -11861,7 +11881,7 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "ports_listener",
-      "community": 10,
+      "community": 3,
       "norm_label": "listener"
     },
     {
@@ -11871,7 +11891,7 @@
       "source_location": "L90",
       "_origin": "ast",
       "id": "ports_listenerlookup",
-      "community": 10,
+      "community": 3,
       "norm_label": "listenerlookup"
     },
     {
@@ -11881,7 +11901,7 @@
       "source_location": "L96",
       "_origin": "ast",
       "id": "ports_registry_scan",
-      "community": 10,
+      "community": 3,
       "norm_label": "scan()"
     },
     {
@@ -11891,7 +11911,7 @@
       "source_location": "L100",
       "_origin": "ast",
       "id": "ports_registry_scanwithlimits",
-      "community": 10,
+      "community": 3,
       "norm_label": "scanwithlimits()"
     },
     {
@@ -11901,7 +11921,7 @@
       "source_location": "L137",
       "_origin": "ast",
       "id": "ports_report_addproject",
-      "community": 10,
+      "community": 3,
       "norm_label": ".addproject()"
     },
     {
@@ -11911,7 +11931,7 @@
       "source_location": "L143",
       "_origin": "ast",
       "id": "ports_report_addheldproject",
-      "community": 10,
+      "community": 3,
       "norm_label": ".addheldproject()"
     },
     {
@@ -11921,7 +11941,7 @@
       "source_location": "L164",
       "_origin": "ast",
       "id": "ports_report_sortprojects",
-      "community": 10,
+      "community": 3,
       "norm_label": ".sortprojects()"
     },
     {
@@ -11931,7 +11951,7 @@
       "source_location": "L172",
       "_origin": "ast",
       "id": "ports_report_addlisteners",
-      "community": 10,
+      "community": 3,
       "norm_label": ".addlisteners()"
     },
     {
@@ -11941,7 +11961,7 @@
       "source_location": "L195",
       "_origin": "ast",
       "id": "ports_registry_firstfree",
-      "community": 10,
+      "community": 3,
       "norm_label": "firstfree()"
     },
     {
@@ -11951,7 +11971,7 @@
       "source_location": "L195",
       "_origin": "ast",
       "id": "internal_ports_registry_go_role",
-      "community": 10,
+      "community": 3,
       "norm_label": "role"
     },
     {
@@ -11961,7 +11981,7 @@
       "source_location": "L216",
       "_origin": "ast",
       "id": "ports_registry_scanroot",
-      "community": 10,
+      "community": 3,
       "norm_label": "scanroot()"
     },
     {
@@ -11971,7 +11991,7 @@
       "source_location": "L245",
       "_origin": "ast",
       "id": "ports_registry_skiplinkedgitworktreeconfig",
-      "community": 10,
+      "community": 3,
       "norm_label": "skiplinkedgitworktreeconfig()"
     },
     {
@@ -11981,7 +12001,7 @@
       "source_location": "L249",
       "_origin": "ast",
       "id": "ports_registry_linkedgitworktree",
-      "community": 10,
+      "community": 3,
       "norm_label": "linkedgitworktree()"
     },
     {
@@ -11991,7 +12011,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "users_phranck_developer_tools_cli_grat_internal_ports_registry_test_go",
-      "community": 10,
+      "community": 3,
       "norm_label": "registry_test.go"
     },
     {
@@ -12001,7 +12021,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "ports_fakelookup",
-      "community": 10,
+      "community": 3,
       "norm_label": "fakelookup"
     },
     {
@@ -12011,7 +12031,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "ports_fakelookup_listener",
-      "community": 10,
+      "community": 3,
       "norm_label": ".listener()"
     },
     {
@@ -12021,7 +12041,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "internal_ports_registry_test_go_listener",
-      "community": 10,
+      "community": 3,
       "norm_label": "listener"
     },
     {
@@ -12031,7 +12051,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "ports_registry_test_testscandoesnotexecuteconfig",
-      "community": 10,
+      "community": 3,
       "norm_label": "testscandoesnotexecuteconfig()"
     },
     {
@@ -12041,7 +12061,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "internal_ports_registry_test_go_t",
-      "community": 10,
+      "community": 3,
       "norm_label": "t"
     },
     {
@@ -12051,7 +12071,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "ports_registry_test_testfirstfreeskipsconfiguredandliveports",
-      "community": 10,
+      "community": 3,
       "norm_label": "testfirstfreeskipsconfiguredandliveports()"
     },
     {
@@ -12061,7 +12081,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "ports_registry_test_testfirstfreeskipsliveportwhenownerpidisunknown",
-      "community": 10,
+      "community": 3,
       "norm_label": "testfirstfreeskipsliveportwhenownerpidisunknown()"
     },
     {
@@ -12071,7 +12091,7 @@
       "source_location": "L68",
       "_origin": "ast",
       "id": "ports_registry_test_testfirstfreetreatsvisibleownerpidasoccupied",
-      "community": 10,
+      "community": 3,
       "norm_label": "testfirstfreetreatsvisibleownerpidasoccupied()"
     },
     {
@@ -12081,7 +12101,7 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "ports_registry_test_testaddlistenersrecordsunknownowner",
-      "community": 10,
+      "community": 3,
       "norm_label": "testaddlistenersrecordsunknownowner()"
     },
     {
@@ -12091,7 +12111,7 @@
       "source_location": "L93",
       "_origin": "ast",
       "id": "ports_registry_test_testscancollectsvalidprojectports",
-      "community": 10,
+      "community": 3,
       "norm_label": "testscancollectsvalidprojectports()"
     },
     {
@@ -12101,7 +12121,7 @@
       "source_location": "L120",
       "_origin": "ast",
       "id": "ports_registry_test_testscanskipsworktreesdirectory",
-      "community": 10,
+      "community": 3,
       "norm_label": "testscanskipsworktreesdirectory()"
     },
     {
@@ -12111,7 +12131,7 @@
       "source_location": "L134",
       "_origin": "ast",
       "id": "ports_registry_test_testscanskipslinkedgitworktreeoutsideworktreesdirectory",
-      "community": 10,
+      "community": 3,
       "norm_label": "testscanskipslinkedgitworktreeoutsideworktreesdirectory()"
     },
     {
@@ -12121,7 +12141,7 @@
       "source_location": "L152",
       "_origin": "ast",
       "id": "ports_registry_test_testskiplinkedgitworktreeconfig",
-      "community": 10,
+      "community": 3,
       "norm_label": "testskiplinkedgitworktreeconfig()"
     },
     {
@@ -12131,7 +12151,7 @@
       "source_location": "L166",
       "_origin": "ast",
       "id": "ports_registry_test_testscanrejectsconfiguredlimitoverruns",
-      "community": 10,
+      "community": 3,
       "norm_label": "testscanrejectsconfiguredlimitoverruns()"
     },
     {
@@ -12141,7 +12161,7 @@
       "source_location": "L191",
       "_origin": "ast",
       "id": "ports_registry_test_writeregistryconfig",
-      "community": 10,
+      "community": 3,
       "norm_label": "writeregistryconfig()"
     },
     {
@@ -17081,7 +17101,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "internal_runtime_state_go_runtime_state",
-      "community": 31,
+      "community": 113,
       "norm_label": "state.go"
     },
     {
@@ -17091,7 +17111,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "runtime_processstate",
-      "community": 31,
+      "community": 113,
       "norm_label": "processstate"
     },
     {
@@ -17101,7 +17121,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "internal_runtime_state_go_time",
-      "community": 31,
+      "community": 113,
       "norm_label": "time"
     },
     {
@@ -17111,7 +17131,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "runtime_loadedstate",
-      "community": 31,
+      "community": 113,
       "norm_label": "loadedstate"
     },
     {
@@ -17121,7 +17141,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "runtime_recoverycandidate",
-      "community": 31,
+      "community": 113,
       "norm_label": "recoverycandidate"
     },
     {
@@ -17131,7 +17151,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "internal_runtime_state_go_service",
-      "community": 31,
+      "community": 113,
       "norm_label": "service"
     },
     {
@@ -17221,7 +17241,7 @@
       "source_location": "L127",
       "_origin": "ast",
       "id": "runtime_state_refuselinkeddirectory",
-      "community": 31,
+      "community": 113,
       "norm_label": "refuselinkeddirectory()"
     },
     {
@@ -24464,6 +24484,16 @@
     }
   ],
   "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".pi/settings.json",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "pi_settings",
+      "target": "pi_settings_skills",
+      "confidence_score": 1.0
+    },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
@@ -71130,9 +71160,9 @@
       "source_file": "internal/runtime/manager_test.go",
       "source_location": "L236",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "runtime_manager_test",
-      "target": "runtime_manager_test_startunrelatedprocess",
-      "confidence_score": 1.0
+      "target": "runtime_manager_test_startunrelatedprocess"
     },
     {
       "relation": "contains",
@@ -71170,9 +71200,9 @@
       "source_file": "internal/runtime/manager_test.go",
       "source_location": "L271",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "runtime_manager_test",
-      "target": "runtime_manager_test_testreusedpidisastalerecordthatstartreplaces",
-      "confidence_score": 1.0
+      "target": "runtime_manager_test_testreusedpidisastalerecordthatstartreplaces"
     },
     {
       "relation": "contains",
@@ -71250,9 +71280,9 @@
       "source_file": "internal/runtime/manager_test.go",
       "source_location": "L302",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "runtime_manager_test",
-      "target": "runtime_manager_test_teststopremovesastalerecordwithoutsignalingthereusedpid",
-      "confidence_score": 1.0
+      "target": "runtime_manager_test_teststopremovesastalerecordwithoutsignalingthereusedpid"
     },
     {
       "relation": "contains",
@@ -71270,9 +71300,9 @@
       "source_file": "internal/runtime/manager_test.go",
       "source_location": "L252",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "runtime_manager_test",
-      "target": "runtime_manager_test_writestalerecord",
-      "confidence_score": 1.0
+      "target": "runtime_manager_test_writestalerecord"
     },
     {
       "relation": "references",
@@ -71336,9 +71366,9 @@
       "source_location": "L236",
       "weight": 1.0,
       "context": "parameter_type",
+      "confidence_score": 1.0,
       "source": "runtime_manager_test_startunrelatedprocess",
-      "target": "internal_runtime_manager_test_go_t",
-      "confidence_score": 1.0
+      "target": "internal_runtime_manager_test_go_t"
     },
     {
       "relation": "references",
@@ -71369,9 +71399,9 @@
       "source_location": "L271",
       "weight": 1.0,
       "context": "parameter_type",
+      "confidence_score": 1.0,
       "source": "runtime_manager_test_testreusedpidisastalerecordthatstartreplaces",
-      "target": "internal_runtime_manager_test_go_t",
-      "confidence_score": 1.0
+      "target": "internal_runtime_manager_test_go_t"
     },
     {
       "relation": "references",
@@ -71457,9 +71487,9 @@
       "source_location": "L302",
       "weight": 1.0,
       "context": "parameter_type",
+      "confidence_score": 1.0,
       "source": "runtime_manager_test_teststopremovesastalerecordwithoutsignalingthereusedpid",
-      "target": "internal_runtime_manager_test_go_t",
-      "confidence_score": 1.0
+      "target": "internal_runtime_manager_test_go_t"
     },
     {
       "relation": "references",
@@ -71479,9 +71509,9 @@
       "source_location": "L252",
       "weight": 1.0,
       "context": "parameter_type",
+      "confidence_score": 1.0,
       "source": "runtime_manager_test_writestalerecord",
-      "target": "internal_runtime_manager_test_go_t",
-      "confidence_score": 1.0
+      "target": "internal_runtime_manager_test_go_t"
     },
     {
       "relation": "calls",
@@ -71688,9 +71718,9 @@
       "source_location": "L236",
       "weight": 1.0,
       "context": "return_type",
+      "confidence_score": 1.0,
       "source": "runtime_manager_test_startunrelatedprocess",
-      "target": "internal_runtime_manager_test_go_cmd",
-      "confidence_score": 1.0
+      "target": "internal_runtime_manager_test_go_cmd"
     },
     {
       "relation": "calls",
@@ -71699,9 +71729,9 @@
       "source_file": "internal/runtime/manager_test.go",
       "source_location": "L274",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "runtime_manager_test_testreusedpidisastalerecordthatstartreplaces",
-      "target": "runtime_manager_test_startunrelatedprocess",
-      "confidence_score": 1.0
+      "target": "runtime_manager_test_startunrelatedprocess"
     },
     {
       "relation": "calls",
@@ -71710,9 +71740,9 @@
       "source_file": "internal/runtime/manager_test.go",
       "source_location": "L304",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "runtime_manager_test_teststopremovesastalerecordwithoutsignalingthereusedpid",
-      "target": "runtime_manager_test_startunrelatedprocess",
-      "confidence_score": 1.0
+      "target": "runtime_manager_test_startunrelatedprocess"
     },
     {
       "relation": "calls",
@@ -71721,9 +71751,9 @@
       "source_file": "internal/runtime/manager_test.go",
       "source_location": "L275",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "runtime_manager_test_testreusedpidisastalerecordthatstartreplaces",
-      "target": "runtime_manager_test_writestalerecord",
-      "confidence_score": 1.0
+      "target": "runtime_manager_test_writestalerecord"
     },
     {
       "relation": "calls",
@@ -71732,9 +71762,9 @@
       "source_file": "internal/runtime/manager_test.go",
       "source_location": "L305",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "runtime_manager_test_teststopremovesastalerecordwithoutsignalingthereusedpid",
-      "target": "runtime_manager_test_writestalerecord",
-      "confidence_score": 1.0
+      "target": "runtime_manager_test_writestalerecord"
     },
     {
       "relation": "references",
@@ -71743,9 +71773,9 @@
       "source_location": "L252",
       "weight": 1.0,
       "context": "parameter_type",
+      "confidence_score": 1.0,
       "source": "runtime_manager_test_writestalerecord",
-      "target": "internal_runtime_manager_test_go_manager",
-      "confidence_score": 1.0
+      "target": "internal_runtime_manager_test_go_manager"
     },
     {
       "relation": "references",
@@ -71754,9 +71784,9 @@
       "source_location": "L252",
       "weight": 1.0,
       "context": "parameter_type",
+      "confidence_score": 1.0,
       "source": "runtime_manager_test_writestalerecord",
-      "target": "internal_runtime_manager_test_go_service",
-      "confidence_score": 1.0
+      "target": "internal_runtime_manager_test_go_service"
     },
     {
       "relation": "references",
@@ -71809,9 +71839,9 @@
       "source_file": "internal/runtime/manager_test.go",
       "source_location": "L273",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "runtime_manager_test_testreusedpidisastalerecordthatstartreplaces",
-      "target": "runtime_manager_test_newfixturemanager",
-      "confidence_score": 1.0
+      "target": "runtime_manager_test_newfixturemanager"
     },
     {
       "relation": "calls",
@@ -71831,9 +71861,9 @@
       "source_file": "internal/runtime/manager_test.go",
       "source_location": "L303",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "runtime_manager_test_teststopremovesastalerecordwithoutsignalingthereusedpid",
-      "target": "runtime_manager_test_newfixturemanager",
-      "confidence_score": 1.0
+      "target": "runtime_manager_test_newfixturemanager"
     },
     {
       "relation": "calls",
@@ -72071,9 +72101,9 @@
       "source_file": "internal/runtime/process.go",
       "source_location": "L212",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "runtime_process",
-      "target": "runtime_process_recordedprocesslive",
-      "confidence_score": 1.0
+      "target": "runtime_process_recordedprocesslive"
     },
     {
       "relation": "contains",
@@ -72280,9 +72310,9 @@
       "source_location": "L212",
       "weight": 1.0,
       "context": "parameter_type",
+      "confidence_score": 1.0,
       "source": "runtime_process_recordedprocesslive",
-      "target": "internal_runtime_process_go_processstate",
-      "confidence_score": 1.0
+      "target": "internal_runtime_process_go_processstate"
     },
     {
       "relation": "references",
@@ -72412,9 +72442,9 @@
       "source_file": "internal/runtime/process.go",
       "source_location": "L170",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "runtime_manager_stopstate",
-      "target": "runtime_process_recordedprocesslive",
-      "confidence_score": 1.0
+      "target": "runtime_process_recordedprocesslive"
     },
     {
       "relation": "calls",
@@ -85185,5 +85215,5 @@
       "source_file": "Documentation.md"
     }
   ],
-  "built_at_commit": "d6eb1a9b5dc8acfa567753ccba2f1f8c3f613999"
+  "built_at_commit": "7219037c88f3ef2fad771adb599ef7d93f037e3f"
 }
